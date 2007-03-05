@@ -1,6 +1,9 @@
 Revision history for Perl extension Bio::Grep.
-
-0.0.1  Thu Mar  01 16:00:00 2007
+0.0.2  Thu Mar  06 00:36:10 2007
+   - POD improvements
+   - bgrep did not accept -man and -help
+   
+0.0.1  Thu Mar  05 16:00:00 2007
    first public release on cpan
    - renamed to Bio::Grep (from Weigel::Search)
    - added backend GUUGle

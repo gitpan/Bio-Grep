@@ -17,7 +17,7 @@ use File::Basename;
 use IO::String;
 use Cwd;
 
-our $VERSION = '0.4';
+use version; our $VERSION = qv('0.4.1');
 
 sub new {
     my $self = shift;
@@ -356,7 +356,7 @@ __END__
 
 =head1 NAME
 
-Backends::Hypa.pm - Hypa Backend  
+Bio::Grep::Backends::Hypa.pm - HyPa back-end
 
 
 =head1 SYNOPSIS
@@ -461,11 +461,11 @@ Available sortmodes in Hypa:
             ga  : 'ascending order of dG'
             gd  : 'descending order of dG'
 
-Note that 'ga' and 'gd' require that search results have dG set. 
-L<Weigel::RNA> ships with filters for free energy calculation.
-
 =back
 
+Note that 'ga' and 'gd' require that search results have dG set. 
+L<Bio::Grep::RNA> ships with filters for free energy calculation. Also note that
+these two sort options require that we load all results in memory.
 
 =back
 

@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.0.1
+This document describes Bio::Grep version 0.0.2
 
 
 =head1 SYNOPSIS
@@ -174,7 +174,7 @@ See the documentation of your back-end for available options.
 
 To start the back-end with the specified settings, simply call
 
-  $sbe->search
+  $sbe->search();
 
 This method also accepts an hash reference with settings. In this case, all
 previous defined options except all paths and the database are set to their
@@ -182,7 +182,7 @@ default values.
 
   $sbe->search({ mismatches => 2, 
                  reverse_complement => 0, 
-                 query = $query })
+                 query => $query });
 
 =head2 ANALYZE SEARCH RESULTS
 
@@ -203,6 +203,7 @@ details.
 
 =head1 WHICH BACKEND?
 
+
 We support this back-ends:
 
 =over
@@ -214,7 +215,7 @@ We support this back-ends:
 =item GUUGle (L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>)
 
 =item Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>) 
-   
+
 =back
 
 Vmatch is fast but needs a lot of memory. Agrep is the best choice if you allow many 
@@ -229,6 +230,7 @@ Filters require exact positions, so you can't use them with agrep.
 This may change in future version or not.
 GUUGle is the best choice if you have RNA queries (counts GU as no mismatch)
 and if you are interested in only exact matches. 
+
 
 =head1 FILTERS
 
@@ -318,6 +320,13 @@ L<Bio::Grep::Backends::Vmatch>
 L<Bio::Grep::Backends::Agrep>
 L<Bio::Grep::Backends::Hypa>
 L<Bio::Grep::Backends::GUUGle>
+
+
+=head2 PUBLICATIONS
+
+GUUGle: L<http://bioinformatics.oxfordjournals.org/cgi/content/full/22/6/762>
+
+HyPa:   L<http://nar.oxfordjournals.org/cgi/content/full/29/1/196>
 
 
 =head1 AUTHOR

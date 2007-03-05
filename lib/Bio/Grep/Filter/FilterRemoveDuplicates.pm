@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-our $VERSION = '0.1';
+use version; our $VERSION = qv('0.2.0');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -42,7 +42,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Filter::FilterRemoveDuplicates.pm  
+Bio::Grep::Filter::FilterRemoveDuplicates - Example Filter  
 
 =head1 DESCRIPTION
 

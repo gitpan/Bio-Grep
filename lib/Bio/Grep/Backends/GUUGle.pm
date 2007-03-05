@@ -19,13 +19,12 @@ use IO::String;
 use Data::Dumper;
 use Cwd;
 
-our $VERSION = '0.1';
+use version; our $VERSION = qv('0.1.1');
 
 sub new {
     my $self = shift;
     $self = $self->SUPER::new;
     my %all_features = $self->features;
-    delete $all_features{NATIVE_ALIGNMENTS};
     delete $all_features{EVALUE};
     delete $all_features{PERCENT_IDENTITY};
     delete $all_features{DELETIONS};
@@ -210,7 +209,7 @@ sub _parse_next_res {
              }xms;
              next LINE;   
         }    
-        elsif ( $line =~ m{ \A > }xms ) {
+        elsif ( $line =~ m{ \A > }xms ) { # -e mode
             ( $subject_id, $subject_desc, $subject_pos, 
                 $query_desc, $query_pos ) = $line =~ m{\A
                 >(.*?)\s
@@ -230,11 +229,17 @@ sub _parse_next_res {
             ( $query_seq ) = $line =~ m{ \A 3 (.*) 5 \z}xms;
             next LINE;
         }
+
+        # find the query that belongs to the match
         my $query = $self->_mapping->{$query_desc};
+        
+        # already reverse, so just the complement here:
         $query_seq =~ tr[UTGCAutgca][AACGUaacgu];
+
+        # -e mode
         if ( $line =~ m{ \A [gucaGUCA]+ \z }xms ) {
             # find subject in string. a little bit complicated because
-            # don't no if the upstream/downstream region is as large
+            # don't know if the upstream/downstream region is as large
             # as we request
             my $qrc = lc($query->revcom->seq);
             $qrc =~ s/t/u/g;
@@ -397,11 +402,11 @@ Available sortmodes in GUUGle:
             ga  : 'ascending order of dG'
             gd  : 'descending order of dG'
 
-Note that 'ga' and 'gd' require that search results have dG set. 
-L<Weigel::RNA> ships with filters for free energy calculation.
-
 =back
 
+Note that 'ga' and 'gd' require that search results have dG set. 
+L<Bio::Grep::RNA> ships with filters for free energy calculation. Also note that
+these two sort options require that we load all results in memory.
 
 =back
 

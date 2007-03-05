@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.0.1);
+use version; our $VERSION = qv(0.0.2);
 
 use Bio::Grep ;
 use Bio::Root::Exception;
@@ -32,6 +32,8 @@ my $result = GetOptions(
          "query_file=s",
          "database=s",
          "datapath=s",
+         "man",
+         "help|?",
                         ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
@@ -40,8 +42,6 @@ unless (defined $h{query_file} && defined $h{database}) {
     pod2usage(1);
 }    
 
-print Dumper \%h;
-#exit;
 # now start configuring Bio::Grep
 ##############################################################################
 my $search_obj = Bio::Grep->new($h{backend});	
@@ -53,7 +53,6 @@ my $sbe = $search_obj->backend;
 
 $sbe->settings->datapath($h{datapath}) if defined $h{datapath};
 
-mkdir($sbe->settings->tmppath);	
 mkdir($sbe->settings->datapath);	
 
 # generate a suffix array. you have to do this only once.
@@ -87,7 +86,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.0.1
+This document describes bgrep version 0.0.2
 
 =head1 SYNOPSIS
 

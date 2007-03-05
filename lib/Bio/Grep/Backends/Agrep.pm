@@ -17,7 +17,7 @@ use File::Basename;
 use IO::String;
 use Cwd;
 
-our $VERSION = '0.5';
+use version; our $VERSION = qv('0.5.1');
 
 sub new {
     my $self = shift;

@@ -18,7 +18,7 @@ use IO::String;
 use File::Copy;
 use Cwd;
 
-our $VERSION = '0.9';
+use version; our $VERSION = qv('0.9.1');
 
 sub new {
     my $self = shift;
@@ -385,7 +385,7 @@ __END__
 
 =head1 NAME
 
-Backends::Vmatch.pm - Vmatch Backend  
+Bio::Grep::Backends::Vmatch.pm - Vmatch back-end  
 
 =head1 SYNOPSIS
 
@@ -446,7 +446,7 @@ Backends::Vmatch.pm - Vmatch Backend
   
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backends::Vmatch> searches for a query in a VMATCH suffix array. 
+B<Bio::Grep::Backends::Vmatch> searches for a query in a Vmatch suffix array. 
 
 =head1 METHODS
 
@@ -487,11 +487,12 @@ Available sortmodes in Vmatch:
             ida : 'ascending order of identity'
             idd : 'descending order of identity'
 
-Note that 'ga' and 'gd' require that search results have dG set. 
-L<Weigel::RNA> ships with filters for free energy calculation.  Also note that
-these sort options require that we load all results in memory.
 
 =back
+
+Note that 'ga' and 'gd' require that search results have dG set. 
+L<Bio::Grep::RNA> ships with filters for free energy calculation.  Also note that
+these two sort options require that we load all results in memory.
 
 =item C<$sbe-E<gt>get_sequences()>
 

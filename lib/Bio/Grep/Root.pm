@@ -106,7 +106,6 @@ Bio::Grep::Root - superclass for all Bio::Grep* packages
 =head1 DESCRIPTION
 
 This is the superclass adds some useful methods to packages.
-Don't call them
 
 =head1 METHODS
 
