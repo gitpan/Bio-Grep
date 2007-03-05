@@ -1,0 +1,207 @@
+#!/usr/bin/perl        
+ 
+use strict;
+use warnings;
+
+use version; our $VERSION = qv(0.0.1);
+
+use Bio::Grep ;
+use Bio::Root::Exception;
+use Getopt::Long qw(:config auto_version);
+use Pod::Usage;
+use Data::Dumper;
+
+# parse command line arguments 
+##############################################################################
+
+my $man = 0;
+my $help = 0;
+my %h = ('help|?' => \$help, man => \$man);
+
+my $result = GetOptions(
+    \%h, "backend=s",   
+         "mismatches=i",      
+         "editdistance=i",      
+         "gumismatches=i",      
+         "insertions=i",      
+         "deletions=i",      
+         "upstream=i",      
+         "downstream=i",      
+         "query_length=i",     
+         "reverse_complement",
+         "query_file=s",
+         "database=s",
+         "datapath=s",
+                        ) or pod2usage(2);
+pod2usage(1) if $help;
+pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+unless (defined $h{query_file} && defined $h{database}) {
+    pod2usage(1);
+}    
+
+print Dumper \%h;
+#exit;
+# now start configuring Bio::Grep
+##############################################################################
+my $search_obj = Bio::Grep->new($h{backend});	
+
+# $sbe is now a reference to the backend
+# perldoc Bio::Grep::Backend::BackendI	
+# perldoc Bio::Grep::Backend::Vmatch
+my $sbe = $search_obj->backend;
+
+$sbe->settings->datapath($h{datapath}) if defined $h{datapath};
+
+mkdir($sbe->settings->tmppath);	
+mkdir($sbe->settings->datapath);	
+
+# generate a suffix array. you have to do this only once.
+my $db_name = $sbe->generate_database_out_of_fastafile($h{database}, 'Description for the test Fastafile');
+
+# now choose that database
+$sbe->settings->database($db_name);
+
+# now try to search. 
+##############################################################################
+
+delete $h{'help|?'};
+delete $h{man};
+delete $h{backend};
+delete $h{database};
+
+$sbe->search(\%h);
+
+#  finally, output the results 
+##############################################################################
+while ( my $res = $sbe->next_res ) {
+   print $res->sequence->id . " " . $res->sequence->desc . "\n";
+   print $res->query->id . " " . $res->query->desc . "\n";
+   print $res->mark_subject_uppercase() . "\n";
+   print $res->alignment_string() . "\n\n";
+}
+
+=head1 NAME
+
+bgrep - Wrapper for several suffix array tools
+
+=head1 VERSION
+
+This document describes bgrep version 0.0.1
+
+=head1 SYNOPSIS
+
+  bgrep [ Options ] --query_file Query.fasta --database Data.fasta
+
+    --query_file    A FASTA file with the query sequences.
+    --database      A FASTA database.
+
+=head1 OPTIONS
+
+=over
+
+=item C<-help>
+
+Brief help message.
+
+=item C<-man>
+
+Full documentation
+
+=item C<--backend b>
+
+The back-end tool. Agrep, GUUGle, Hypa and Vmatch are supported.
+
+=item C<--mismatches n>
+
+The number of mismatches.
+
+=item C<--editdistance n>
+
+The allowed edit distance.
+
+=item C<--insertions n>
+
+The number of insertions.
+
+=item C<--deletions n>
+
+The number of deletions.
+
+=item C<--query_length n>
+
+Report all matches of length of at least n.
+
+=item C<--reverse_complement>
+
+Searches for the reverse complement.
+
+=item C<--upstream n>
+
+Display n nucleotides/AAs upstream the match.
+
+=item C<--downstream n>
+
+Display n nucleotides/AAs downstream the match.
+
+=item C<--datapath p>,
+
+Generate suffix arrays in path p.
+
+=back  
+
+=head1 DESCRIPTION
+
+Bio-Grep is a collection of Perl modules for searching in 
+FASTA-files. It is programmed in a modular way. There are different 
+backends available. You can filter search results.
+
+bgrep is an example of how to use this library.
+
+=head1 BUGS AND LIMITATIONS
+
+No bugs have been reported. 
+
+Please report any bugs or feature requests to
+C<bug-bio-grep@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org>. 
+
+=head1 SEE ALSO
+
+perldoc L<Bio::Grep>
+
+=head1 AUTHOR
+
+Markus Riester, E<lt>mriester@gmx.deE<gt>
+
+=head1 LICENCE AND COPYRIGHT
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=head1 DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
+YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
+OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+=cut
+
+# vim: ft=perl sw=4 ts=4 expandtab

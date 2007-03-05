@@ -1,0 +1,121 @@
+package Bio::Grep::Filter::FilterRemoveDuplicates;
+
+use strict;
+use warnings;
+
+use Bio::Grep::Filter::FilterI;
+
+use base 'Bio::Grep::Filter::FilterI';
+
+our $VERSION = '0.1';
+
+use Class::MethodMaker
+ [ new => [ qw / new2 / ],
+   hash => [qw / _ids / ],
+ ];
+
+
+sub new {
+   my $self = shift->new2;
+   $self->delete(1);
+   $self->supports_alphabet( dna => 1, protein => 1);
+   $self;
+}
+
+sub filter {
+   my $self = shift;
+   my %ids = $self->_ids;
+   my ( $id ) = $self->search_result->sequence->id =~ m{\A (.*) \. \d+ \z}xms;
+   $id =  $self->search_result->sequence->id if !defined $id;
+   return 0 if defined($ids{$id});
+   $ids{$id} = 1;
+   $self->_ids(%ids);
+   return 1;
+}   
+
+sub reset {
+   my $self = shift;
+   $self->_ids_reset;
+}
+1;# Magic true value required at end of module
+__END__
+
+=head1 NAME
+
+Bio::Grep::Filter::FilterRemoveDuplicates.pm  
+
+=head1 DESCRIPTION
+
+Allows only unique sequence ids in search results. Deletes the result if 
+id already occured. Ignores suffixes of the form ".xx", where xx are digit
+characters.
+
+=over
+
+=item C<$filter = Bio::Grep::Filter::FilterRemoveDuplicates-E<gt>new($res)>
+
+This function constructs a FilterRemoveDuplicates object. Takes as parameter
+a L<Bio::Grep::Container::SearchResult> object
+
+=back
+
+=head1 INTERNAL METHODS
+
+Only L<Bio::Grep::Backends::BackendI> should need to call them. If not,
+it is a bug.
+
+=over
+
+=item C<$filter-E<gt>filter>
+
+=item C<$filter-E<gt>reset>
+
+=back
+
+=head1 SEE ALSO
+
+L<Bio::Grep::Filter::FilterI>
+L<Bio::Grep::Backends::BackendI>
+
+=head1 AUTHOR
+
+Markus Riester, E<lt>mriester@gmx.deE<gt>
+
+
+=head1 LICENCE AND COPYRIGHT
+
+Based on Weigel::Seach v0.13
+
+Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
+Tuebingen.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+
+=head1 DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
+YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
+OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+=cut
+
+# vim: ft=perl sw=4 ts=4 expandtab
