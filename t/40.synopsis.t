@@ -6,6 +6,14 @@ use BioGrepTest;
 
 use Test::More; 
 
+my %prereq = BioGrepTest::check_prereq();
+if (!$prereq{bioperl}) {
+    plan skip_all => 'Bioperl not found';
+}
+elsif (!$prereq{bioperl_run}) {
+    plan skip_all => 'Bioperl-run not found';
+}
+
 my $backendname  = 'Vmatch';
 plan skip_all => 'Vmatch binary not in path' if
     BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';

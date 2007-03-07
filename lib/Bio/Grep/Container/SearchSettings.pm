@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.3.1');
+use version; our $VERSION = qv('0.3.2');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -75,7 +75,7 @@ sub to_string {
    $self->query_file_isset;
    $result .= "Querylength  : " . $self->query_length . "\n"
      if $self->query_length_isset;
-   $result .= "Revcom        : " . $self->reverse_complement . "\n" if $self->reverse_complement_isset;
+   $result .= "Revcom       : " . $self->reverse_complement . "\n" if $self->reverse_complement_isset;
 #   $result .= "Subject      : " . $self->subject . "\n" if $self->subject_isset;
    $result .= "GU Mismatches: " . $self->gumismatches . "\n";
    $result .= "upstream     : " . $self->upstream . "\n";
@@ -93,7 +93,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Container::SearchSettings.pm - an object for storing all search settings 
+Bio::Grep::Container::SearchSettings.pm - Data structure that stores all search settings 
 
 =head1 SYNOPSIS
 

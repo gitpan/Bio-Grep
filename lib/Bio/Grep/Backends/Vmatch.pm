@@ -40,8 +40,9 @@ sub search {
     $self->_create_tmp_query_file();
 
     if (($s->upstream > 0 || $s->downstream > 0) && $s->showdesc_isset) {
-        $self->warn("You can't use showdesc() with upstream or downstream. " .
-            'Ignoring upstream() and downstream');
+        $self->throw(-class => 'Bio::Root::BadParameter',
+              -text  => "You can't use showdesc() with upstream or downstream.",
+                );
     }
    
     # now generate the command string

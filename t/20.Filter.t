@@ -8,15 +8,28 @@
 use strict;
 use warnings;
 
+BEGIN{
+    use lib 't';
+    use BioGrepTest;
+    use Test::More; 
+
+    my %prereq = BioGrepTest::check_prereq();
+    if (!$prereq{bioperl}) {
+        plan skip_all => 'Bioperl not found';
+    }
+    elsif (!$prereq{bioperl_run}) {
+        plan skip_all => 'Bioperl-run not found';
+    }
+}
+
 my %tests = ( Agrep => 3, Vmatch => 9, Hypa => 9 );
-my $number_tests = 2;
+my $number_tests = 1;
 
 foreach (keys %tests) {
     $number_tests += $tests{$_};
 }
-
-use Test::More; 
 plan tests => $number_tests;
+
 ################################################################################
 
 use Bio::Grep::Filter::FilterRemoveDuplicates;
@@ -24,15 +37,13 @@ use Bio::Grep::Filter::FilterRemoveDuplicates;
 use Bio::Grep;
 use Bio::Perl;
 
-use lib 't';
-use BioGrepTest;
-
-
 # the number of files we assume in the data directory after
 # database generation. NOT TESTED HERE
 my %backend_filecnt = ( Agrep => 5, Vmatch => 16, Hypa => 31 );
 
 my $tests = 0;
+mkdir("t/tmp");
+mkdir("t/data");
 
 foreach my $backendname ( sort keys %tests ) {
 SKIP: {
@@ -50,8 +61,6 @@ SKIP: {
  # define own tmppath, so that we can check if all temporary files are deleted
         $sbe->settings->tmppath('t/tmp');
         $sbe->settings->datapath('t/data');
-        mkdir("t/tmp");
-        mkdir("t/data");
         BioGrepTest::delete_files;
 
         $sbe->generate_database_out_of_fastafile( 't/Test2.fasta',
@@ -104,7 +113,7 @@ foreach my $file (<t/data/*>) {
     unlink $filename if -e $filename;
 }
 
-ok( $tests > 0, " at least one backend found in path" );
+#ok( $tests > 0, " at least one backend found in path" );
 
 #ok( rmdir("t/tmp"), "Can remove tmp directory (all temp files deleted)" );
 ok( rmdir("t/data"),

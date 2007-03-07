@@ -7,17 +7,29 @@
 
 use strict;
 use warnings;
-my %tests = ( Agrep => 61, Vmatch => 99, Hypa => 76, GUUGle => 9 );
 
-my $number_tests = 0;
+BEGIN{
+    use lib 't';
+    use BioGrepTest;
+    use Test::More; 
+
+    my %prereq = BioGrepTest::check_prereq();
+    if (!$prereq{bioperl}) {
+        plan skip_all => 'Bioperl not found';
+    }
+    elsif (!$prereq{bioperl_run}) {
+        plan skip_all => 'Bioperl-run not found';
+    }
+}
+
+our %tests = ( Agrep => 62, Vmatch => 104, Hypa => 77, GUUGle => 10 );
+my $number_tests = 1;
 
 foreach (keys %tests) {
     $number_tests += $tests{$_};
 }
-# three less in Hypa because of upstream bug, 1 less because of maxhits
-
-use Test::More; 
 plan tests => $number_tests;
+
 
 # backends 
 ################################################################################
@@ -25,12 +37,12 @@ plan tests => $number_tests;
 
 use English qw( -no_match_vars );
 use Cwd;
-use lib 't';
-use BioGrepTest;
 use Scalar::Util qw/tainted/;
 use Data::Dumper;
-use Bio::Grep;
 
+
+
+use Bio::Grep;
 use Bio::Perl;
 
 # the number of files we assume in the data directory after
@@ -66,6 +78,15 @@ my %hits_sequences = (
 );
 my $tests = 0;
 
+my %sort_modes = (
+    GUUGle  => [ 'ga', 'gd' ],
+    Hypa    => [ 'ga', 'gd' ],
+    Agrep   => [ ],
+    Vmatch  => [ sort(              
+               qw(la ld ia id ja jd ea ed sa sd ida idd ga gd) ) ],
+);
+
+
 BACKEND:
 foreach my $backendname ( sort keys %tests ) {
 SKIP: {
@@ -79,6 +100,9 @@ SKIP: {
             'RNAcofold' );
         my $search_obj = Bio::Grep->new($backendname);
         my $sbe        = $search_obj->backend;
+        my %asm        = $sbe->available_sort_modes();
+        is_deeply([ sort keys %asm ], 
+                  $sort_modes{$backendname}, 'sortmodes as expected');
 
  # define own tmppath, so that we can check if all temporary files are deleted
         $sbe->settings->tmppath('t/tmp');
@@ -267,8 +291,7 @@ SKIP: {
         ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
 
         if ($backendname eq 'Vmatch') {
-            $sbe->settings->query_file('t/Test_query_' . lc($backendname)  .
-            '.fasta');
+            $sbe->settings->query_file('t/Test_query.fasta');
             $sbe->search();
             
             @ids = ();
@@ -500,6 +523,42 @@ SKIP: {
         $sbe->settings->database('Test.fasta');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured when searching pep seq in dna db" );
+
+        if ($backendname eq 'Vmatch' ) {
+            eval { $sbe->search({
+                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+                        reverse_complement => 0,
+                        upstream => 5,
+                        showdesc => 100,
+                  });  
+            };
+            ok( $EVAL_ERROR, 'Exception occured when upstream and showdesc' );
+            eval { $sbe->search({
+                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+                        reverse_complement => 0,
+                        downstream => 5,
+                        showdesc => 100,
+                  });  
+            };
+            ok( $EVAL_ERROR, 'Exception occured when downstream and showdesc' );
+            eval { $sbe->search({
+                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+                        reverse_complement => 0,
+                        upstream => 5,
+                        downstream => 5,
+                        showdesc => 100,
+                  });  
+            };
+            ok( $EVAL_ERROR, 'Exception occured when up-&downstream and showdesc' );
+            eval { $sbe->search({
+                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+                        reverse_complement => 0,
+                        showdesc => 100,
+                  });  
+            };
+            ok( !$EVAL_ERROR, 'No exception occured without up/down' ) || diag $EVAL_ERROR;
+
+        }    
         
 ################################################################################
         #  exit if $backendname eq "Hypa";
@@ -516,6 +575,9 @@ SKIP: {
         );
     }    #SKIP
 }
+
+eval { Bio::Grep->new('UnknownBackend'); };
+ok($EVAL_ERROR, 'Exception occured with unknown backend');
 
 #ok( $tests > 0, " at least one backend found in path" );
 

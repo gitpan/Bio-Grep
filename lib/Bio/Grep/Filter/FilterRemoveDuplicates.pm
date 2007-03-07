@@ -47,7 +47,7 @@ Bio::Grep::Filter::FilterRemoveDuplicates - Example Filter
 =head1 DESCRIPTION
 
 Allows only unique sequence ids in search results. Deletes the result if 
-id already occured. Ignores suffixes of the form ".xx", where xx are digit
+the id already occured. Ignores suffixes of the form ".xx", where xx are digit
 characters.
 
 =over

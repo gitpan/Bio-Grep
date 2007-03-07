@@ -1,7 +1,25 @@
 package BioGrepTest;
 
+use English qw( -no_match_vars );
 use File::Spec;
 
+sub check_prereq {
+    # check if some backend is found
+    my %res = ( backend => 0, bioperl => 0, bioperl_run => 0 );
+    my @backends = qw(vmatch guugle agrep hypa);
+    BACKEND:
+    for my $backend (@backends) {
+        if (find_binary_in_path($backend) ne '') {
+            $res{backend} = 1;
+            last BACKEND;
+        }    
+    }    
+    eval { require Bio::Root::Root; };
+    $res{bioperl} = !$EVAL_ERROR;
+    eval { require Bio::Factory::EMBOSS; };
+    $res{bioperl_run} = !$EVAL_ERROR;
+    return %res;
+}    
 
 sub find_binary_in_path {
    my ( $name ) = @_;

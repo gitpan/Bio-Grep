@@ -1,4 +1,12 @@
 Revision history for Perl extension Bio::Grep.
+
+0.0.3  Wed Mar  06 15:13:26 2007
+    - POD improvements
+    - more tests (Devel::Cover)
+    - Vmatch now throws an exception if showdesc + upstream instead of
+      just a warning
+    - skip tests if bioperl and/or bioperl-run is not found  
+    
 0.0.2  Thu Mar  06 00:36:10 2007
    - POD improvements
    - bgrep did not accept -man and -help

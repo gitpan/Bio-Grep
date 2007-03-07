@@ -8,21 +8,30 @@
 use strict;
 use warnings;
 
-use lib 't';
-use Test::More; 
+BEGIN{
+    use lib 't';
+    use Test::More; 
+    use BioGrepTest;
 
+
+    # make taint happy    
+    BioGrepTest::set_path( ( 'guugle' ) );
+
+    my %prereq = BioGrepTest::check_prereq();
+    if (!$prereq{bioperl}) {
+        plan skip_all => 'Bioperl not found';
+    }
+    elsif (!$prereq{bioperl_run}) {
+        plan skip_all => 'Bioperl-run not found';
+    }
+}
 my $backendname  = 'GUUGle';
 plan skip_all => 'GUUGle binary not in path' if
-    BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
-
-# make taint happy    
-BioGrepTest::set_path( ( 'guugle' ) );
-
-plan tests => 28;
+BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
+plan tests => 33;
 
 use English qw( -no_match_vars );
 use Cwd;
-use BioGrepTest;
 use Data::Dumper;
 use Bio::Grep;
 
@@ -64,6 +73,7 @@ $sbe->generate_database_out_of_fastafile( 't/TestGUUGleExtend.fasta',
  'Description for Test.fasta' );
 $sbe->settings->query('auggaggaucaaguugg');
 $sbe->settings->database('TestGUUGleExtend.fasta');
+$sbe->settings->gumismatches(0);
 $sbe->search();
 while (my $res = $sbe->next_res() ) {
     is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
@@ -113,6 +123,7 @@ while (my $res = $sbe->next_res() ) {
 $sbe->search({
     reverse_complement => 1,
     database           => 'Test.fasta',
+    gumismatches => 0,
     query              => 'CAGAGTCGGGTGGTTCCTCCACTGAGTCATCCTCTTTCAGTGGAGGGCTCAT',
 });
 
@@ -133,9 +144,49 @@ SKIP: {
     is( $test_seq_obj->seq,  $test_seq{seq} );
 }
 
+# test for GUUGle specific exceptions
+$sbe->settings->upstream(10);
+$sbe->settings->downstream(5);
+$sbe->settings->gumismatches(0);
 
-exit;
+eval { $sbe->search(); };
 
+ok($EVAL_ERROR, 'Exception occured with different values for up- and ' .
+     'downstream.');
+
+$sbe->settings->downstream(10);
+
+eval { $sbe->search(); };
+
+ok(!$EVAL_ERROR, 'No exception occured with equal values for up- and ' .
+     'downstream.') || diag $EVAL_ERROR;
+
+eval { $sbe->search( { query_file => 't/Test.fasta',  
+                 query_length => 20,
+                 gumismatches => 0,
+             } ); 
+     }; 
+
+ok($EVAL_ERROR, 'Exception occured when revcom not set');
+
+eval { $sbe->search( { query_file => 't/Test.fasta', 
+                 query_length => 20, 
+                 gumismatches => 0,
+                 reverse_complement => 1  } 
+             ); 
+     }; 
+
+ok(!$EVAL_ERROR, 'No exception occured when revcom set') || diag $EVAL_ERROR;
+
+
+eval { $sbe->search( { query_file => 't/Test.fasta', 
+                       gumismatches => 0,
+                       reverse_complement => 1  } 
+             ); 
+     }; 
+
+ok($EVAL_ERROR, 'Exception occured when query_length is missing');
+             
 1;
 
 # vim: ft=perl sw=4 ts=4 expandtab

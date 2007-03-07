@@ -100,12 +100,12 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Root - superclass for all Bio::Grep* packages
+Bio::Grep::Root - Superclass for all Bio::Grep* packages
 
 
 =head1 DESCRIPTION
 
-This is the superclass adds some useful methods to packages.
+This superclass adds some useful methods to all Bio::Grep packages.
 
 =head1 METHODS
 

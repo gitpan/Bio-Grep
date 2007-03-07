@@ -19,7 +19,7 @@ use IO::String;
 use Data::Dumper;
 use Cwd;
 
-use version; our $VERSION = qv('0.1.1');
+use version; our $VERSION = qv('0.1.2');
 
 sub new {
     my $self = shift;
@@ -54,7 +54,7 @@ sub search {
     if ($s->upstream > 0 || $s->downstream > 0) {
         $self->throw( 
              -class => 'Bio::Root::BadParameter',
-             -text => 'Upstream and downstream must be the same in GUUGle.'
+             -text => 'Upstream and downstream must be the same in GUUGle.',
              -value => 'Upstream: ' . $s->upstream . ' Downstream: ' .
              $s->downstream,
              ) if $s->upstream != $s->downstream;
@@ -62,7 +62,9 @@ sub search {
     }
     
     if ($s->gumismatches > 0) {
-        $self->warn('GUUGle counts GU always as no mismatch.');
+        $self->warn('GUUGle counts GU always as no mismatch. ' .
+            'Set gumismatches(0) to hide this warning.'
+        );
     }   
     if (!$s->reverse_complement && $s->query_file) {
         $self->throw( 
@@ -316,7 +318,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::GUUGle.pm - GUUGle Backend  
+Bio::Grep::Backends::GUUGle.pm - GUUGle back-end  
 
 
 =head1 SYNOPSIS

@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.0.2');
+use version; our $VERSION = qv('0.0.3');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.0.2
+This document describes Bio::Grep version 0.0.3
 
 
 =head1 SYNOPSIS
@@ -64,7 +64,7 @@ This document describes Bio::Grep version 0.0.2
   mkdir($sbe->settings->datapath);	
   
   # generate a suffix array. you have to do this only once.
-  $sbe->generate_database_out_of_fastafile('../t/Test.fasta', 'Description for the test Fastafile');
+  $sbe->generate_database_out_of_fastafile('t/Test.fasta', 'Description for the test Fastafile');
   
   $sbe->settings->database('Test.fasta');
   
@@ -147,6 +147,8 @@ For example:
 Now, in a second script:
 
   my $sbe = Bio::Grep->new('Vmatch')->backend;	
+  $sbe->settings->datapath('data');
+
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
   

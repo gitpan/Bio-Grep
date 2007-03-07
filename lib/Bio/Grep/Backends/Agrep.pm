@@ -227,7 +227,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::Agrep.pm - Agrep Backend  
+Bio::Grep::Backends::Agrep - Agrep back-end  
 
 
 =head1 SYNOPSIS

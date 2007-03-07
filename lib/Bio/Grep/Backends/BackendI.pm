@@ -586,7 +586,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::BackendI.pm - superclass for all back-ends  
+Bio::Grep::Backends::BackendI.pm - Superclass for all back-ends  
 
 =head1 SYNOPSIS
 
@@ -603,7 +603,7 @@ directly.
 
 =item C<new()>
 
-This function constructs a Backend object
+This function constructs a Backend object.
 
 =cut
 

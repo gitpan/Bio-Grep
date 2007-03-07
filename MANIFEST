@@ -26,7 +26,7 @@ t/40.synopsis.t
 t/Test.fasta
 t/TestGUUGleExtend.fasta
 t/Test_pep.fasta
-t/Test_query_vmatch.fasta
+t/Test_query.fasta
 t/Test2.fasta
 t/pod.t
 t/pod-coverage.t

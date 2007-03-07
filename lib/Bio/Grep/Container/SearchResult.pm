@@ -114,7 +114,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Container::SearchResult - data structure for a back-end search hit
+Bio::Grep::Container::SearchResult - Data structure for a back-end search hit
 
 =head1 SYNOPSIS
   

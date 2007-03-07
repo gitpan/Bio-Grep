@@ -4,11 +4,24 @@
 #
 ################################################################################
 
-use Test::More tests => 31;
 ################################################################################
 
 use strict;
 use warnings;
+BEGIN{
+    use Test::More;
+    use lib 't';
+    use BioGrepTest;
+    my %prereq = BioGrepTest::check_prereq();
+    if (!$prereq{bioperl}) {
+        plan skip_all => 'Bioperl not found';
+    }
+    elsif (!$prereq{bioperl_run}) {
+        plan skip_all => 'Bioperl-run not found';
+    }
+}
+
+plan tests => 32;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -17,8 +30,6 @@ use Scalar::Util qw/tainted/;
 use Bio::Grep;
 use Bio::Perl;
 
-use lib 't';
-use BioGrepTest;
 
 my @paths = ( '', '/', '/usr/local/bin' );
 
@@ -81,5 +92,25 @@ ok($sbe->_rnas_match('agcuag','aucuag'), 'rna matching function');
 ok($sbe->_rnas_match('agcuau','aucuag'), 'rna matching function');
 ok($sbe->_rnas_match('aucuau','agcuag'), 'rna matching function');
 ok(!$sbe->_rnas_match('aucaau','agcuag'), 'rna matching function');
+
+my $tmp = $sbe->settings->tmppath;
+$sbe->settings->datapath('data');
+$sbe->settings->database('Test.fasta');
+
+my $settings_dump =<<EOT
+Mismatches   : 0
+Insertions   : 0
+Deletions    : 0
+No alignments: 0
+Revcom       : 0
+GU Mismatches: 0
+upstream     : 0
+downstream   : 0
+Data Path    : data
+Database     : Test.fasta
+Tmp Path     : $tmp
+EOT
+;
+cmp_ok($sbe->settings->to_string,'eq', $settings_dump, 'Settings dump ok');
 
 # vim: ft=perl sw=4 ts=4 expandtab
