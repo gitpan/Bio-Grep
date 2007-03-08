@@ -9,13 +9,8 @@ use Bio::Grep::Backends::BackendI;
 
 use base 'Bio::Grep::Backends::BackendI';
 
-use Bio::Seq;
-use Bio::SeqIO;
-use Bio::Index::Fasta;
-
 use File::Basename;
 use IO::String;
-use Cwd;
 
 use version; our $VERSION = qv('0.5.1');
 
@@ -39,6 +34,7 @@ sub new {
     delete $all_features{QUERYFILE};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
+    delete $all_features{REVCOM_DEFAULT};
     $self->features(%all_features);
     $self;
 }
@@ -205,9 +201,12 @@ sub _parse_next_res {
         $alignment = $self->_get_alignment( $seq_query, $seq_subject )
             unless $s->no_alignments;
 
-        return Bio::Grep::Container::SearchResult->new( $seq_subject,
+        my $res = Bio::Grep::Container::SearchResult->new( $seq_subject,
             $s->upstream, $s->upstream + $s->query_length,
             $alignment, $seq_subject->id, "" );
+        # agrep does not support multiple queries yet    
+        $res->query(Bio::Seq->new( -display_id => "Query", -seq => $s->query));
+        return $res;
     }
     $self->_delete_output();
     return 0;

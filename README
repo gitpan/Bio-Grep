@@ -1,4 +1,4 @@
-Bio-Grep version 0.0.3
+Bio-Grep version 0.0.4
 ======================
 
 Bio::Grep is a collection of Perl modules for searching in 
@@ -60,10 +60,10 @@ This module requires these other modules, libraries and programs:
 
   Hypa (http://bibiserv.techfak.uni-bielefeld.de/HyPa/) Another
 	powerful enhanced suffix array tool. We use only a small set of 
-        features. Hypa is not yet offically released. It is the only
-	back-end that supports wobble pairs, meaning that GU mismatches
-	can count only 0 or 0.5 mismatches. Another difference is that
-	you can define how many insertions and deletions should be allowed.
+    features. Hypa is not yet offically released. It supports wobble pairs, 
+    meaning that GU mismatches can count only 0 or 0.5 mismatches. 
+    Another difference is that you can define how many insertions and 
+    deletions should be allowed.
 	The other back-ends only allow edit or hamming distances.
 	The tests require that hypa is in your path.
 	  
@@ -129,7 +129,9 @@ maybe it is a good starting point.
 
 BUGS
 
-Please report them: mriester@gmx.de
+Please report any bugs or feature requests to
+C<bug-bio-grep@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org>. 
 
 
 COPYRIGHT AND LICENCE

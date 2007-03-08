@@ -65,7 +65,7 @@ mkdir("t/data");
 BioGrepTest::delete_files;
 
 
-$sbe->settings->reverse_complement(1);
+$sbe->settings->reverse_complement(0);
 $sbe->settings->datapath('t/data');
 $sbe->generate_database_out_of_fastafile( 't/Test.fasta',
  'Description for Test.fasta' );
@@ -108,7 +108,7 @@ while (my $res = $sbe->next_res() ) {
     is($res->sequence->seq, $hits_sequences2{$res->sequence->id}, 'sequence correct'); 
 }
 # test reverse complement
-$sbe->settings->reverse_complement(0);
+$sbe->settings->reverse_complement(1);
 my $query = 'auggaggaucaaguugg';
 $query =~ s/u/t/g;
 $sbe->settings->query(revcom_as_string($query));
@@ -121,7 +121,7 @@ while (my $res = $sbe->next_res() ) {
 
 # test database
 $sbe->search({
-    reverse_complement => 1,
+    reverse_complement => 0,
     database           => 'Test.fasta',
     gumismatches => 0,
     query              => 'CAGAGTCGGGTGGTTCCTCCACTGAGTCATCCTCTTTCAGTGGAGGGCTCAT',

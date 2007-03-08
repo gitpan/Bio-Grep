@@ -3,22 +3,16 @@ package Bio::Grep::Backends::Vmatch;
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchSettings;
 use Bio::Grep::Container::SearchResult;
 use Bio::Grep::Backends::BackendI;
 
 use base 'Bio::Grep::Backends::BackendI';
 
-use Bio::Seq;
-use Bio::SeqIO;
-
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
-use File::Copy;
-use Cwd;
 
-use version; our $VERSION = qv('0.9.1');
+use version; our $VERSION = qv('0.9.2');
 
 sub new {
     my $self = shift;
@@ -27,6 +21,7 @@ sub new {
     delete $all_features{GUMISMATCHES};
     delete $all_features{DELETIONS};
     delete $all_features{INSERTIONS};
+    delete $all_features{REVCOM_DEFAULT};
     $self->features(%all_features);
     $self;
 }
@@ -54,7 +49,7 @@ sub search {
     my $online = '';
     $online = ' -online ' if ( $s->online_isset && $s->online );
     my $auto_query_length = 0;
-    if (!defined $s->query_length && !defined $s->complete && !$query_file) {
+    if (!defined $s->query_length && !$s->complete && !$query_file) {
         $s->query_length( length($query) );
         $auto_query_length = 1;
     }    
@@ -76,7 +71,16 @@ sub search {
     $showdesc = ' -showdesc ' . $s->showdesc . ' ' if $s->showdesc_isset;
     
     my $qspeedup = '';
-    $qspeedup = ' -qspeedup ' . $s->qspeedup . ' ' if $s->qspeedup_isset;
+    if ( $s->qspeedup_isset ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  =>
+                "Vmatch: You can't combine qspeedup and complete",
+            ) if $s->complete_isset;
+
+        $qspeedup = ' -qspeedup ' . $s->qspeedup . ' '; 
+
+    }    
    
     my $pflag = '';
     $pflag = ' -p ' if ($s->query_file && $s->reverse_complement);
@@ -386,7 +390,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::Vmatch.pm - Vmatch back-end  
+Bio::Grep::Backends::Vmatch - Vmatch back-end  
 
 =head1 SYNOPSIS
 

@@ -58,42 +58,43 @@ sub set {
 }    
 
 sub to_string {
-   my $self   = shift;
-   my $result = "";
-   $result .= "Mismatches   : " . $self->mismatches . "\n"
-     if $self->mismatches_isset;
-   $result .= "Insertions   : " . $self->insertions . "\n"
-     if $self->insertions_isset;
-   $result .= "Deletions    : " . $self->deletions . "\n"
-     if $self->deletions_isset;
-   $result .= "Edit distance: " . $self->editdistance . "\n"
-     if $self->editdistance_isset;
-   $result .= "No alignments: " . $self->no_alignments . "\n"
-     if $self->no_alignments_isset;
-   $result .= "Query        : " . $self->query . "\n" if $self->query_isset;
-   $result .= "Query File   : " . $self->query_file . "\n" if
-   $self->query_file_isset;
-   $result .= "Querylength  : " . $self->query_length . "\n"
-     if $self->query_length_isset;
-   $result .= "Revcom       : " . $self->reverse_complement . "\n" if $self->reverse_complement_isset;
-#   $result .= "Subject      : " . $self->subject . "\n" if $self->subject_isset;
-   $result .= "GU Mismatches: " . $self->gumismatches . "\n";
-   $result .= "upstream     : " . $self->upstream . "\n";
-   $result .= "downstream   : " . $self->downstream . "\n";
-   $result .= "maxhits      : " . $self->maxhits . "\n" if
-       $self->maxhits_isset;
-   $result .= "filters      : " . Dumper($self->filters) . "\n" if $self->filters_isset;
-   $result .= "Data Path    : " . $self->datapath . "\n";
-   $result .= "Database     : " . $self->database . "\n";
-   $result .= "Tmp Path     : " . $self->tmppath . "\n";
-   return $result;
+    my $self = shift;
+    return Data::Dumper->Dump( [ $self ] ); 
+#   my $result = "";
+#   $result .= "Mismatches   : " . $self->mismatches . "\n"
+#     if $self->mismatches_isset;
+#   $result .= "Insertions   : " . $self->insertions . "\n"
+#     if $self->insertions_isset;
+#   $result .= "Deletions    : " . $self->deletions . "\n"
+#     if $self->deletions_isset;
+#   $result .= "Edit distance: " . $self->editdistance . "\n"
+#     if $self->editdistance_isset;
+#   $result .= "No alignments: " . $self->no_alignments . "\n"
+#     if $self->no_alignments_isset;
+#   $result .= "Query        : " . $self->query . "\n" if $self->query_isset;
+#   $result .= "Query File   : " . $self->query_file . "\n" if
+#   $self->query_file_isset;
+#   $result .= "Querylength  : " . $self->query_length . "\n"
+#     if $self->query_length_isset;
+#   $result .= "Revcom       : " . $self->reverse_complement . "\n" if $self->reverse_complement_isset;
+##   $result .= "Subject      : " . $self->subject . "\n" if $self->subject_isset;
+#   $result .= "GU Mismatches: " . $self->gumismatches . "\n";
+#   $result .= "upstream     : " . $self->upstream . "\n";
+#   $result .= "downstream   : " . $self->downstream . "\n";
+#   $result .= "maxhits      : " . $self->maxhits . "\n" if
+#       $self->maxhits_isset;
+#   $result .= "filters      : " . Dumper($self->filters) . "\n" if $self->filters_isset;
+#   $result .= "Data Path    : " . $self->datapath . "\n";
+#   $result .= "Database     : " . $self->database . "\n";
+#   $result .= "Tmp Path     : " . $self->tmppath . "\n";
+#   return $result;
 }
 1;# Magic true value required at end of module
 __END__
 
 =head1 NAME
 
-Bio::Grep::Container::SearchSettings.pm - Data structure that stores all search settings 
+Bio::Grep::Container::SearchSettings - Data structure for all search settings 
 
 =head1 SYNOPSIS
 

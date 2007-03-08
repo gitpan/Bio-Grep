@@ -25,6 +25,7 @@ plan tests => 32;
 
 use English qw( -no_match_vars );
 use Cwd;
+use Data::Dumper;
 use Scalar::Util qw/tainted/;
 
 use Bio::Grep;
@@ -96,21 +97,38 @@ ok(!$sbe->_rnas_match('aucaau','agcuag'), 'rna matching function');
 my $tmp = $sbe->settings->tmppath;
 $sbe->settings->datapath('data');
 $sbe->settings->database('Test.fasta');
+$sbe->settings->reverse_complement(1);
 
 my $settings_dump =<<EOT
-Mismatches   : 0
-Insertions   : 0
-Deletions    : 0
-No alignments: 0
-Revcom       : 0
-GU Mismatches: 0
-upstream     : 0
-downstream   : 0
-Data Path    : data
-Database     : Test.fasta
-Tmp Path     : $tmp
+\$VAR1 = bless( {                               
+                 'datapath' => 'data',
+                 'no_alignments' => 0,
+                 'execpath' => '',
+                 'database' => 'Test.fasta',
+                 'deletions' => '0',
+                 'upstream' => '0',
+                 'insertions' => '0',
+                 'reverse_complement' => 1,
+                 'tmppath' => '$tmp',
+                 'mismatches' => '',
+                 'downstream' => '0',
+                 'gumismatches' => 0
+               }, 'Bio::Grep::Container::SearchSettings' );
 EOT
 ;
-cmp_ok($sbe->settings->to_string,'eq', $settings_dump, 'Settings dump ok');
+
+is_deeply(d2h($sbe->settings->to_string), d2h($settings_dump), 'Settings dump ok');
+sub d2h {
+    my ( $dump ) = @_;
+    my %h;
+    while ( $dump =~ m{ ^ \s+ '(.*?)' .*? > \s (.*?) [,]* $ }xmsg ) {
+        my ($v1, $v2) = ($1, $2);
+        $v2 =~ s/\'//g;
+        $v2 = '' if !$v2;
+        chomp $v2;
+        $h{$v1} = $v2;
+    }
+    return \%h;
+}
 
 # vim: ft=perl sw=4 ts=4 expandtab

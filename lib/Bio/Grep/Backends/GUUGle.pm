@@ -3,23 +3,16 @@ package Bio::Grep::Backends::GUUGle;
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchSettings;
 use Bio::Grep::Container::SearchResult;
 use Bio::Grep::Backends::BackendI;
-use Bio::Align::AlignI;
 
 use base 'Bio::Grep::Backends::BackendI';
 
-use Bio::Seq;
-use Bio::SeqIO;
-
-use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
-use IO::String;
-use Data::Dumper;
-use Cwd;
 
-use version; our $VERSION = qv('0.1.2');
+use Data::Dumper;
+
+use version; our $VERSION = qv('0.2.0');
 
 sub new {
     my $self = shift;
@@ -318,7 +311,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::GUUGle.pm - GUUGle back-end  
+Bio::Grep::Backends::GUUGle - GUUGle back-end  
 
 
 =head1 SYNOPSIS
@@ -417,7 +410,7 @@ these two sort options require that we load all results in memory.
 
 L<Bio::Grep::Backends::BackendI>
 L<Bio::Grep::Container::SearchSettings>
-L<Bio::SeqIO>
+L<Bio::Seq>
 
 
 =head1 AUTHOR

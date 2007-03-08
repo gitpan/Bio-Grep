@@ -3,21 +3,15 @@ package Bio::Grep::Backends::Hypa;
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchSettings;
 use Bio::Grep::Container::SearchResult;
 use Bio::Grep::Backends::BackendI;
 
 use base 'Bio::Grep::Backends::BackendI';
 
-use Bio::Seq;
-use Bio::SeqIO;
-
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
-use IO::String;
-use Cwd;
 
-use version; our $VERSION = qv('0.4.1');
+use version; our $VERSION = qv('0.4.2');
 
 sub new {
     my $self = shift;
@@ -31,6 +25,7 @@ sub new {
     delete $all_features{COMPLETE};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
+    delete $all_features{REVCOM_DEFAULT};
     $self->features(%all_features);
     $self;
 }
@@ -333,6 +328,7 @@ sub _parse_next_res {
             length($upstream), length($upstream) + length($match),
             $alignment, $tmp_seq->id, '' )
             );
+        $res->query(Bio::Seq->new( -display_id => "Query", -seq => $s->query));
         return $res if $res;
     }
     $self->_delete_output();
@@ -356,7 +352,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::Hypa.pm - HyPa back-end
+Bio::Grep::Backends::Hypa - HyPa back-end
 
 
 =head1 SYNOPSIS

@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 62, Vmatch => 104, Hypa => 77, GUUGle => 10 );
+our %tests = ( Agrep => 64, Vmatch => 107, Hypa => 79, GUUGle => 10 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -230,9 +230,25 @@ SKIP: {
                 $sbe->settings->reverse_complement(0);
             }
             for my $i ( 1 .. 5 ) {
+                # test some vmatch flags
+                # they should not change anything in the results
+                if ($j && $i == 5 && defined( $sbe->features->{ONLINE} )) {
+                    $sbe->settings->online(1);
+                }    
+                if (!$j && $i == 5 && defined( $sbe->features->{ONLINE} )) {
+                    $sbe->settings->online(0);
+                }    
+                if ($j && $i == 4 && defined( $sbe->features->{QSPEEDUP} )) {
+                    $sbe->settings->qspeedup(2);
+                }    
+                if ($j == 0 && $i == 4 && defined( $sbe->features->{QSPEEDUP} )) {
+                    $sbe->settings->qspeedup(2);
+                }    
                 $sbe->settings->mismatches($i);
 
                 $sbe->search();
+                $sbe->settings->online_reset;
+                $sbe->settings->qspeedup_reset;
                 my @ids = ();
                 while (my $res = $sbe->next_res ) {
 
@@ -240,6 +256,10 @@ SKIP: {
                     push ( @ids, $res->sequence->id );
                     $test_seq_internal_id = $res->sequence_id
                         if $res->sequence->id eq $test_seq{id};
+                    if ($i == 1 && $j == 1) {
+                        is(uc($res->query->seq), uc($sbe->settings->query), 
+                            'query sequence in results');
+                    }    
                 }
                 my @shouldbe = _get_ids_where_mm_smaller($i);
                 foreach (@shouldbe) {
@@ -349,6 +369,9 @@ SKIP: {
             );
 
             my $sequence = 'tgacagaagagagtgagcac';
+            if( defined( $sbe->features->{COMPLETE} )) {
+                $sbe->settings->complete(0);
+            }    
             $sbe->settings->query($sequence);
             $sbe->settings->reverse_complement(1);
             $sbe->settings->mismatches(5);
@@ -357,6 +380,7 @@ SKIP: {
             $sbe->settings->downstream(10);
 
             $sbe->search();
+            $sbe->settings->complete_reset;
             my @ids = ();
             while (my $res = $sbe->next_res  ) {
 
@@ -557,6 +581,14 @@ SKIP: {
                   });  
             };
             ok( !$EVAL_ERROR, 'No exception occured without up/down' ) || diag $EVAL_ERROR;
+            eval { $sbe->search({
+                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+                        reverse_complement => 0,
+                        complete => 1,
+                        qspeedup => 2,
+                  });  
+            };
+            ok( $EVAL_ERROR, 'No exception occured without up/down' );
 
         }    
         

@@ -4,14 +4,13 @@ use strict;
 use warnings;
 
 use Bio::Grep::Container::SearchSettings;
-use Bio::Grep::Container::SearchResult;
 use Bio::Grep::Root;
 
-use Bio::Seq;
-use Bio::Perl;
-use Bio::SeqIO;
 use Bio::AlignIO;
 use Bio::Factory::EMBOSS;
+use Bio::Index::Fasta;
+use Bio::Seq;
+use Bio::SeqIO;
 
 use base 'Bio::Grep::Root';
 
@@ -53,7 +52,7 @@ sub new {
         NATIVE_ALIGNMENTS => 1,
         EVALUE            => 1,
         PERCENT_IDENTITY  => 1,
-        PROTEINS         => 1,
+        PROTEINS          => 1,
         ONLINE            => 1,
         UPSTREAM          => 1,
         DOWNSTREAM        => 1,
@@ -63,6 +62,7 @@ sub new {
         QUERYFILE         => 1,
         SHOWDESC          => 1,
         QSPEEDUP          => 1,
+        REVCOM_DEFAULT    => 1,
     );
     $self->features(%all_features);
     $self;
@@ -418,8 +418,9 @@ sub _prepare_query {
     $self->settings->reverse_complement(0)
         unless $self->settings->reverse_complement_isset;
     if ($self->settings->reverse_complement) {
-        if ($db_alphabet eq 'dna') {    
-            $query = $seq->revcom->seq 
+        if ($db_alphabet eq 'dna') {
+            $query = $seq->revcom->seq unless defined 
+                $self->features->{REVCOM_DEFAULT}; 
         }
         else {
             $self->warn("Setting reverse complement only available for DNA
@@ -427,6 +428,9 @@ sub _prepare_query {
             $self->settings->reverse_complement(0);
         }
     }
+    elsif (defined $self->features->{REVCOM_DEFAULT} && $db_alphabet eq 'dna') {    
+            $query = $seq->revcom->seq 
+    }    
     $self->settings->_real_query( uc($query) );
     return $self->settings->_real_query();
 }

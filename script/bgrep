@@ -3,19 +3,21 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.0.2);
+use version; our $VERSION = qv(0.0.4);
 
 use Bio::Grep ;
 use Bio::Root::Exception;
 use Getopt::Long qw(:config auto_version);
 use Pod::Usage;
 use Data::Dumper;
+use File::Basename;
 
 # parse command line arguments 
 ##############################################################################
 
 my $man = 0;
 my $help = 0;
+my $start = time;
 my %h = ('help|?' => \$help, man => \$man);
 
 my $result = GetOptions(
@@ -27,18 +29,22 @@ my $result = GetOptions(
          "deletions=i",      
          "upstream=i",      
          "downstream=i",      
+         "query=s",
          "query_length=i",     
+         "showdesc=i",     
          "reverse_complement",
          "query_file=s",
          "database=s",
          "datapath=s",
+         "createdb",
+         "complete",
          "man",
          "help|?",
                         ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
-unless (defined $h{query_file} && defined $h{database}) {
+unless ((defined $h{query_file} || defined $h{query} || defined $h{createdb}) && defined $h{database} ) {
     pod2usage(1);
 }    
 
@@ -56,7 +62,10 @@ $sbe->settings->datapath($h{datapath}) if defined $h{datapath};
 mkdir($sbe->settings->datapath);	
 
 # generate a suffix array. you have to do this only once.
-my $db_name = $sbe->generate_database_out_of_fastafile($h{database}, 'Description for the test Fastafile');
+my $db_name = $h{database};
+if ($h{createdb}) {
+    $db_name = $sbe->generate_database_out_of_fastafile($h{database}, 'Description for the test Fastafile');
+}
 
 # now choose that database
 $sbe->settings->database($db_name);
@@ -69,16 +78,19 @@ delete $h{man};
 delete $h{backend};
 delete $h{database};
 
-$sbe->search(\%h);
+if (!defined $h{createdb}) { 
+    $sbe->search(\%h);
 
-#  finally, output the results 
-##############################################################################
-while ( my $res = $sbe->next_res ) {
-   print $res->sequence->id . " " . $res->sequence->desc . "\n";
-   print $res->query->id . " " . $res->query->desc . "\n";
-   print $res->mark_subject_uppercase() . "\n";
-   print $res->alignment_string() . "\n\n";
+    #  finally, output the results 
+    ##############################################################################
+    while ( my $res = $sbe->next_res ) {
+        print $res->sequence->id . " " . $res->sequence->desc . "\n";
+        print $res->query->id . " " . $res->query->desc . "\n";
+        print $res->mark_subject_uppercase() . "\n";
+        print $res->alignment_string() . "\n\n";
+    }
 }
+print "Search took " . (time - $start) . " seconds.\n";
 
 =head1 NAME
 
@@ -86,11 +98,15 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.0.2
+This document describes bgrep version 0.0.4
 
 =head1 SYNOPSIS
 
-  bgrep [ Options ] --query_file Query.fasta --database Data.fasta
+  # to create a database
+  bgrep --database Data.fa --datapath data --createdb
+
+  # to search
+  bgrep [ Options ] --query_file Query.fa --database Data.fa  --datapath  data
 
     --query_file    A FASTA file with the query sequences.
     --database      A FASTA database.

@@ -1,6 +1,17 @@
 Revision history for Perl extension Bio::Grep.
 
-0.0.3  Wed Mar  06 15:13:26 2007
+0.0.4  Wed Mar  07 15:13:26 2007
+    - forgot to include perlcritic test and 00.checkprereq
+    - POD improvements
+    - Cleanup: removed unnecessary use lines
+    - switched to Data::Dumper for settings->to_string()
+    - more tests
+    - Vmatch did not calculate query_length if complete(0)
+    - GUUGle: reverse_complement was switched (revcom(1) was revcom(0)
+      and vice versa).
+    - Agrep: did not store $res->query  
+    
+0.0.3  Wed Mar  07 15:13:26 2007
     - POD improvements
     - more tests (Devel::Cover)
     - Vmatch now throws an exception if showdesc + upstream instead of

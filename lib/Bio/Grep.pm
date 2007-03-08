@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.0.3');
+use version; our $VERSION = qv('0.0.4');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,8 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.0.3
-
+This document describes Bio::Grep version 0.0.4
 
 =head1 SYNOPSIS
 
@@ -54,18 +53,17 @@ This document describes Bio::Grep version 0.0.3
   my $search_obj = Bio::Grep->new('Vmatch');	
   
   # $sbe is now a reference to the back-end
-  # perldoc Bio::Grep::Backends::BackendI	
-  # perldoc Bio::Grep::Backends::Vmatch
   my $sbe = $search_obj->backend;
  
-  # perldoc Bio::Grep::Container::SearchSettings  
+  # define the location of the suffix arrays
   $sbe->settings->datapath('data');
   
   mkdir($sbe->settings->datapath);	
   
-  # generate a suffix array. you have to do this only once.
+  # now generate a suffix array. you have to do this only once.
   $sbe->generate_database_out_of_fastafile('t/Test.fasta', 'Description for the test Fastafile');
   
+  # search in this suffix array
   $sbe->settings->database('Test.fasta');
   
   # search for the reverse complement and allow 2 mismatches
@@ -86,8 +84,6 @@ This document describes Bio::Grep version 0.0.3
                  });  
   
   # output some informations! 
-  # perldoc Bio::Grep::Container::SearchResult
-  
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
      print $res->alignment_string() . "\n\n";
@@ -97,8 +93,11 @@ This document describes Bio::Grep version 0.0.3
 =head1 DESCRIPTION
 
 Bio-Grep is a collection of Perl modules for searching in 
-FASTA-files. It is programmed in a modular way. There are different 
-back-ends available. You can filter search results.
+Fasta files. It supports different back-ends, most importantly some (enhanced) suffix
+array implementations. Currently, there is no suffix array tool that works in
+all scenarios (for example whole genome, protein and RNA data). Bio::Grep
+provides a common API to the most popular tools. This way, you can easily switch or combine
+tools.
 
 =head1 METHODS
 
@@ -132,11 +131,11 @@ the back-end you want to use (e.g. L<Bio::Grep::Backends::Vmatch>).
 
 =head2 GENERATE DATABASES 
 
-As a first step, you have to generate a Bio::Grep database out of your FASTA
+As a first step, you have to generate a Bio::Grep database out of your Fasta
 file in which you want to search. A Bio::Grep database consists of a couple of
 files and allows you to retrieve informations about the database as well
 as to perform queries as fast and memory efficient as possible. You have to do
-this only once for every FASTA file.
+this only once for every Fasta file.
 
 For example:
 
@@ -153,6 +152,11 @@ Now, in a second script:
   my @local_dbs = sort keys %local_dbs_description;
   
 
+Alternatively, you can use bgrep which is part of this distribution:
+
+  bgrep --backend Vmatch --database TAIR6_cdna_20060907 --datapath data --createdb
+
+  
 =head2 SEARCH SETTINGS
 
 All search settings are stored in the L<Bio::Grep::Container::SearchSettings>
@@ -304,7 +308,7 @@ None reported.
 No bugs have been reported. 
 
 There is not yet a nice interface for searching for multiple queries. However,
-Vmatch and GUUGle support this feature. So you can generate a FASTA query file
+Vmatch and GUUGle support this feature. So you can generate a Fasta query file
 with L<Bio::SeqIO> and then set C<$sbe-E<gt>settings-E<gt>query_file()>. To
 find out, to which query a match belongs, you have to check C<$res-E<gt>query>.
 
