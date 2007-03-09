@@ -5,7 +5,7 @@ use File::Spec;
 
 sub check_prereq {
     # check if some backend is found
-    my %res = ( backend => 0, bioperl => 0, bioperl_run => 0 );
+    my %res = ( backend => 0, bioperl => 0, bioperl_run => 0, emboss => 0 );
     my @backends = qw(vmatch guugle agrep hypa);
     BACKEND:
     for my $backend (@backends) {
@@ -18,6 +18,7 @@ sub check_prereq {
     $res{bioperl} = !$EVAL_ERROR;
     eval { require Bio::Factory::EMBOSS; };
     $res{bioperl_run} = !$EVAL_ERROR;
+    $res{emboss} = 1 if find_binary_in_path('needle') ne '';
     return %res;
 }    
 

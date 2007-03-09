@@ -183,12 +183,17 @@ back-end function get_sequences (L<Bio::Grep::Backends::BackendI>).
 =item C<begin()>
 
 Get/set the position of the beginning of the subject in the sequence. This allows 
-retrieving upstream regions from the back-end.
+retrieving upstream regions from the back-end. First position is 0.
+
+    my $seq = $res->sequence->seq;
+    my $upstream   = substr $seq, 0, $res->begin;
+    my $subject    = substr $seq, $res->begin, $res->end - $res->begin;
+    my $downstream = substr $seq, $res->end;
 
 =item C<end()>
 
 Get/set the position of the end of the subject in the sequence. This allows retrieving
-downstream regions from the back-end.
+downstream regions from the back-end. See C<begin()>.
 
 =item C<dG()>
 

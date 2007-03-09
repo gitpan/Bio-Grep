@@ -28,7 +28,7 @@ BEGIN{
 my $backendname  = 'GUUGle';
 plan skip_all => 'GUUGle binary not in path' if
 BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
-plan tests => 33;
+plan tests => 35;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -153,6 +153,7 @@ eval { $sbe->search(); };
 
 ok($EVAL_ERROR, 'Exception occured with different values for up- and ' .
      'downstream.');
+### 
 
 $sbe->settings->downstream(10);
 
@@ -160,7 +161,17 @@ eval { $sbe->search(); };
 
 ok(!$EVAL_ERROR, 'No exception occured with equal values for up- and ' .
      'downstream.') || diag $EVAL_ERROR;
+###
 
+$sbe->settings->upstream_reset;
+
+eval { $sbe->search(); };
+
+ok($EVAL_ERROR, 'Exception occured with undef up- and ' .
+     'def. downstream.');
+
+###
+ 
 eval { $sbe->search( { query_file => 't/Test.fasta',  
                  query_length => 20,
                  gumismatches => 0,
@@ -168,6 +179,8 @@ eval { $sbe->search( { query_file => 't/Test.fasta',
      }; 
 
 ok($EVAL_ERROR, 'Exception occured when revcom not set');
+
+###
 
 eval { $sbe->search( { query_file => 't/Test.fasta', 
                  query_length => 20, 
@@ -178,6 +191,20 @@ eval { $sbe->search( { query_file => 't/Test.fasta',
 
 ok(!$EVAL_ERROR, 'No exception occured when revcom set') || diag $EVAL_ERROR;
 
+###
+
+diag "\nNow you should see a warning\n";
+
+eval { $sbe->search( { query_file => 't/Test.fasta', 
+                 query_length => 20, 
+                 gumismatches => 1,
+                 reverse_complement => 1  } 
+             ); 
+     }; 
+
+ok(!$EVAL_ERROR, 'No exception occured when revcom set') || diag $EVAL_ERROR;
+
+###
 
 eval { $sbe->search( { query_file => 't/Test.fasta', 
                        gumismatches => 0,

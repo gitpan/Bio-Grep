@@ -28,6 +28,7 @@ t/Test.fasta
 t/TestGUUGleExtend.fasta
 t/Test_pep.fasta
 t/Test_query.fasta
+t/Test_query_revcom.fasta
 t/Test2.fasta
 t/pod.t
 t/pod-coverage.t

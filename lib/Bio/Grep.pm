@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.0.4');
+use version; our $VERSION = qv('0.1.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.0.4
+This document describes Bio::Grep version 0.1.0
 
 =head1 SYNOPSIS
 
@@ -229,13 +229,19 @@ mismatches in short sequences, if you want to search in Fasta files
 with relatively short sequences (e.g transcript databases) and if you are 
 only interested in which sequences the approximate match was found. 
 Its performance is in this case 
-amazing. If you want the exact positions, choose vmatch. If you want 
+amazing. If you want the exact positions of a match in the sequence, choose vmatch. If you want 
 nice alignments, choose vmatch too (EMBOSS can automatically align the 
 sequence and the query in the agrep back-end, but then vmatch is faster). 
 Filters require exact positions, so you can't use them with agrep. 
 This may change in future version or not.
-GUUGle is the best choice if you have RNA queries (counts GU as no mismatch)
-and if you are interested in only exact matches. 
+
+GUUGle may be the best choice if you have RNA queries (counts GU as no mismatch)
+and if you are interested in only exact matches. Another
+solution here would be to use Vmatch and write a filter (see next section) that
+only allows GU mismatches. Of course, this is only an alternative if you
+can limit (C<$sbe-E<gt>settings-E<gt>mismatches()>) the maximal number of GU
+mismatches. Vmatch with its precalculated suffix arrays is really fast, so you
+should consider this option.
 
 
 =head1 FILTERS

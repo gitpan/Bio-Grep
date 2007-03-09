@@ -89,10 +89,10 @@ $sbe=Bio::Grep->new('GUUGle')->backend;
 
 ok($sbe->_rnas_match('agcua','agcua'), 'rna matching function');
 ok(!$sbe->_rnas_match('agcuag','agcua'), 'rna matching function');
-ok($sbe->_rnas_match('agcuag','aucuag'), 'rna matching function');
-ok($sbe->_rnas_match('agcuau','aucuag'), 'rna matching function');
-ok($sbe->_rnas_match('aucuau','agcuag'), 'rna matching function');
-ok(!$sbe->_rnas_match('aucaau','agcuag'), 'rna matching function');
+ok($sbe->_rnas_match('uguggu','cgcgau'), 'rna matching function');
+ok($sbe->_rnas_match('uguggu','ugcggu'), 'rna matching function');
+ok($sbe->_rnas_match('uguggu','cguggu'), 'rna matching function');
+ok(!$sbe->_rnas_match('uguggu','cgcguu'), 'rna matching function');
 
 my $tmp = $sbe->settings->tmppath;
 $sbe->settings->datapath('data');

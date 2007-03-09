@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 64, Vmatch => 107, Hypa => 79, GUUGle => 10 );
+our %tests = ( Agrep => 64, Vmatch => 123, Hypa => 79, GUUGle => 17 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -96,6 +96,7 @@ SKIP: {
         else {
             $tests++;
         }
+        diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt),
             'RNAcofold' );
         my $search_obj = Bio::Grep->new($backendname);
@@ -204,22 +205,81 @@ SKIP: {
             );
         }
         push @files, @files2;
+        
+        if (defined $sbe->features->{PROTEINS}) {
+
+            is($sbe->get_alphabet_of_database('Test_pep.fasta'), 'protein', "Test.fasta
+            protein
+            ($backendname)");
+            
+            is_deeply( { $sbe->get_databases },
+                { 'Test.fasta' => 'Description for Test.fasta', 'Test_pep.fasta'
+                => 'Description for Test_pep.fasta' } );
+        }
+
+       
+        $sbe->settings->database('Test.fasta');
+
+        my $sequence ='ttattagatataccaaaccagagaaaacaaatacat';
+        
+        if (defined $sbe->features->{NATIVE_ALIGNMENTS}) {
+            my $msu =
+            'aaaTTATTAGATATACCAAACCAGAGAAAACAAATACATaatcggagaaatacagattacagagagcga';
+
+            if (defined $sbe->features->{GUMISMATCHES}) {
+                $sbe->settings->gumismatches(0);
+            }    
+
+            $sbe->settings->query($sequence);
+            $sbe->settings->upstream(30);
+            $sbe->settings->downstream(30);
+            $sbe->search();
+            while (my $res = $sbe->next_res) {
+                my $t_msu = $res->mark_subject_uppercase();
+                $t_msu =~ tr/Uu/Tt/;
+                is($t_msu, $msu, 'mark subject uppercase works');
+                my $t_el = 3 + length($sequence)+30;
+                is(length($t_msu),$t_el,
+                    'length of sequence correct');
+                is($res->begin, 3,'begin is 3');
+                my $t_ss = $res->sequence->seq;
+                $t_ss =~ tr/Uu/tt/;
+                is(lc($t_ss), lc($msu), 'subject ok');
+                my $seqio = $sbe->get_sequences([$res->sequence_id ]);
+                my $db_seq = $seqio->next_seq;
+                is(lc($db_seq->subseq(4,3+length($sequence))),
+                   lc($sequence),'subject found in db');
+                is(lc($db_seq->subseq(1,$t_el)),
+                   lc($t_ss),'sequence found in db');
+            }   
+        $sbe->settings->set({});    
+        }     
+        if (defined $sbe->features->{MAXHITS}) {
+            $sequence ='ttatt';
+
+            $sbe->settings->query($sequence);
+            if (defined $sbe->features->{GUMISMATCHES}) {
+                $sbe->settings->gumismatches(0);
+            }    
+            $sbe->settings->query($sequence);
+            $sbe->settings->maxhits(5);
+            $sbe->search();
+            my $cnt = 0;
+            while (my $res = $sbe->next_res) {
+                $cnt++;
+            }    
+            is ($cnt, 5, 'maxhits(5) returned 5 hits');
+
+            $sbe->settings->set({});   
+        }
+
         goto CLEANUP if $backendname eq 'GUUGle';
 
-        is($sbe->get_alphabet_of_database('Test_pep.fasta'), 'protein', "Test.fasta
-        protein
-        ($backendname)");
-        
-        is_deeply( { $sbe->get_databases },
-            { 'Test.fasta' => 'Description for Test.fasta', 'Test_pep.fasta'
-            => 'Description for Test_pep.fasta' } );
-
         my $test_seq_internal_id = '';
-        my $sequence             = 'tgacagaagagagtgagcac';
+        $sequence             = 'tgacagaagagagtgagcac';
 
         # now search for 1 to 5 mismatches, test if reverse complement works
 ################################################################################
-        $sbe->settings->database('Test.fasta');
         for my $j ( 0 .. 1 ) {
             if ( $j == 0 ) {
                 $sbe->settings->query($sequence);
@@ -300,8 +360,10 @@ SKIP: {
         }
         my @shouldbe = qw( At1g67120 );
         ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
-
-        $sbe->settings->complete(1);
+        
+        if (defined $sbe->features->{COMPLETE}) {
+            $sbe->settings->complete(1);
+        }    
         $sbe->search();
         
         @ids = ();
@@ -311,40 +373,45 @@ SKIP: {
         ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
 
         if ($backendname eq 'Vmatch') {
-            $sbe->settings->query_file('t/Test_query.fasta');
-            $sbe->search();
-            
-            @ids = ();
-            my %multi_query_result = (
-                'At1g01020.1' => {id => 'b', desc => 'descb', seq =>
-                    'CGAGTGTGAACGCATGATTATTTTCATCGATTTAA'}, 
-                'At1g01030.1' => {id => 'c', desc => 'descc',
-                seq => 'gttttcttccgattctagggttttcatatttc'},
-                'At1g01010.1' => {id => 'a', desc => 'desca', seq =>
-                'TGTAGTGAGGGCTTTCGTGGTAAGATT' }
-            ); 
-            while (my $res = $sbe->next_res ) {
-                is($res->query->id,
-                    $multi_query_result{$res->sequence->id}->{id});
-                is($res->query->desc,
-                    $multi_query_result{$res->sequence->id}->{desc});
-                is($res->query->seq,
-                    $multi_query_result{$res->sequence->id}->{seq});
+            for my $i ( 0 .. 2) {
+                $sbe->settings->query_file('t/Test_query.fasta');
+                if ($i == 2) {
+                    $sbe->settings->showdesc(20);
+                }
+                if ($i == 1) {
+                    $sbe->settings->query_file('t/Test_query_revcom.fasta');
+                    $sbe->settings->reverse_complement(1);
+                }
+
+                $sbe->search();
+                
+                @ids = ();
+                my %multi_query_result = (
+                    'At1g01020.1' => {id => 'b', desc => 'descb', seq =>
+                        'CGAGTGTGAACGCATGATTATTTTCATCGATTTAA'}, 
+                    'At1g01030.1' => {id => 'c', desc => 'descc',
+                    seq => 'gttttcttccgattctagggttttcatatttc'},
+                    'At1g01010.1' => {id => 'a', desc => 'desca', seq =>
+                    'TGTAGTGAGGGCTTTCGTGGTAAGATT' }
+                ); 
+                while (my $res = $sbe->next_res ) {
+                    
+                    is($res->query->id,
+                        $multi_query_result{$res->sequence->id}->{id});
+                    is($res->query->desc,
+                        $multi_query_result{$res->sequence->id}->{desc});
+                    if ($sbe->settings->reverse_complement) {
+                        is($res->query->revcom->seq,
+                            $multi_query_result{$res->sequence->id}->{seq});
+                    }
+                    else {
+                        is($res->query->seq,
+                            $multi_query_result{$res->sequence->id}->{seq});
+                    }    
+                }
+                $sbe->settings->showdesc_reset;
+                $sbe->settings->reverse_complement_reset;
             }
-            #warn Dumper($sbe->results);
-            $sbe->settings->showdesc(20);
-            $sbe->search();
-            while (my $res = $sbe->next_res ) {
-                is($res->query->id,
-                    $multi_query_result{$res->sequence->id}->{id});
-                is($res->query->desc,
-                    $multi_query_result{$res->sequence->id}->{desc});
-                is($res->query->seq,
-                    $multi_query_result{$res->sequence->id}->{seq});
-            }
-            #warn Dumper($sbe->results);
-            $sbe->settings->showdesc_reset;
-            
         }
 
         $sbe->settings->complete_reset();

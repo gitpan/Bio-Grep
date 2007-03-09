@@ -165,7 +165,7 @@ sub _rnas_match {
     for my $i (0 .. (length($s1) -1)) {
         my $a = substr $s1, $i, 1;
         my $b = substr $s2, $i, 1;
-        if ($a ne $b && join('',sort($a,$b)) ne 'gu') {
+        if ($a ne $b && join('',$a,$b) ne 'uc' && join('',$a,$b) ne 'ga') {
             return 0;
         }    
     }    
@@ -224,6 +224,9 @@ sub _parse_next_res {
             ( $query_seq ) = $line =~ m{ \A 3 (.*) 5 \z}xms;
             next LINE;
         }
+        elsif ( $line =~ m{\A Maximum\snumber}xms ) {
+            return 0;
+        }    
 
         # find the query that belongs to the match
         my $query = $self->_mapping->{$query_desc};
@@ -247,7 +250,7 @@ sub _parse_next_res {
                         my $qs = substr $qrc, $query_start, $length;
                         my $ss = substr $line, $start, $length;
                         #warn "L:$length S:$start QS:$query_start $qrc $qs $line $ss";
-                        if ($self->_rnas_match($qs, $ss)) {
+                        if ($self->_rnas_match($ss, $qs)) {
                                 $subject_pos = $start;
                                 $subject_seq = $ss;
                                 $query_seq   = $qs;
@@ -274,9 +277,12 @@ sub _parse_next_res {
                 -end   => $subject_pos+ length($subject_seq)-1,
             )
         );
+        my $rct = '';
+        $rct =  '(Reverse Complement)' if $s->query_isset &&
+            $s->reverse_complement;
         $tmp_aln->add_seq(
             Bio::LocatableSeq->new(
-                -id    => "Query (Reverse Complement)",
+                -id    => "Query$rct",
                 -seq   => $query_seq,
                 -start => $query_pos,
                 -end   => $query_pos + length($query_seq)-1,

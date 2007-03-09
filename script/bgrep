@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.0.4);
+use version; our $VERSION = qv(0.1.0);
 
 use Bio::Grep ;
 use Bio::Root::Exception;
@@ -29,6 +29,7 @@ my $result = GetOptions(
          "deletions=i",      
          "upstream=i",      
          "downstream=i",      
+         "maxhits=i",      
          "query=s",
          "query_length=i",     
          "showdesc=i",     
@@ -80,7 +81,8 @@ delete $h{database};
 
 if (!defined $h{createdb}) { 
     $sbe->search(\%h);
-
+    
+    my $hits = 0;
     #  finally, output the results 
     ##############################################################################
     while ( my $res = $sbe->next_res ) {
@@ -88,9 +90,13 @@ if (!defined $h{createdb}) {
         print $res->query->id . " " . $res->query->desc . "\n";
         print $res->mark_subject_uppercase() . "\n";
         print $res->alignment_string() . "\n\n";
+        $hits++;
     }
+    print "$hits search results. Search took " . (time - $start) . " seconds.\n";
 }
-print "Search took " . (time - $start) . " seconds.\n";
+else {
+    print "Database generation took " . (time - $start) . " seconds.\n";
+}    
 
 =head1 NAME
 
@@ -98,7 +104,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.0.4
+This document describes bgrep version 0.1.0
 
 =head1 SYNOPSIS
 
