@@ -39,7 +39,12 @@ sub search {
               -text  => "You can't use showdesc() with upstream or downstream.",
                 );
     }
-   
+    if ($query_file && !$s->complete && !$s->query_length_isset) {
+        $self->throw(-class => 'Bio::Root::BadParameter',
+              -text  => 'You have to specify complete or querylength. See ' .
+             'the flags -complete and -l in the Vmatch documentation.',
+                );
+    }    
     # now generate the command string
     my $fuzzy = '';
     $fuzzy = ' -h ' . $s->mismatches . ' ' if $s->mismatches > 0;

@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.2.0');
+use version; our $VERSION = qv('0.2.1');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -46,9 +46,11 @@ Bio::Grep::Filter::FilterRemoveDuplicates - Example Filter
 
 =head1 DESCRIPTION
 
-Allows only unique sequence ids in search results. Deletes the result if 
+B<Bio::Grep::Filter::FilterRemoveDuplicates> is an example filter that allows 
+only unique sequence ids in search results. It is useful if you are only
+interested in which genes the query was found. Deletes the result if 
 the id already occured. Ignores suffixes of the form ".xx", where xx are digit
-characters.
+characters (this normally represents alternative splice forms).
 
 =over
 
@@ -61,8 +63,7 @@ a L<Bio::Grep::Container::SearchResult> object
 
 =head1 INTERNAL METHODS
 
-Only L<Bio::Grep::Backends::BackendI> should need to call them. If not,
-it is a bug.
+Only L<Bio::Grep::Backends::BackendI> should need to call them. 
 
 =over
 

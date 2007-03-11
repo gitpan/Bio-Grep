@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.2.0');
+use version; our $VERSION = qv('0.2.1');
 
 use base 'Bio::Root::Root';
 
@@ -21,12 +21,14 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Filter::FilterI.pm - Superclass for all filter modules   
+Bio::Grep::Filter::FilterI - Superclass for all filter modules   
 
 
 =head1 DESCRIPTION
 
-Superclass for all filter modules. Don't use this directly. 
+B<Bio::Grep::Filter::FilterI> is the superclass for all filter modules. 
+Don't use this directly. 
+
 Use this as interface for new filters (see L<Bio::Grep::Filter::MIRNAFilter> for
 details). A Filter module implements a filter function that
 returns 1 if query and subject pass the filter, 0 otherwise.

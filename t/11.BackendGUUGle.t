@@ -28,7 +28,7 @@ BEGIN{
 my $backendname  = 'GUUGle';
 plan skip_all => 'GUUGle binary not in path' if
 BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
-plan tests => 35;
+plan tests => 36;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -143,6 +143,21 @@ SKIP: {
     is( $test_seq_obj->desc, $test_seq{desc} );
     is( $test_seq_obj->seq,  $test_seq{seq} );
 }
+
+$sbe->search({
+    reverse_complement => 1,
+    database           => 'Test.fasta',
+    gumismatches       => 0,
+    query_file         => 't/Test_query_revcom.fasta',
+    query_length       => 20,
+    upstream           => 5,
+    downstream         => 5,
+});
+my $cnt = 0;
+while (my $res = $sbe->next_res() ) {
+    $cnt++;
+}
+is($cnt,3,'3 hits found');
 
 # test for GUUGle specific exceptions
 $sbe->settings->upstream(10);

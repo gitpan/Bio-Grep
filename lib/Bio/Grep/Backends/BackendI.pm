@@ -153,7 +153,7 @@ sub _sort_by_dg {
         if ( !$result->dG_isset ) {
             $self->warn(
                 "Not sorting results by dG because some results have no
-         dG calculated. Use Weigel::RNA."
+         dG calculated. Use Bio::Grep::RNA."
             );
             return @results;
         }
@@ -590,7 +590,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::BackendI.pm - Superclass for all back-ends  
+Bio::Grep::Backends::BackendI - Superclass for all back-ends  
 
 =head1 SYNOPSIS
 
@@ -598,7 +598,7 @@ See the back-end modules for example code.
 
 =head1 DESCRIPTION
 
-This is the superclass for all back-ends. Don't use this class
+B<Bio::Grep::Backends::BackendI> is the superclass for all back-ends. Don't use this class
 directly. 
 
 =head1 METHODS
@@ -795,8 +795,19 @@ When no file is found, the description will be the filename without the suffix:
 Hypa and Agrep back-end use L<Bio::Index> for sequence id queries (implemented
 in this this method. Returns a L<Bio::SeqIO> object like abstract the method get_sequences should.
 
-=back
+=item C<_create_tmp_query_file()>
 
+Examines query, query_file and reverse_complement and generates a temporary
+Fasta file that is passed in the C<system()> call to the backend. If the
+environment variable BIOGREPDEBUG is not set, then this file will be deleted
+when the script exits.  
+
+=item C<_create_index_and_alphabet_file($fastafile)>
+
+Creates an index of the specified Fasta file with L<Bio::Index::Fasta>.
+Creates an Vmatch alphabet file.
+
+=back
 
 =head1 DIAGNOSTICS
 

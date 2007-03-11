@@ -12,7 +12,7 @@ use File::Basename;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.2.0');
+use version; our $VERSION = qv('0.3.0');
 
 sub new {
     my $self = shift;
@@ -225,7 +225,7 @@ sub _parse_next_res {
             next LINE;
         }
         elsif ( $line =~ m{\A Maximum\snumber}xms ) {
-            return 0;
+            last LINE;
         }    
 
         # find the query that belongs to the match
@@ -241,12 +241,12 @@ sub _parse_next_res {
             # as we request
             my $qrc = lc($query->revcom->seq);
             $qrc =~ s/t/u/g;
-            my $ql =  $s->query_length || length($s->query);
+            my $ql =  $s->query_length || length($query->seq);
             SUBSTRING:
-            for my $length ( reverse($ql .. length($s->query)) ) { 
+            for my $length ( reverse($ql .. length($query->seq)) ) { 
                 for my $start ( reverse( 0 .. $s->upstream )) {
                         my $query_start =
-                        length($s->query)-$query_pos+1-$length;
+                        length($query->seq)-$query_pos+1-$length;
                         my $qs = substr $qrc, $query_start, $length;
                         my $ss = substr $line, $start, $length;
                         #warn "L:$length S:$start QS:$query_start $qrc $qs $line $ss";
@@ -324,16 +324,18 @@ Bio::Grep::Backends::GUUGle - GUUGle back-end
 
   use Bio::Grep::Backends::GUUGle;
  
-  use Bio::Root::Exception;
- 
   # construct the GUUGle back-end	
   my $sbe = Bio::Grep::Backends::GUUGle->new();
  
   $sbe->settings->tmppath('tmp');
   $sbe->settings->datapath('data');
   
-  # generate a GUUGle suffix array. you have to do this only once.
-  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  # generate a GUUGle Bio::Grep database. you have to do this only once.
+  # GUUGle does not create a persistent index right now.
+  # This function generates an fast index for $sbe->get_sequences
+  # and files with a description and the alphabet (only DNA/RNA allowed)
+  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 
+     'AGI Transcripts (- introns, + UTRs)');
  
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
@@ -364,9 +366,6 @@ Bio::Grep::Backends::GUUGle - GUUGle back-end
 =head1 DESCRIPTION
 
 B<Bio::Grep::Backends::GUUGle> searches for a query in a GUUGle suffix array. 
-
-WARNING: NOT THOROUGHLY TESTED! I recommend setting the environment variable BIOGREPDEBUG and
-comparing the results with the program output.
 
 NOTE 1: GUUGle always searches for the reverse complement. If you specify a
 query file, Bio::Grep throws an exception if reverse_complement is not set.
@@ -411,6 +410,41 @@ these two sort options require that we load all results in memory.
 
 =back
 
+=head1 DIAGNOSTICS
+
+See L<Bio::Grep::Backends::BackendI> for other diagnostics. 
+
+=over
+
+=item C<Bio::Root::SystemException>
+
+=over 2
+
+=item 
+
+It was not possible to run GUUGle in function C<search>. 
+
+=back
+
+=item C<Bio::Root::BadParameter>
+
+=over 2
+
+=item 
+
+Upstream and downstream must have the same length. 
+
+=item 
+
+You have specified a query_file and reverse_complement is not set.
+
+=item 
+
+You have specified a query_file and forgot to set query_length.
+
+=back
+
+=back
 
 =head1 SEE ALSO
 
@@ -426,10 +460,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
-
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Copyright (C) 2007  by M. Riester. All rights reserved. 
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

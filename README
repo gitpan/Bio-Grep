@@ -1,9 +1,12 @@
-Bio-Grep version 0.1.0
+Bio-Grep version 0.2.0
 ======================
 
-Bio::Grep is a collection of Perl modules for searching in 
-FASTA-files. It is programmed in a modular way. There are different 
-back-ends available. You can filter search results.
+Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
+supports different back-ends, most importantly some (enhanced) suffix
+array implementations. Currently, there is no suffix array tool that works in
+all scenarios (for example whole genome, protein and RNA data). Bio::Grep
+provides a common API to the most popular tools. This way, you can easily 
+switch or combine tools.
 
 
 DEPENDENCIES

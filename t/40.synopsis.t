@@ -28,26 +28,28 @@ my $code =<<'EOT'
   
   my $search_obj = Bio::Grep->new('Vmatch');	
   
-  # $sbe is now a reference to the backend
-  # perldoc Bio::Grep::Backends::BackendI	
-  # perldoc Bio::Grep::Backends::Vmatch
+  # $sbe is now a reference to the back-end
   my $sbe = $search_obj->backend;
  
-  # perldoc Bio::Grep::Container::SearchSettings  
+  # define the location of the suffix arrays
   $sbe->settings->datapath('data');
   
   mkdir($sbe->settings->datapath);	
   
-  # generate a suffix array. you have to do this only once.
+  # now generate a suffix array. you have to do this only once.
   $sbe->generate_database_out_of_fastafile('t/Test.fasta', 'Description for the test Fastafile');
   
+  # search in this suffix array
   $sbe->settings->database('Test.fasta');
   
   # search for the reverse complement and allow 2 mismatches
   $sbe->settings->query('UGAACAGAAAG');
   $sbe->settings->reverse_complement(1);
   $sbe->settings->mismatches(2);
-  
+
+  # or you can use Fasta file with queries
+  # $sbe->settings->query_file('Oligos.fasta');
+
   # $sbe->search();
 
   # Alternatively, you can specify the settings in the search call.
@@ -55,18 +57,23 @@ my $code =<<'EOT'
   # (because it is likely that they don't change when search is called
   # multiple times)
 
-  $sbe->search( { query => 'UGAACAGAAAG',
+  $sbe->search( { query  =>  'UGAACAGAAAG',
                   reverse_complement => 1,
                   mismatches         => 2,
                  });  
   
+  my @ids;
+
   # output some informations! 
-  # perldoc Bio::Grep::Container::SearchResult
-  
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
      print $res->alignment_string() . "\n\n";
+     push @ids, $res->sequence_id;
   }
+  
+  # get the gene sequences of all matches as Bio::SeqIO object.
+  # (to generate a Fasta file for example)
+  my $seqio = $sbe->get_sequences(\@ids);
 
 EOT
 ;

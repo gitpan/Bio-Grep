@@ -8,7 +8,7 @@ use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.2.1');
+use version; our $VERSION = qv('0.2.2');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -118,7 +118,7 @@ Bio::Grep::Container::SearchResult - Data structure for a back-end search hit
 
 =head1 SYNOPSIS
   
-  # output the searchresults with nice alignments
+  # output the search results with nice alignments
   while ( my $res = $sbe->next_res ) {
      # $res->sequence is a Bio::Seq object with down-/upstream regions
      # see Bio::Grep::Container::SearchSettings
@@ -139,7 +139,7 @@ Bio::Grep::Container::SearchResult - Data structure for a back-end search hit
 
 =head1 DESCRIPTION
 
-This is the data structure for one hit in the database.
+B<Bio::Grep::Container::SearchResult> is the data structure for one hit in the database.
 
 =head1 METHODS
 
@@ -190,6 +190,9 @@ retrieving upstream regions from the back-end. First position is 0.
     my $subject    = substr $seq, $res->begin, $res->end - $res->begin;
     my $downstream = substr $seq, $res->end;
 
+Note that C<$res-E<gt>begin> differs from C<$sbe-E<gt>settings-E<gt>upstream> if the
+available upstream region is smaller than requested!
+
 =item C<end()>
 
 Get/set the position of the end of the subject in the sequence. This allows retrieving
@@ -197,7 +200,7 @@ downstream regions from the back-end. See C<begin()>.
 
 =item C<dG()>
 
-Get/set dG . See L<Weigel::RNA::HybridizationI> for details.
+Get/set dG . See L<Bio::Grep::RNA::HybridizationI> for details.
 
 =item C<remark()>
 

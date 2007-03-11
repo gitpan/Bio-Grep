@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 64, Vmatch => 123, Hypa => 79, GUUGle => 17 );
+our %tests = ( Agrep => 64, Vmatch => 124, Hypa => 79, GUUGle => 33 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -273,7 +273,7 @@ SKIP: {
             $sbe->settings->set({});   
         }
 
-        goto CLEANUP if $backendname eq 'GUUGle';
+        goto ENDLONGSEQS if $backendname eq 'GUUGle';
 
         my $test_seq_internal_id = '';
         $sequence             = 'tgacagaagagagtgagcac';
@@ -347,11 +347,13 @@ SKIP: {
             is( $test_seq_obj->seq,  $test_seq{seq} );
         }
 
+        ENDLONGSEQS:
         # testing, if backends find matches at the end of long sequences
 ################################################################################
         $sbe->settings->query('CGAGCTGATGCAAAGCTCGCGGGACTGA');
         $sbe->settings->reverse_complement(0);
         $sbe->settings->mismatches(0);
+        $sbe->settings->gumismatches(0) if $backendname eq "GUUGle";
         $sbe->search();
         
         my @ids = ();
@@ -416,6 +418,7 @@ SKIP: {
 
         $sbe->settings->complete_reset();
         $sbe->settings->query_file_reset();
+
 ################################################################################
         # test upstream/downstream
 ################################################################################
@@ -434,7 +437,7 @@ SKIP: {
             ok( defined( $sbe->features->{DOWNSTREAM} ),
                 "$backendname does support downstream"
             );
-
+            goto EXCEPTIONS if $backendname eq 'GUUGle';
             my $sequence = 'tgacagaagagagtgagcac';
             if( defined( $sbe->features->{COMPLETE} )) {
                 $sbe->settings->complete(0);
@@ -477,7 +480,8 @@ SKIP: {
             }
 
         }
-
+        
+        EXCEPTIONS:
         # check exceptions with insecure sortmode
         $sbe->settings->sort('&& ls *;');
         eval { $sbe->search() };
@@ -506,7 +510,8 @@ SKIP: {
         ok( $EVAL_ERROR, "Exception occured with wrong database" );
         $sbe->settings->database('Test.fasta');
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct database" );
+        ok( !$EVAL_ERROR, "No Exception occured with correct database" ) ||
+            diag $EVAL_ERROR;
         $sbe->settings->database_reset;
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with no database" );
@@ -518,7 +523,8 @@ SKIP: {
         ok( $EVAL_ERROR, "Exception occured with wrong mismatches" );
         $sbe->settings->mismatches(0);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct mismatches" );
+        ok( !$EVAL_ERROR, "No Exception occured with correct mismatches" )  ||
+            diag $EVAL_ERROR;
 
         # check exceptions with insecure insertions
         $sbe->settings->insertions('&& ls *;');
@@ -526,7 +532,8 @@ SKIP: {
         ok( $EVAL_ERROR, "Exception occured with wrong insertions" );
         $sbe->settings->insertions(0);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" );
+        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" ) ||
+            diag $EVAL_ERROR;
 
         # check exceptions with insecure query_length
         $sbe->settings->query_length('&& ls *;');
@@ -534,10 +541,13 @@ SKIP: {
         ok( $EVAL_ERROR, "Exception occured with wrong query_length" );
         $sbe->settings->query_length(10);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct query_length" );
+        ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
+        || diag $EVAL_ERROR;
         $sbe->settings->query_length_reset;
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct query_length" );
+        ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
+        || diag $EVAL_ERROR;
+        goto CLEANUP if $backendname eq 'GUUGle';
 
         # check exceptions with insecure upstream
         $sbe->settings->upstream('&& ls *;');
@@ -656,6 +666,19 @@ SKIP: {
                   });  
             };
             ok( $EVAL_ERROR, 'No exception occured without up/down' );
+            $sbe->search({
+                        query => 'AACCCTCAAAGCC',
+                        reverse_complement => 0,
+                        mismatches => 3,
+                        maxhits => 100,
+                        sort  => 'sa',
+                  }); 
+            my @ids;  
+            while (my $res = $sbe->next_res()) {
+                push @ids, $res->sequence->id;
+            }    
+            is_deeply( \@ids, ['At1g01040.1', 'At1g01040.1', 'At1g67120',
+                'At3g47170'],'sorting works' );
 
         }    
         

@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.1.0');
+use version; our $VERSION = qv('0.2.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.1.0
+This document describes Bio::Grep version 0.2.0
 
 =head1 SYNOPSIS
 
@@ -70,7 +70,10 @@ This document describes Bio::Grep version 0.1.0
   $sbe->settings->query('UGAACAGAAAG');
   $sbe->settings->reverse_complement(1);
   $sbe->settings->mismatches(2);
-  
+
+  # or you can use Fasta file with queries
+  # $sbe->settings->query_file('Oligos.fasta');
+
   # $sbe->search();
 
   # Alternatively, you can specify the settings in the search call.
@@ -78,21 +81,27 @@ This document describes Bio::Grep version 0.1.0
   # (because it is likely that they don't change when search is called
   # multiple times)
 
-  $sbe->search( { query => 'UGAACAGAAAG',
+  $sbe->search( { query  =>  'UGAACAGAAAG',
                   reverse_complement => 1,
                   mismatches         => 2,
                  });  
   
+  my @ids;
+
   # output some informations! 
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
      print $res->alignment_string() . "\n\n";
+     push @ids, $res->sequence_id;
   }
-
+  
+  # get the gene sequences of all matches as Bio::SeqIO object.
+  # (to generate a Fasta file for example)
+  my $seqio = $sbe->get_sequences(\@ids);
 
 =head1 DESCRIPTION
 
-Bio-Grep is a collection of Perl modules for searching in 
+B<Bio-Grep> is a collection of Perl modules for searching in 
 Fasta files. It supports different back-ends, most importantly some (enhanced) suffix
 array implementations. Currently, there is no suffix array tool that works in
 all scenarios (for example whole genome, protein and RNA data). Bio::Grep
@@ -108,7 +117,7 @@ tools.
 This function constructs a C<Bio::Grep> object. Available back-ends
 are Vmatch, Agrep, GUUGle and Hypa. Vmatch is default.
 
-Sets temporary path to File::Spec->tmpdir();
+Sets temporary path to C<File::Spec-E<gt>tmpdir();>
 
 
   my $search_obj = Bio::Grep->new('Agrep');	
@@ -122,6 +131,31 @@ L<Bio::Grep::Backends::Agrep>, L<Bio::Grep::Backends::GUUGle> and L<Bio::Grep::B
 
 =back
 
+=head1 FEATURES
+
+=over
+
+=item 
+
+We support most of the features of the back-ends. If a particular feature is not
+supported, then we probably did not need it until now. But in general it should be easy to 
+integrate. For a list of supported features, see L<Bio::Grep::Container::SearchSettings>.
+
+=item 
+
+This module should be suitable for large datasets. The back-end output is piped
+to a temporary file and the parser only stores the current hit in memory.
+
+=item
+
+Bio::Grep has a nice interface for search result filters. See L<"FILTERS">.
+
+=item 
+
+Bio::Grep was in particular designed for web services and therefore
+checks the settings carefully before calling back-ends. See L<"SECURITY">.
+
+=back
 
 =head1 QUICK START
 
@@ -283,7 +317,7 @@ straightforward:
    
    sub reset {
       my $self = shift;
-      # if you need local variables, can can clean it up here
+      # if you need local variables, you can clean up here
    }
 
    1;# Magic true value required at end of module

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.1.0);
+use version; our $VERSION = qv(0.2.0);
 
 use Bio::Grep ;
 use Bio::Root::Exception;
@@ -35,6 +35,7 @@ my $result = GetOptions(
          "showdesc=i",     
          "reverse_complement",
          "query_file=s",
+         "sort=s",
          "database=s",
          "datapath=s",
          "createdb",
@@ -58,7 +59,11 @@ my $search_obj = Bio::Grep->new($h{backend});
 # perldoc Bio::Grep::Backend::Vmatch
 my $sbe = $search_obj->backend;
 
-$sbe->settings->datapath($h{datapath}) if defined $h{datapath};
+if (!defined $h{datapath}) {
+    $h{datapath} = 'data';
+}
+
+$sbe->settings->datapath($h{datapath});
 
 mkdir($sbe->settings->datapath);	
 
@@ -104,15 +109,15 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.1.0
+This document describes bgrep version 0.2.0
 
 =head1 SYNOPSIS
 
   # to create a database
-  bgrep --database Data.fa --datapath data --createdb
+  bgrep --backend Vmatch --database Data.fa --datapath data --createdb
 
   # to search
-  bgrep [ Options ] --query_file Query.fa --database Data.fa  --datapath  data
+  bgrep [ Options ] --query_file Query.fa --database Data.fa  --datapath data
 
     --query_file    A FASTA file with the query sequences.
     --database      A FASTA database.
@@ -165,9 +170,17 @@ Display n nucleotides/AAs upstream the match.
 
 Display n nucleotides/AAs downstream the match.
 
+==item C<--sort s>
+
+Sets sort mode to s.
+
+==item C<--maxhits n>
+
+Display only the n (best) hits.
+
 =item C<--datapath p>,
 
-Generate suffix arrays in path p.
+Generate suffix arrays in path p. Default is 'data'
 
 =back  
 
