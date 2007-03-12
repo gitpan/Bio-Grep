@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.2.0');
+use version; our $VERSION = qv('0.3.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.2.0
+This document describes Bio::Grep version 0.3.0
 
 =head1 SYNOPSIS
 
@@ -248,15 +248,130 @@ We support this back-ends:
 
 =over
 
-=item Vmatch (L<http://vmatch.de/>) 
+=item 
+
+Vmatch (L<http://vmatch.de/>) 
 	
-=item Agrep (L<http://www.tgries.de/agrep/>)
+=item 
 
-=item GUUGle (L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>)
+Agrep (L<http://www.tgries.de/agrep/>)
 
-=item Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>) 
+=item 
+
+GUUGle (L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>)
+
+=item 
+
+Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>) 
 
 =back
+
+=head2 FEATURE COMPARISON
+
+=begin html
+
+<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>HyPA</th><th>Vmatch</th></tr><tr><td>Persistent Index<sup>1</sup></td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Mismatches</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Edit Distance</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Insertions</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+</tr>
+<tr><td>Deletions</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+</tr>
+<tr><td>Multiple Queries<sup>2</sup></td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>GU<sup>3</sup></td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+</tr>
+<tr><td>DNA/RNA</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Protein</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Reverse Complement</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Upstream/Downstream Regions</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Filters</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Query Length<sup>4</sup></td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+</table><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches
+
+=end html
+
+=begin man
+
+     Features                    || Agrep  | GUUGle |  Hypa  | Vmatch 
+     Persistent Index            ||   no   |   no   |  yes   |  yes   
+     Mismatches                  ||  yes   |   no   |  yes   |  yes   
+     Edit Distance               ||  yes   |   no   |   no   |  yes   
+     Insertions                  ||   no   |   no   |  yes   |   no   
+     Deletions                   ||   no   |   no   |  yes   |   no   
+     Multiple Queries            ||   no   |  yes   |   no   |  yes   
+     GU                          ||   no   |  yes   |  yes   |   no   
+     DNA/RNA                     ||  yes   |  yes   |  yes   |  yes   
+     Protein                     ||  yes   |   no   |  yes   |  yes   
+     Reverse Complement          ||  yes   |  yes   |  yes   |  yes   
+     Upstream/Downstream Regions ||   no   |  yes   |  yes   |  yes   
+     Filters                     ||   no   |  yes   |  yes   |  yes   
+     Query Length                ||   no   |  yes   |   no   |  yes   
+
+=end man
+
+
 
 Vmatch is fast but needs a lot of memory. Agrep is the best choice if you allow many 
 mismatches in short sequences, if you want to search in Fasta files 

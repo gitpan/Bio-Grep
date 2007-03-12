@@ -391,7 +391,7 @@ SKIP: {
                 my %multi_query_result = (
                     'At1g01020.1' => {id => 'b', desc => 'descb', seq =>
                         'CGAGTGTGAACGCATGATTATTTTCATCGATTTAA'}, 
-                    'At1g01030.1' => {id => 'c', desc => 'descc',
+                    'At1g01030.1' => {id => 'c', desc => '',
                     seq => 'gttttcttccgattctagggttttcatatttc'},
                     'At1g01010.1' => {id => 'a', desc => 'desca', seq =>
                     'TGTAGTGAGGGCTTTCGTGGTAAGATT' }

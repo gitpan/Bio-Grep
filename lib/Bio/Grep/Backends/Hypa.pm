@@ -328,8 +328,10 @@ sub _parse_next_res {
             length($upstream), length($upstream) + length($match),
             $alignment, $tmp_seq->id, '' )
             );
-        $res->query(Bio::Seq->new( -display_id => "Query", -seq => $s->query));
-        return $res if $res;
+        if ($res) {    
+            $res->query(Bio::Seq->new( -display_id => "Query", -seq => $s->query));
+            return $res;
+        }    
     }
     $self->_delete_output();
     return 0;

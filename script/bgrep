@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.2.0);
+use version; our $VERSION = qv(0.3.0);
 
 use Bio::Grep ;
 use Bio::Root::Exception;
@@ -109,7 +109,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.2.0
+This document describes bgrep version 0.3.0
 
 =head1 SYNOPSIS
 
@@ -170,11 +170,11 @@ Display n nucleotides/AAs upstream the match.
 
 Display n nucleotides/AAs downstream the match.
 
-==item C<--sort s>
+=item C<--sort s>
 
 Sets sort mode to s.
 
-==item C<--maxhits n>
+=item C<--maxhits n>
 
 Display only the n (best) hits.
 

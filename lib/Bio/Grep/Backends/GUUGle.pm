@@ -293,8 +293,10 @@ sub _parse_next_res {
             $upstream, $upstream +$matchlength,
             $tmp_aln, $fasta->id, '' )
             );
-        $res->query($query);    
-        return $res if $res;
+        if ($res) {    
+            $res->query($query);    
+            return $res;
+        }
     }
     $self->_delete_output();
     return 0;

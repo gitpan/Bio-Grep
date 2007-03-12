@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-my %tests = ( Agrep => 3, Vmatch => 9, Hypa => 9 );
+my %tests = ( Agrep => 3, Vmatch => 9, Hypa => 9, GUUGle => 9 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -39,7 +39,7 @@ use Bio::Perl;
 
 # the number of files we assume in the data directory after
 # database generation. NOT TESTED HERE
-my %backend_filecnt = ( Agrep => 5, Vmatch => 16, Hypa => 31 );
+my %backend_filecnt = ( Agrep => 5, Vmatch => 16, Hypa => 31, GUUGle => 3  );
 
 my $tests = 0;
 mkdir("t/tmp");
@@ -71,8 +71,17 @@ SKIP: {
         for my $j ( 0 .. 2 ) {
             $sbe->settings->query($sequence);
             $sbe->settings->reverse_complement(1);
-            $sbe->settings->mismatches(3);
-
+            if (defined $sbe->features->{MISMATCHES}) {
+                $sbe->settings->mismatches(3);
+            }
+            if ($backendname eq 'GUUGle') {
+                $sbe->settings->gumismatches(0);
+                $sbe->settings->query_length(13);
+            }    
+            else {
+                $sbe->settings->query_length_reset();
+                $sbe->settings->gumismatches_reset();
+            }
             $sbe->search();
             my @ids = ();
             foreach my $res ( @{ $sbe->results } ) {
@@ -81,7 +90,12 @@ SKIP: {
                 push ( @ids, $res->sequence->id );
             }
             @ids = sort @ids;
-            is( @ids, 4, "4 results" );
+            if ($backendname eq 'GUUGle') {
+                is( @ids, 6, "6 results" );
+            }
+            else {
+                is( @ids, 4, "4 results" );
+            }    
         }
         next unless defined( $sbe->features->{FILTERS} );
         my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
@@ -93,8 +107,17 @@ SKIP: {
             $sbe->settings->filters($filter);
             $sbe->settings->query($sequence);
             $sbe->settings->reverse_complement(1);
-            $sbe->settings->mismatches(3);
-
+            if (defined $sbe->features->{MISMATCHES}) {
+                $sbe->settings->mismatches(3);
+            }
+            if ($backendname eq 'GUUGle') {
+                $sbe->settings->gumismatches(0);
+                $sbe->settings->query_length(13);
+            }
+            else {
+                $sbe->settings->query_length_reset();
+                $sbe->settings->gumismatches_reset();
+            }
             $sbe->search();
             my @ids = ();
             while (my $res = $sbe->next_res  ) {
