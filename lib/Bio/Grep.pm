@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.3.0');
+use version; our $VERSION = qv('0.4.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.3.0
+This document describes Bio::Grep version 0.4.0
 
 =head1 SYNOPSIS
 
@@ -139,7 +139,9 @@ L<Bio::Grep::Backends::Agrep>, L<Bio::Grep::Backends::GUUGle> and L<Bio::Grep::B
 
 We support most of the features of the back-ends. If a particular feature is not
 supported, then we probably did not need it until now. But in general it should be easy to 
-integrate. For a list of supported features, see L<Bio::Grep::Container::SearchSettings>.
+integrate. For a complete list of supported features, see
+L<Bio::Grep::Container::SearchSettings>, for an overview see 
+L<"FEATURE COMPARISON">.
 
 =item 
 
@@ -186,7 +188,7 @@ Now, in a second script:
   my @local_dbs = sort keys %local_dbs_description;
   
 
-Alternatively, you can use bgrep which is part of this distribution:
+Alternatively, you can use L<bgrep> which is part of this distribution:
 
   bgrep --backend Vmatch --database TAIR6_cdna_20060907 --datapath data --createdb
 
@@ -270,7 +272,7 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 
 =begin html
 
-<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>HyPA</th><th>Vmatch</th></tr><tr><td>Persistent Index<sup>1</sup></td>
+<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>HyPa</th><th>Vmatch</th></tr><tr><td>Persistent Index<sup>1</sup></td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -348,29 +350,34 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
-</table><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches
+</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches</div>
 
 =end html
 
 =begin man
 
-     Features                    || Agrep  | GUUGle |  Hypa  | Vmatch 
-     Persistent Index            ||   no   |   no   |  yes   |  yes   
+     Features                    || Agrep  | GUUGle |  HyPa  | Vmatch 
+     Persistent Index 1          ||   no   |   no   |  yes   |  yes   
      Mismatches                  ||  yes   |   no   |  yes   |  yes   
      Edit Distance               ||  yes   |   no   |   no   |  yes   
      Insertions                  ||   no   |   no   |  yes   |   no   
      Deletions                   ||   no   |   no   |  yes   |   no   
-     Multiple Queries            ||   no   |  yes   |   no   |  yes   
-     GU                          ||   no   |  yes   |  yes   |   no   
+     Multiple Queries 2          ||   no   |  yes   |   no   |  yes   
+     GU 3                        ||   no   |  yes   |  yes   |   no   
      DNA/RNA                     ||  yes   |  yes   |  yes   |  yes   
      Protein                     ||  yes   |   no   |  yes   |  yes   
      Reverse Complement          ||  yes   |  yes   |  yes   |  yes   
      Upstream/Downstream Regions ||   no   |  yes   |  yes   |  yes   
      Filters                     ||   no   |  yes   |  yes   |  yes   
-     Query Length                ||   no   |  yes   |   no   |  yes   
+     Query Length 4              ||   no   |  yes   |   no   |  yes   
+
+------------------------------------------------------------------------------------
+ 1 Needs precalculation and (much) more memory but queries are in general faster
+ 2 With query_file
+ 3 HyPa also allows that GU counts only as 0.5 mismatches
+ 4 Matches if a substring of the query of size n or larger matches
 
 =end man
-
 
 
 Vmatch is fast but needs a lot of memory. Agrep is the best choice if you allow many 
@@ -411,7 +418,7 @@ straightforward:
    
    use Class::MethodMaker
     [ new => [ qw / new2 / ],
-       # here some local variables                 
+      ... # here some local variables, see perldoc Class::MethodMaker
     ];
    
    sub new {
@@ -427,6 +434,8 @@ straightforward:
       my $self = shift;
       # code that examines $self->search_result
       # and returns 0 (not passed) or 1 (passed)
+      ...
+      $self->message('passed');
       return 1;
    }   
    

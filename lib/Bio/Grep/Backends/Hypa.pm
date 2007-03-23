@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.4.2');
+use version; our $VERSION = qv('0.4.3');
 
 sub new {
     my $self = shift;
@@ -25,6 +25,8 @@ sub new {
     delete $all_features{COMPLETE};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
+    delete $all_features{HXDROP};
+    delete $all_features{EXDROP};
     delete $all_features{REVCOM_DEFAULT};
     $self->features(%all_features);
     $self;

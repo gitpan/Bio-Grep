@@ -85,7 +85,13 @@ sub search {
 
         $qspeedup = ' -qspeedup ' . $s->qspeedup . ' '; 
 
-    }    
+    }
+
+    my $hxdrop = '';
+    $hxdrop = ' -hxdrop ' . $s->hxdrop . ' ' if $s->hxdrop_isset;
+    
+    my $exdrop = '';
+    $exdrop = ' -exdrop ' . $s->exdrop . ' ' if $s->exdrop_isset;
    
     my $pflag = '';
     $pflag = ' -p ' if ($s->query_file && $s->reverse_complement);
@@ -101,6 +107,8 @@ sub search {
         . $showdesc 
         . $length . ' -s '
         . $online
+        . $hxdrop
+        . $exdrop
         . $pflag
         . $self->_cat_path_filename( $s->datapath, $s->database );
 
@@ -195,59 +203,87 @@ sub _parse_next_res {
     my @results             = ();
     my $alignment_in_output = -1;
     my $skip_next_alignment = 0;
+    my $skipped_lines = 0;
     my $subject;
+    my $tmp_aln;
     
     my ($command, $output);  
 
     my $FH = $self->_output_fh;
-    while (<$FH>) { #TODO argh, scho wieder $_
-        chomp;
-        s/\s+/ /g;
-        next unless /\s/;
-        my @fields = split (" ");
-        $alignment_in_output = 0 if ( /^Sbjct:/ && !$skip_next_alignment );
+    LINE:
+    while (my $line = <$FH>) { 
+        chomp $line;
+        $line =~ s/\s+/ /g;
+        if ($line !~ /\s/) {
+            $skipped_lines++;
+            if ($skipped_lines == 2) {
+                $results[-1]->alignment($tmp_aln);
+                my $real_subject = $subject;
+                # remove gaps out of alignment
+                $real_subject =~ s{-}{}g;
+                $results[-1]->sequence->seq($real_subject) if $s->showdesc_isset;
+    #            $results[-1]->query->seq($query);
+                my $res = $self->_filter_result($results[-1]);
+                return $res if $res;
+                $alignment_in_output = -1;
+                next LINE;
+            } 
+            else {
+                next LINE;
+            }    
+        }
+        else {
+            $skipped_lines = 0;
+        }    
+        my @fields = split ' ', $line;
+        $alignment_in_output = 0 if ( $line =~ /^Sbjct:/ && !$skip_next_alignment );
 
         next unless ( $fields[0] =~ /^\d+$/ || $alignment_in_output >= 0 );
         $skip_next_alignment = 0;
 
-        if (/^Sbjct: (.*)$/) {
+        if ($line =~ /^Sbjct: (.*)$/) {
             $subject = $1;
         }
-        if (/^Query: (.*)$/) {
+        if ($line =~ /^Query: (.*)$/) {
             my $query = $1;
             $query =~ s/\s+(\d+)\s*$//;
             my $query_pos = $1;
             $subject =~ s/\s+(\d+)\s*$//;
             my $subject_pos = $1;
-            my $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
-            $tmp_aln->add_seq(
-                Bio::LocatableSeq->new(
-                    -id    => 'Subject',
-                    -seq   => $subject,
-                    -start => ( $subject_pos - length($subject) ) + 1,
-                    -end   => $subject_pos
-                )
-            );
-            $tmp_aln->add_seq(
-                Bio::LocatableSeq->new(
-                    -id    => "Query",
-                    -seq   => $query,
-                    -start => ( $query_pos - length($query) ) + 1,
-                    -end   => $query_pos
-                )
-            );
-            $results[-1]->alignment($tmp_aln);
-            my $real_subject = $subject;
-            # remove gaps out of alignment
-            $real_subject =~ s{-}{}g;
-            $results[-1]->sequence->seq($real_subject) if $s->showdesc_isset;
-#            $results[-1]->query->seq($query);
-            my $res = $self->_filter_result($results[-1]);
-            return $res if $res;
-            $alignment_in_output = -1;
-            next;
+            if (!$tmp_aln->no_sequences) {
+                $tmp_aln->add_seq(
+                    Bio::LocatableSeq->new(
+                        -id    => 'Subject',
+                        -seq   => $subject,
+                        -start => ( $subject_pos - length($subject) ) + 1,
+                        -end   => $subject_pos
+                    )
+                );
+                $tmp_aln->add_seq(
+                    Bio::LocatableSeq->new(
+                        -id    => "Query",
+                        -seq   => $query,
+                        -start => ( $query_pos - length($query) ) + 1,
+                        -end   => $query_pos
+                    )
+                );
+            }
+            else {
+                my $s1 = $tmp_aln->get_seq_by_pos(1);
+                my $s2 = $tmp_aln->get_seq_by_pos(2);
+                $s1->end($subject_pos);
+                $s1->seq($s1->seq . $subject);
+                $s2->end($query_pos);
+                $s2->seq($s2->seq . $query);
+                $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
+                $tmp_aln->add_seq($s1);
+                $tmp_aln->add_seq($s2);
+            }    
+            next LINE;
         }
-        next if $alignment_in_output >= 0;
+        next LINE if $alignment_in_output >= 0;
+        
+        $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
 
         # make taint mode happy
         ( $fields[0] ) = $fields[0] =~ /(\d+)/;

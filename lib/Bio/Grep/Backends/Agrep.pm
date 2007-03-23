@@ -12,7 +12,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.5.1');
+use version; our $VERSION = qv('0.5.2');
 
 sub new {
     my $self = shift;
@@ -34,6 +34,8 @@ sub new {
     delete $all_features{QUERYFILE};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
+    delete $all_features{HXDROP};
+    delete $all_features{EXDROP};
     delete $all_features{REVCOM_DEFAULT};
     $self->features(%all_features);
     $self;

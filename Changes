@@ -1,5 +1,11 @@
 Revision history for Perl extension Bio::Grep.
 
+0.4.0  Fri Mar  23 15:59:00 2007
+    - hxdrop, exdrop flags for vmatch
+    - more tests
+    - POD improvements
+    - long queries in vmatch broken
+
 0.3.0  Thu Mar  12 15:49:19 2007
     - POD improvements
     - Filter broken with GUUGle

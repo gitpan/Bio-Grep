@@ -3,14 +3,13 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.3.0);
+use version; our $VERSION = qv(0.4.0);
 
 use Bio::Grep ;
-use Bio::Root::Exception;
 use Getopt::Long qw(:config auto_version);
 use Pod::Usage;
-use Data::Dumper;
 use File::Basename;
+use Data::Dumper;
 
 # parse command line arguments 
 ##############################################################################
@@ -33,6 +32,8 @@ my $result = GetOptions(
          "query=s",
          "query_length=i",     
          "showdesc=i",     
+         "hxdrop=i",     
+         "exdrop=i",     
          "reverse_complement",
          "query_file=s",
          "sort=s",
@@ -56,25 +57,18 @@ my $search_obj = Bio::Grep->new($h{backend});
 
 # $sbe is now a reference to the backend
 # perldoc Bio::Grep::Backend::BackendI	
-# perldoc Bio::Grep::Backend::Vmatch
 my $sbe = $search_obj->backend;
 
 if (!defined $h{datapath}) {
     $h{datapath} = 'data';
 }
 
-$sbe->settings->datapath($h{datapath});
-
-mkdir($sbe->settings->datapath);	
+mkdir($h{datapath});	
 
 # generate a suffix array. you have to do this only once.
-my $db_name = $h{database};
 if ($h{createdb}) {
-    $db_name = $sbe->generate_database_out_of_fastafile($h{database}, 'Description for the test Fastafile');
+    $h{database} = $sbe->generate_database_out_of_fastafile($h{database}, 'Description for the test Fastafile');
 }
-
-# now choose that database
-$sbe->settings->database($db_name);
 
 # now try to search. 
 ##############################################################################
@@ -82,7 +76,6 @@ $sbe->settings->database($db_name);
 delete $h{'help|?'};
 delete $h{man};
 delete $h{backend};
-delete $h{database};
 
 if (!defined $h{createdb}) { 
     $sbe->search(\%h);
@@ -94,6 +87,7 @@ if (!defined $h{createdb}) {
         print $res->sequence->id . " " . $res->sequence->desc . "\n";
         print $res->query->id . " " . $res->query->desc . "\n";
         print $res->mark_subject_uppercase() . "\n";
+        #print Dumper $res->alignment;
         print $res->alignment_string() . "\n\n";
         $hits++;
     }
@@ -109,7 +103,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.3.0
+This document describes bgrep version 0.4.0
 
 =head1 SYNOPSIS
 
@@ -126,11 +120,11 @@ This document describes bgrep version 0.3.0
 
 =over
 
-=item C<-help>
+=item C<--help>
 
 Brief help message.
 
-=item C<-man>
+=item C<--man>
 
 Full documentation
 
@@ -181,6 +175,21 @@ Display only the n (best) hits.
 =item C<--datapath p>,
 
 Generate suffix arrays in path p. Default is 'data'
+
+=item C<--showdesc n>,
+
+Vmatch only (see manual). Is faster because it extracts all data
+directly out of the vmatch output. Otherwise, vsubseqselect is called
+for every hit.
+
+=item C<--hxdrop n>
+
+Vmatch only (see manual). Specifies the xdrop value for hamming distance extension.
+
+=item C<--exdrop n>
+
+Vmatch only (see manual). Specifies the xdrop value for edit distance extension.
+
 
 =back  
 

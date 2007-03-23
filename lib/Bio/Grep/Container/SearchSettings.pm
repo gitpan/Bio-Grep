@@ -13,7 +13,7 @@ use Class::MethodMaker [
       qw / mismatches insertions deletions editdistance query query_length
       _real_query gumismatches upstream downstream maxhits no_alignments
       datapath database online tmppath execpath reverse_complement sort
-      complete query_file showdesc qspeedup/
+      complete query_file showdesc qspeedup hxdrop exdrop/
    ],
    array => [ qw / filters / ],
 ];
@@ -277,9 +277,15 @@ This function returns a string representation of this object
 
 Get/set complete. Specify that query sequences must match completely.
 
-Only available in the Vmatch back-end.
-
     $sbe->settings->complete(1);
+
+=item C<hxdrop()>
+
+Specifies the xdrop value for hamming distance extension.
+
+=item C<exdrop()>
+
+Specifies the xdrop value for edit distance extension.
 
 =item C<showdesc()>
 

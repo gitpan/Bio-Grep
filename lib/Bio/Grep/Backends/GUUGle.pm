@@ -12,7 +12,7 @@ use File::Basename;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.3.0');
+use version; our $VERSION = qv('0.4.0');
 
 sub new {
     my $self = shift;
@@ -29,6 +29,8 @@ sub new {
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
     delete $all_features{PROTEINS};
+    delete $all_features{HXDROP};
+    delete $all_features{EXDROP};
     $self->settings->gumismatches(0);
     $self->features(%all_features);
     $self;

@@ -62,6 +62,8 @@ sub new {
         QUERYFILE         => 1,
         SHOWDESC          => 1,
         QSPEEDUP          => 1,
+        HXDROP            => 1,
+        EXDROP            => 1,
         REVCOM_DEFAULT    => 1,
     );
     $self->features(%all_features);
@@ -241,6 +243,14 @@ sub _check_search_settings {
     $self->settings->qspeedup(
         $self->is_integer( $self->settings->qspeedup ) );
     $self->settings->qspeedup_reset if !defined $self->settings->qspeedup;
+    
+    $self->settings->hxdrop(
+        $self->is_integer( $self->settings->hxdrop ) );
+    $self->settings->hxdrop_reset if !defined $self->settings->hxdrop;
+    
+    $self->settings->exdrop(
+        $self->is_integer( $self->settings->exdrop ) );
+    $self->settings->exdrop_reset if !defined $self->settings->exdrop;
 
     $self->settings->editdistance(
         $self->is_integer( $self->settings->editdistance ) );
@@ -328,6 +338,14 @@ sub _check_search_settings {
     unless ( defined( $self->features->{QSPEEDUP} ) ) {
         $self->warn("qspeedup parameter not available in this back-end")
             if $self->settings->qspeedup;
+    }
+    unless ( defined( $self->features->{HXDROP} ) ) {
+        $self->warn("hxdrop parameter not available in this back-end")
+            if $self->settings->hxdrop;
+    }
+    unless ( defined( $self->features->{EXDROP} ) ) {
+        $self->warn("exdrop parameter not available in this back-end")
+            if $self->settings->exdrop;
     }
     if (defined $self->settings->editdistance && defined $self->settings->mismatches &&
     $self->settings->editdistance > 0 && $self->settings->mismatches > 0) {
