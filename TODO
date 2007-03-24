@@ -3,4 +3,4 @@
  - queryfile for Hypa [ maybe we dump Hypa ]
  - interface for multiple queries
  - support other file formats (Genbank,...)
- - different upstream/downstream values in GUUGle
+ - support agreps regular expressions

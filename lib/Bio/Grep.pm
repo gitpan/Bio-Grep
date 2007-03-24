@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.4.0');
+use version; our $VERSION = qv('0.5.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.4.0
+This document describes Bio::Grep version 0.5.0
 
 =head1 SYNOPSIS
 

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.4.0);
+use version; our $VERSION = qv(0.5.0);
 
 use Bio::Grep ;
 use Getopt::Long qw(:config auto_version);
@@ -64,6 +64,7 @@ if (!defined $h{datapath}) {
 }
 
 mkdir($h{datapath});	
+$sbe->settings->datapath($h{datapath});
 
 # generate a suffix array. you have to do this only once.
 if ($h{createdb}) {
@@ -103,7 +104,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.4.0
+This document describes bgrep version 0.5.0
 
 =head1 SYNOPSIS
 

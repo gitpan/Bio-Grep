@@ -1,4 +1,4 @@
-Bio-Grep version 0.4.0
+Bio-Grep version 0.5.0
 ======================
 
 Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
@@ -15,11 +15,11 @@ This module requires these other modules, libraries and programs:
 
 
   Bioperl 1.4 http://bioperl.org/Core/Latest/index.shtml
-  	(You will need "Core" and "Run") Be sure that you have all
-	required modules installed. You don't need to worry about this if 
-	you follow all installation steps in the Bioperl Documentation 
-	(for example you will need some XML modules. Bundle::BioPerl 
-	will install them).
+    (You will need "Core" and "Run") Be sure that you have all
+    required modules installed. You don't need to worry about this if 
+    you follow all installation steps in the Bioperl Documentation 
+    (for example you will need some XML modules. Bundle::BioPerl 
+    will install them).
     Works with Bioperl 1.5.2.
     
   EMBOSS (ftp://emboss.open-bio.org/pub/EMBOSS/EMBOSS-latest.tar.gz)
@@ -29,7 +29,7 @@ This module requires these other modules, libraries and programs:
   
   You need at least one of them. Vmatch is always a good choice. Agrep is
   the best choice if you allow many mismatches in short sequences, if you
-  want to search in Fasta files	with relatively short sequences (e.g
+  want to search in Fasta files with relatively short sequences (e.g
   transcript databases) and if you are only interested in which sequences
   the approximate match was found. Its performance is in this case 
   amazing. If you want the exact positions, choose vmatch. If you want 
@@ -42,19 +42,16 @@ This module requires these other modules, libraries and programs:
 
 
   Vmatch (http://vmatch.de/) for the Vmatch back-end. Commercial software.
-  	The Vmatch tests assume that vmatch is in your path (You
-	can later specify a path to vmatch that is not in your path. 
+    The Vmatch tests assume that vmatch is in your path (You
+    can later specify a path to vmatch that is not in your path. 
     The tests will fail but the module should work if the 
     specified path to vmatch is correct.). 
-	
+ 
   Agrep (http://www.tgries.de/agrep/) for the Agrep back-end. There
-  	are packages for some Linux distributions available (Debian:
-	apt-get install agrep). Fink has some packages for Mac OS X.
-	Ebuilds for Gentoo are available, too.	As for Vmatch, Agrep 
-	tests assume that agrep is in your path. There are a few
-	limitations. Line numbers are truncated after 1024 characters.
-	It is possible to change that value in agrep.h. Don't know
-	if this works. We haven't tested this back-end thoroughly. 
+    are packages for some Linux distributions available (Debian:
+    apt-get install agrep). Fink has some packages for Mac OS X.
+    Ebuilds for Gentoo are available, too. As for Vmatch, Agrep 
+    tests assume that agrep is in your path. 
 
   GUUGle (http://bibiserv.techfak.uni-bielefeld.de/guugle/)
     A suffix array implementation for RNA sequences. Only allows search
@@ -62,14 +59,14 @@ This module requires these other modules, libraries and programs:
     suffix arrays. Open Source.
 
   Hypa (http://bibiserv.techfak.uni-bielefeld.de/HyPa/) Another
-	powerful enhanced suffix array tool. We use only a small set of 
+    powerful enhanced suffix array tool. We use only a small set of 
     features. Hypa is not yet offically released. It supports wobble pairs, 
     meaning that GU mismatches can count only 0 or 0.5 mismatches. 
     Another difference is that you can define how many insertions and 
     deletions should be allowed.
-	The other back-ends only allow edit or hamming distances.
-	The tests require that hypa is in your path.
-	  
+    The other back-ends only allow edit or hamming distances.
+    The tests require that hypa is in your path.
+   
   ...and other Perl modules. You will get a warning about missing
   modules when you run the make command. A lot of dependencies, we know,
   but most of them are standard software in bioinformatics. So please

@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 66, Vmatch => 126, Hypa => 81, GUUGle => 35 );
+our %tests = ( Agrep => 66, Vmatch => 130, Hypa => 81, GUUGle => 35 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -567,7 +567,25 @@ my $long_query =
         ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
         || diag $EVAL_ERROR;
         goto CLEANUP if $backendname eq 'GUUGle';
-
+        
+        if ($backendname eq 'Vmatch') {
+            $sbe->settings->hxdrop('&& ls *;');
+            eval { $sbe->search() };
+            ok( $EVAL_ERROR, "Exception occured with wrong hxdrop" );
+            $sbe->settings->hxdrop(1);
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, "No Exception occured with correct hxdrop" ) ||
+                diag $EVAL_ERROR;
+           $sbe->settings->hxdrop_reset;     
+            $sbe->settings->exdrop('&& ls *;');
+            eval { $sbe->search() };
+            ok( $EVAL_ERROR, "Exception occured with wrong exdrop" );
+            $sbe->settings->exdrop(1);
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, "No Exception occured with correct exdrop" ) ||
+                diag $EVAL_ERROR;
+           $sbe->settings->exdrop_reset;     
+        }    
         # check exceptions with insecure upstream
         $sbe->settings->upstream('&& ls *;');
         eval { $sbe->search() };

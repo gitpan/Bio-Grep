@@ -480,7 +480,7 @@ sub get_alphabet_of_database {
     my ( $self, $db ) = @_;
     my %dbs = $self->get_databases();
     if (!defined $dbs{$db}) {
-        my $self->throw( -class => 'Bio::Root::BadParameter',
+        $self->throw( -class => 'Bio::Root::BadParameter',
                          -text  => 'Database not found',
                          -value => $db,
                        );
@@ -671,7 +671,7 @@ This method is DEPRECATED. The new syntax is
 Get available features. This is a hash. Valid features are
 MISMATCHES, GUMISMATCHES, EDITDISTANCE, INSERTIONS, DELETIONS, 
 FILTERS, NATIVE_ALIGNMENTS, PROTEINS, UPSTREAM, DOWNSTREAM, MAXHITS, COMPLETE,
-QUERYFILE, SHOWDESC, QSPEEDUP, EVALUE and PERCENT_IDENTITY.
+QUERYFILE, SHOWDESC, QSPEEDUP, HXDROP, EXDROP, EVALUE and PERCENT_IDENTITY.
 
   if (defined($sbe->features->{GUMISMATCHES})) {
           # $sbe->settings->gumismatches(0);

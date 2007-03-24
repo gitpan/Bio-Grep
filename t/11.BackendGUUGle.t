@@ -28,7 +28,7 @@ BEGIN{
 my $backendname  = 'GUUGle';
 plan skip_all => 'GUUGle binary not in path' if
 BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
-plan tests => 36;
+plan tests => 54;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -53,6 +53,21 @@ my %hits_sequences2 = (
  'At1g01010.1' => 'aaauggaggaucaaguuggguuug',
  'At1g01010.2' => 'aaauggaggaucaaguuggguuug',
  'At1g01010.3' => 'aaauggaggaucaaguuggguu',
+);
+my %hits_sequences3 = (
+ 'At1g01010.1' => 'ugaaaauggaggaucaaguugggu',
+ 'At1g01010.2' => 'aaaauggaggaucaaguugggu',
+ 'At1g01010.3' => 'ugaaaauggaggaucaaguugggu',
+);
+my %hits_sequences4 = (
+ 'At1g01010.1' => 'aaauggaggaucaaguuggguuug',
+ 'At1g01010.2' => 'aaauggaggaucaaguuggguuug',
+ 'At1g01010.3' => 'aaauggaggaucaaguuggguu',
+);
+my %hits_sequences5 = (
+ 'At1g01010.1' => 'auggaggaucaaguuggguuug',
+ 'At1g01010.2' => 'auggaggaucaaguuggguuug',
+ 'At1g01010.3' => 'auggaggaucaaguuggguu',
 );
 
 my $search_obj = Bio::Grep->new($backendname);
@@ -117,7 +132,36 @@ while (my $res = $sbe->next_res() ) {
     is($res->subject->seq, 'auggaggaucaaguugg', 'subject is query'); 
 }
 
-
+# different up/downstream
+$sbe->search({
+        gumismatches => 0,
+        query => 'auggaggaucaaguugg',
+        upstream => 5,
+        downstream => 2,
+    });
+while (my $res = $sbe->next_res() ) {
+    is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
+    is($res->sequence->seq, $hits_sequences3{$res->sequence->id}, 'sequence correct'); 
+}
+$sbe->search({
+        gumismatches => 0,
+        query => 'auggaggaucaaguugg',
+        upstream => 2,
+        downstream => 5,
+    });
+while (my $res = $sbe->next_res() ) {
+    is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
+    is($res->sequence->seq, $hits_sequences4{$res->sequence->id}, 'sequence correct'); 
+}
+$sbe->search({
+        gumismatches => 0,
+        query => 'auggaggaucaaguugg',
+        downstream => 5,
+    });
+while (my $res = $sbe->next_res() ) {
+    is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
+    is($res->sequence->seq, $hits_sequences5{$res->sequence->id}, 'sequence correct'); 
+}
 
 # test database
 $sbe->search({
@@ -166,8 +210,9 @@ $sbe->settings->gumismatches(0);
 
 eval { $sbe->search(); };
 
-ok($EVAL_ERROR, 'Exception occured with different values for up- and ' .
-     'downstream.');
+ok(!$EVAL_ERROR, 'Exception occured with different values for up- and ' .
+     'downstream.') || diag $EVAL_ERROR;
+
 ### 
 
 $sbe->settings->downstream(10);
@@ -182,8 +227,12 @@ $sbe->settings->upstream_reset;
 
 eval { $sbe->search(); };
 
-ok($EVAL_ERROR, 'Exception occured with undef up- and ' .
-     'def. downstream.');
+ok(!$EVAL_ERROR, 'No exception occured with undef up- and ' .
+     'def. downstream.') || diag $EVAL_ERROR;
+###
+
+$sbe->settings->upstream_reset;
+
 
 ###
  

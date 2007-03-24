@@ -47,6 +47,7 @@ sub search {
     $self->_check_search_settings($arg_ref);
     
     my $query = $self->_prepare_query();
+    $s->query_length( length($query) ) unless $s->query_length_isset;
 
     # now generate the command string
     my $mm = 0;
@@ -62,8 +63,6 @@ sub search {
             if $s->mismatches > 0;
     }
 
-    $s->query_length( length($query) ) unless $s->query_length_isset;
-    my $length = "-l " . $s->query_length;
 
     my $command =
         $self->_cat_path_filename( $s->execpath, 'agrep' ) . ' -i ' . $fuzzy

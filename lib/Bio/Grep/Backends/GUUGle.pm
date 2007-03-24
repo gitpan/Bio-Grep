@@ -11,8 +11,9 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Basename;
 
 use Data::Dumper;
+use List::Util qw(max);
 
-use version; our $VERSION = qv('0.4.0');
+use version; our $VERSION = qv('0.5.0');
 
 sub new {
     my $self = shift;
@@ -47,13 +48,7 @@ sub search {
     # now generate the command string
     my $eflag = '';
     if ($s->upstream > 0 || $s->downstream > 0) {
-        $self->throw( 
-             -class => 'Bio::Root::BadParameter',
-             -text => 'Upstream and downstream must be the same in GUUGle.',
-             -value => 'Upstream: ' . $s->upstream . ' Downstream: ' .
-             $s->downstream,
-             ) if $s->upstream != $s->downstream;
-        $eflag = ' -e ' . $s->upstream . ' ';     
+        $eflag = ' -e ' . max($s->upstream,$s->downstream) . ' ';     
     }
     
     if ($s->gumismatches > 0) {
@@ -246,7 +241,7 @@ sub _parse_next_res {
             my $ql =  $s->query_length || length($query->seq);
             SUBSTRING:
             for my $length ( reverse($ql .. length($query->seq)) ) { 
-                for my $start ( reverse( 0 .. $s->upstream )) {
+                for my $start ( reverse( 0 .. max($s->upstream,$s->downstream) ) ) {
                         my $query_start =
                         length($query->seq)-$query_pos+1-$length;
                         my $qs = substr $qrc, $query_start, $length;
@@ -260,6 +255,17 @@ sub _parse_next_res {
                                 $upstream    = $start;
                                 $up_seq   = substr $line, 0, $upstream;
                                 $down_seq = substr $line, $upstream + $length;
+                                # now check if regions are larger than
+                                # expected. can happen when up/down differ
+                                if(length($up_seq) > $s->upstream) {
+                                    $up_seq = substr $up_seq, 
+                                           length($up_seq)-$s->upstream;
+                                    $upstream = length($up_seq);       
+                                }    
+                                if(length($down_seq) > $s->downstream) {
+                                    $down_seq = substr $down_seq,0, 
+                                           $s->downstream;
+                                }    
                                 last SUBSTRING;
                         }        
                 }        
@@ -355,7 +361,6 @@ Bio::Grep::Backends::GUUGle - GUUGle back-end
   
   # display 5 bases upstream and downstream of the match
   $sbe->settings->upstream(5);
-  # upstream and downstream must be the same in GUUGle
   $sbe->settings->downstream(5);
   
   $sbe->search();
@@ -376,8 +381,6 @@ query file, Bio::Grep throws an exception if reverse_complement is not set.
 
 NOTE 2: GUUGle only allows search for exact matches. It counts GU as no
 mismatch.
-
-NOTE 3: Upstream and Downstream must have the same length.
 
 
 =head1 METHODS
@@ -434,15 +437,11 @@ It was not possible to run GUUGle in function C<search>.
 
 =over 2
 
-=item 
-
-Upstream and downstream must have the same length. 
-
-=item 
+=item C<GUUGle searches only for the reverse complement> 
 
 You have specified a query_file and reverse_complement is not set.
 
-=item 
+=item C<settings-E<gt>query_length not set. See -d flag...>
 
 You have specified a query_file and forgot to set query_length.
 

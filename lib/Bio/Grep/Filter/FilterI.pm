@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.2.1');
+use version; our $VERSION = qv('0.5.0');
 
 use base 'Bio::Root::Root';
 

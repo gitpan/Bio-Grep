@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.4.3');
+use version; our $VERSION = qv('0.5.0');
 
 sub new {
     my $self = shift;

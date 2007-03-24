@@ -8,7 +8,7 @@ use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.2.2');
+use version; our $VERSION = qv('0.5.0');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -218,8 +218,7 @@ Get/set the identity in percent of this hit.
 
 =head1 OBJECT FORMATTER
 
-Some predefined methods for printing objects. Make your own methods if you
-don't like them. 
+Some predefined methods for printing objects. 
 
 =over 
 

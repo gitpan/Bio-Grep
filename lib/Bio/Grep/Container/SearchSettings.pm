@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.3.2');
+use version; our $VERSION = qv('0.5.0');
 
 use Class::MethodMaker [
    new    => 'new2',
