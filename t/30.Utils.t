@@ -21,7 +21,7 @@ BEGIN{
     }
 }
 
-plan tests => 32;
+plan tests => 29;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -40,11 +40,6 @@ my $result = Bio::Grep::Container::SearchResult->new();
 
 # todo make this platform independent
 is( $sbe->_cat_path_filename( $paths[0], 't.txt' ), 't.txt', 'concat path' );
-
-is( $result->_commafy_string('string'), 's,t,r,i,n,g' );
-is( $result->_commafy_string(''),       '' );
-eval { $result->_commafy_string(); };
-ok($EVAL_ERROR);
 
 my $tainted_word    = 'bla' . substr( cwd, 0, 0 );
 my $tainted_integer = '1' . substr( cwd,   0, 0 );

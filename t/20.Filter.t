@@ -22,7 +22,9 @@ BEGIN{
     }
 }
 
-my %tests = ( Agrep => 3, Vmatch => 9, Hypa => 9, GUUGle => 9 );
+use TestFilter;
+
+my %tests = ( Agrep => 3, Vmatch => 15, Hypa => 15, GUUGle => 15 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -53,6 +55,7 @@ SKIP: {
         else {
             $tests++;
         }
+        diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
             'RNAcofold' );
         my $search_obj = Bio::Grep->new($backendname);
@@ -68,6 +71,7 @@ SKIP: {
 
         $sbe->settings->database('Test2.fasta');
         my $sequence = 'tgacagaagagagtgagcac';
+        my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
         for my $j ( 0 .. 2 ) {
             $sbe->settings->query($sequence);
             $sbe->settings->reverse_complement(1);
@@ -82,6 +86,14 @@ SKIP: {
                 $sbe->settings->query_length_reset();
                 $sbe->settings->gumismatches_reset();
             }
+            if ( defined $sbe->features->{FILTERS}) {
+                if ($j == 1) {
+                    $filter->delete(0);
+                    $sbe->settings->filters( $filter );
+                } else {
+                    $sbe->settings->filters_reset;
+                }    
+            }    
             $sbe->search();
             my @ids = ();
             foreach my $res ( @{ $sbe->results } ) {
@@ -98,13 +110,17 @@ SKIP: {
             }    
         }
         next unless defined( $sbe->features->{FILTERS} );
-        my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
+        $filter->delete(1);
         ok($filter->supports_alphabet_exists('dna'));
         ok($filter->supports_alphabet_exists('protein'));
         ok(!$filter->supports_alphabet_exists('rna'));
-        
+        my @filters = ( $filter );        
         for my $j ( 0 .. 2 ) {
-            $sbe->settings->filters($filter);
+            if ($j == 2 && defined $sbe->features->{FILTERS}) {
+                push @filters, TestFilter->new();
+                $sbe->settings->sort('ga');
+            }    
+            $sbe->settings->filters(@filters);
             $sbe->settings->query($sequence);
             $sbe->settings->reverse_complement(1);
             if (defined $sbe->features->{MISMATCHES}) {
@@ -120,13 +136,21 @@ SKIP: {
             }
             $sbe->search();
             my @ids = ();
+            my $start_dg = -100;
             while (my $res = $sbe->next_res  ) {
-
+                if ($j == 2 && defined $sbe->features->{FILTERS}) {
+                    cmp_ok($res->dG, '>=', $start_dg, 'sorting works');
+                    cmp_ok($res->dG, '<=', 0, 'sorting works');
+                    is($res->remark,'passed', 'remark ok')
+                }
+                $start_dg = $res->dG;
                 #  print STDERR "IS: " . $res->sequence->id . "\n";
                 push ( @ids, $res->sequence->id );
             }
             @ids = sort @ids;
             is( @ids, 2, "2 results" );
+            $sbe->settings->sort_reset;
+            $sbe->settings->filters_reset;
         }
     }    #skip
 }

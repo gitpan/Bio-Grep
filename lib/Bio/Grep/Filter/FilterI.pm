@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.5.0');
+use version; our $VERSION = qv('0.6.0');
 
 use base 'Bio::Root::Root';
 
@@ -23,14 +23,54 @@ __END__
 
 Bio::Grep::Filter::FilterI - Superclass for all filter modules   
 
+=head1 SYNOPSIS
+
+   package MyFilter;
+   
+   use strict;
+   use warnings;
+   
+   use Bio::Grep::Filter::FilterI;
+   
+   use base 'Bio::Grep::Filter::FilterI';
+   
+   use Class::MethodMaker
+    [ new => [ qw / new2 / ],
+      ... # here some local variables, see perldoc Class::MethodMaker
+    ];
+   
+   sub new {
+      my $self = shift->new2;
+      $self->delete(1); # a filter that actually filters, not only adds
+                        # remarks to $self->search_result->remark
+
+      $self->supports_alphabet( dna => 1, protein => 1);
+      $self;
+   }
+   
+   sub filter {
+      my $self = shift;
+      # code that examines $self->search_result
+      # and returns 0 (not passed) or 1 (passed)
+      ...
+      $self->message('passed');
+      return 1;
+   }   
+   
+   sub reset {
+      my $self = shift;
+      # if you need local variables, you can clean up here
+   }
+
+   1;# Magic true value required at end of module
+
 
 =head1 DESCRIPTION
 
 B<Bio::Grep::Filter::FilterI> is the superclass for all filter modules. 
 Don't use this directly. 
 
-Use this as interface for new filters (see L<Bio::Grep::Filter::MIRNAFilter> for
-details). A Filter module implements a filter function that
+A Filter module implements a filter function that
 returns 1 if query and subject pass the filter, 0 otherwise.
 If the member variable "delete" is 1, then this subject won't
 be in the search results of the back-end.
@@ -99,6 +139,26 @@ result.
 
 Get/set the search_result. A L<Bio::Grep::Container::SearchResult>
 object. 
+
+=back
+
+=head1 MOTIVATION
+
+You might wonder why or when you should write a Filter object instead of 
+filtering in the while loop:
+
+=over
+
+=item Code reuse:
+
+Is it likely that you need the code (or parts of it) in other projects? Do you
+think other people may find your code useful? Good candidates here are parsers 
+for other programs (that perform thermodynamic calculations for example).
+
+=item Debugging:
+
+It is easier to debug and test modular code than whole scripts. Additionally,
+the code in your script is easier to understand and maintain.
 
 =back
 

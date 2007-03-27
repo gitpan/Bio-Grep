@@ -1,9 +1,18 @@
 Revision history for Perl extension Bio::Grep.
 
+0.6.0  Tue Mar  27 14:09:10 2007
+    - POD improvements
+    - BackendI code cleanups 
+    - renamed feature QUERYFILE to QUERY_FILE
+    - did not throw an exception when query and query_file
+      are set
+    - more tests
+    - removed $res->get_gene_id and $res->alignment_to_csv
+    
 0.5.0  Sat Mar  23 17:34:20 2007
     - POD improvements
     - different values for upstream and downstream in GUUGle
-    - did not throw an exception if alphabet file was missing
+    - did not throw an exception when alphabet file was missing
     - database generation in bgrep broken
     - more tests
 

@@ -18,7 +18,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.7.1');
+use version; our $VERSION = qv('0.7.2');
 
 use Class::MethodMaker [
     new      => 'new2',
@@ -42,7 +42,13 @@ sub new {
     # assume back-end binary is in path
     $self->settings->execpath('');
 
-    my %all_features = (
+    $self->features(%{$self->_get_all_possible_features()});
+    $self;
+}
+
+sub _get_all_possible_features {
+    my ( $self ) = @_;
+    return {
         MISMATCHES        => 1,
         GUMISMATCHES      => 1,
         EDITDISTANCE      => 1,
@@ -59,16 +65,16 @@ sub new {
         SORT              => 1,
         MAXHITS           => 1,
         COMPLETE          => 1,
-        QUERYFILE         => 1,
+        QUERY             => 1,
+        QUERY_FILE        => 1,
+        QUERY_LENGTH      => 1,
         SHOWDESC          => 1,
         QSPEEDUP          => 1,
         HXDROP            => 1,
         EXDROP            => 1,
         REVCOM_DEFAULT    => 1,
-    );
-    $self->features(%all_features);
-    $self;
-}
+    };
+}   
 
 sub _get_databases {
     my ( $self, $suffix ) = @_;
@@ -218,52 +224,34 @@ sub _check_search_settings {
     }    
     $self->settings->upstream(0)   if !defined $self->settings->upstream;
     $self->settings->downstream(0) if !defined $self->settings->downstream;
-
-    $self->settings->upstream(
-        $self->is_integer( $self->settings->upstream ) );
-    $self->settings->downstream(
-        $self->is_integer( $self->settings->downstream ) );
-
-    $self->settings->mismatches(
-        $self->is_integer( $self->settings->mismatches ) );
-    $self->settings->mismatches_reset if !defined $self->settings->mismatches;
-
-    $self->settings->insertions(
-        $self->is_integer( $self->settings->insertions ) );
-    $self->settings->insertions_reset if !defined $self->settings->insertions;
-
-    $self->settings->deletions(
-        $self->is_integer( $self->settings->deletions ) );
-    $self->settings->deletions_reset if !defined $self->settings->deletions;
     
-    $self->settings->showdesc(
-        $self->is_integer( $self->settings->showdesc ) );
-    $self->settings->showdesc_reset if !defined $self->settings->showdesc;
+    my %all_features = %{$self->_get_all_possible_features()};
     
-    $self->settings->qspeedup(
-        $self->is_integer( $self->settings->qspeedup ) );
-    $self->settings->qspeedup_reset if !defined $self->settings->qspeedup;
+    my @int_features = map { lc $_ } keys %all_features, 'reverse_complement',
+        'no_alignments';
+
+    my %skip = (
+        FILTERS           => 1,  # checked later
+        NATIVE_ALIGNMENTS => 1,  
+        PERCENT_IDENTITY  => 1,  # no user setting
+        PROTEINS          => 1,  # no user setting
+        SORT              => 1,  # checked later
+        QUERY_FILE        => 1,  # checked later 
+        QUERY             => 1,  # checked later
+        EVALUE            => 1,  # no user setting
+        REVCOM_DEFAULT    => 1,  # no user setting
+    );
     
-    $self->settings->hxdrop(
-        $self->is_integer( $self->settings->hxdrop ) );
-    $self->settings->hxdrop_reset if !defined $self->settings->hxdrop;
-    
-    $self->settings->exdrop(
-        $self->is_integer( $self->settings->exdrop ) );
-    $self->settings->exdrop_reset if !defined $self->settings->exdrop;
-
-    $self->settings->editdistance(
-        $self->is_integer( $self->settings->editdistance ) );
-    $self->settings->editdistance_reset
-        if !defined $self->settings->editdistance;
-
-    $self->settings->query_length(
-        $self->is_integer( $self->settings->query_length ) );
-    $self->settings->query_length_reset
-        if !defined $self->settings->query_length;
-
-    $self->settings->maxhits( $self->is_integer( $self->settings->maxhits ) );
-    $self->settings->maxhits_reset if !defined $self->settings->maxhits;
+    INT_FEATURE:
+    for my $option (@int_features) {
+        next INT_FEATURE if defined $skip{uc($option)};
+        $self->settings->$option(
+        $self->is_integer( $self->settings->$option ) );
+        if (!defined $self->settings->$option) {
+            my $reset = $option . '_reset';
+            $self->settings->$reset;
+        }
+    } 
 
     if ( $self->settings->sort_isset ) {
         my $found_sort_mode = 0;
@@ -300,52 +288,29 @@ sub _check_search_settings {
     }
 
     # some warnings if user requests features that are not available
-    unless ( defined( $self->features->{GUMISMATCHES} ) ) {
-        $self->warn("GU mismatch options not available in this back-end")
-            if $self->settings->gumismatches_isset
-            && $self->settings->gumismatches != 1;
-    }
-    unless ( defined( $self->features->{DELETIONS} ) ) {
-        $self->warn(
-            "deletions not available in this back-end. Try editdistance or mismatches."
-            )
-            if $self->settings->deletions_isset
-            && $self->settings->deletions != 0;
-    }
-    unless ( defined( $self->features->{INSERTIONS} ) ) {
-        $self->warn(
-            "insertions not available in this back-end. Try editdistance or mismatches."
-            )
-            if $self->settings->insertions_isset
-            && $self->settings->insertions != 0;
-    }
-    unless ( defined( $self->features->{FILTERS} ) ) {
-        $self->warn("Filter options not available in this back-end")
-            if $self->settings->filters_isset;
-    }
-    unless ( defined( $self->features->{ONLINE} ) ) {
-        $self->warn("online parameter not available in this back-end")
-            if $self->settings->online_isset && $self->settings->online;
-    }
-    unless ( defined( $self->features->{COMPLETE} ) ) {
-        $self->warn("complete parameter not available in this back-end")
-            if $self->settings->complete_isset && $self->settings->complete;
-    }
-    unless ( defined( $self->features->{SHOWDESC} ) ) {
-        $self->warn("showdesc parameter not available in this back-end")
-            if $self->settings->showdesc_isset;
-    }
-    unless ( defined( $self->features->{QSPEEDUP} ) ) {
-        $self->warn("qspeedup parameter not available in this back-end")
-            if $self->settings->qspeedup;
-    }
-    unless ( defined( $self->features->{HXDROP} ) ) {
-        $self->warn("hxdrop parameter not available in this back-end")
-            if $self->settings->hxdrop;
-    }
-    unless ( defined( $self->features->{EXDROP} ) ) {
-        $self->warn("exdrop parameter not available in this back-end")
-            if $self->settings->exdrop;
+    %skip = ( 
+        NATIVE_ALIGNMENTS => 1,
+        PERCENT_IDENTITY  => 1,
+        REVCOM_DEFAULT    => 1,
+        PROTEINS          => 1,
+        EVALUE            => 1,
+    );
+    
+    FEATURE:
+    for my $feature (keys %all_features) {
+        next FEATURE if defined $skip{$feature};
+        my $value_ok = 0;
+        if ($feature eq 'GUMISMATCHES') {
+            $value_ok = 1;
+        }
+        if (!defined( $self->features->{$feature} ) ) {
+            my $lc_f = lc($feature);
+            my $lc_i = $lc_f . '_isset';
+            if ($self->settings->$lc_i  && 
+                $self->settings->$lc_f ne $value_ok) {
+                $self->warn($lc_f .' not available in this back-end.')
+            }    
+        }
     }
     if (defined $self->settings->editdistance && defined $self->settings->mismatches &&
     $self->settings->editdistance > 0 && $self->settings->mismatches > 0) {
@@ -353,11 +318,12 @@ sub _check_search_settings {
         $self->warn(
             "Ignoring edit distance settings because mismatches is set.")
           ;
-    }        
+    }
     if ( $ENV{BIOGREPDEBUG} ) {
         warn $self->settings->to_string();
     }
-
+    
+    # reset all filters
     if ( $self->settings->filters_isset ) {
         foreach my $filter ( @{ $self->settings->filters } ) {
             $filter->reset;
@@ -420,6 +386,11 @@ sub _guess_alphabet_of_file {
 sub _prepare_query {
     my $self  = shift;
     my $query = $self->settings->query;
+    if (!defined $query) {
+        $self->throw( -class => 'Bio::Root::BadParameter',
+                      -text  => 'query not defined',
+                    );
+    }    
     my $db_alphabet =
     $self->get_alphabet_of_database($self->settings->database);
     
@@ -567,6 +538,13 @@ sub _create_tmp_query_file {
     if (defined $s->query_file) {
         $query_file = $self->is_path($s->query_file);
     }
+    if ($s->query_isset && $s->query_file_isset) {
+        $self->throw(
+        -class => 'Bio::Root::BadParameter',
+        -text  => "query and query_file is set. I am confused ...",
+        -value => $s->query . ' and ' . $s->query_file,
+        );
+    }    
     my @query_seqs = ();
     
     my $query = '';
@@ -625,7 +603,9 @@ directly.
 
 =item C<new()>
 
-This function constructs a Backend object.
+This function constructs a Bio::Grep::Backends::BackendI object and is never used 
+directly. Rather, all other back-ends in this package inherit the methods of
+this interface and call its constructor internally.
 
 =cut
 
@@ -657,7 +637,7 @@ This method is DEPRECATED. The new syntax is
      print $res->alignment_string() . "\n\n";
   }
  
-  if you need an array with all search results, you should use following code:
+If you need an array with all search results, you should use the following code:
 
   my @results;
 
@@ -671,7 +651,8 @@ This method is DEPRECATED. The new syntax is
 Get available features. This is a hash. Valid features are
 MISMATCHES, GUMISMATCHES, EDITDISTANCE, INSERTIONS, DELETIONS, 
 FILTERS, NATIVE_ALIGNMENTS, PROTEINS, UPSTREAM, DOWNSTREAM, MAXHITS, COMPLETE,
-QUERYFILE, SHOWDESC, QSPEEDUP, HXDROP, EXDROP, EVALUE and PERCENT_IDENTITY.
+QUERY, QUERY_FILE, QUERY_LENGTH, SHOWDESC, QSPEEDUP, HXDROP, EXDROP, EVALUE and 
+PERCENT_IDENTITY.
 
   if (defined($sbe->features->{GUMISMATCHES})) {
           # $sbe->settings->gumismatches(0);
@@ -810,7 +791,7 @@ When no file is found, the description will be the filename without the suffix:
 
 =item C<_get_sequences_from_bio_index($id)>
 
-Hypa and Agrep back-end use L<Bio::Index> for sequence id queries (implemented
+GUUGle, Hypa and Agrep back-ends use L<Bio::Index> for sequence id queries (implemented
 in this this method. Returns a L<Bio::SeqIO> object like abstract the method get_sequences should.
 
 =item C<_create_tmp_query_file()>
@@ -880,7 +861,7 @@ The database name is not valid. Allowed characters are 'a-z', 'A-z','0-9', '.'
 
 =head1 FILES
 
-Requires EMBOSS and Bio::Factory::EMBOSS for the Needleman-Wunsch local 
+Requires EMBOSS and L<Bio::Factory::EMBOSS> for the Needleman-Wunsch local 
 alignment implementation from EMBOSS. The internal method 
 C<_get_alignment($seq_a, $seq_b)> can than calculate an alignment for 
 back-ends that do not generate a alignment (like Hypa, agrep).

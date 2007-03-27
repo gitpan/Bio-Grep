@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 66, Vmatch => 130, Hypa => 81, GUUGle => 35 );
+our %tests = ( Agrep => 66, Vmatch => 140, Hypa => 81, GUUGle => 41 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -374,6 +374,7 @@ SKIP: {
         }
         ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
 
+        $sbe->settings->query_reset;
         if ($backendname eq 'Vmatch') {
             for my $i ( 0 .. 2) {
                 $sbe->settings->query_file('t/Test_query.fasta');
@@ -384,7 +385,6 @@ SKIP: {
                     $sbe->settings->query_file('t/Test_query_revcom.fasta');
                     $sbe->settings->reverse_complement(1);
                 }
-
                 $sbe->search();
                 
                 @ids = ();
@@ -502,6 +502,7 @@ my $long_query =
         
         EXCEPTIONS:
         # check exceptions with insecure sortmode
+        $sbe->settings->query(substr($long_query,0,25));
         $sbe->settings->sort('&& ls *;');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong sort mode" );
@@ -554,18 +555,56 @@ my $long_query =
         ok( !$EVAL_ERROR, "No Exception occured with correct insertions" ) ||
             diag $EVAL_ERROR;
 
-        # check exceptions with insecure query_length
-        $sbe->settings->query_length('&& ls *;');
+        # check exceptions with insecure insertions
+        $sbe->settings->no_alignments('&& ls *;');
+        eval { $sbe->_check_search_settings };
+        ok( $EVAL_ERROR, "Exception occured with wrong no_alignments" );
+        $sbe->settings->no_alignments(1);
+        eval { $sbe->_check_search_settings };
+        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" ) ||
+            diag $EVAL_ERROR;
+        $sbe->settings->no_alignments_reset;
+
+        
+        if (defined $sbe->features->{QUERY_LENGTH}) {
+            # check exceptions with insecure query_length
+            $sbe->settings->query_length('&& ls *;');
+            eval { $sbe->search() };
+            ok( $EVAL_ERROR, "Exception occured with wrong query_length" );
+            $sbe->settings->query_length(10);
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
+            || diag $EVAL_ERROR;
+            $sbe->settings->query_length_reset;
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
+            || diag $EVAL_ERROR;
+        }
+        
+        my $tmp_query = $sbe->settings->query;
+        if (defined $sbe->features->{QUERY_FILE}) {
+            $sbe->settings->query_file('t/Test_query.fasta');
+            $sbe->settings->query_length(50);
+            $sbe->settings->reverse_complement(1);
+            eval { $sbe->search() };
+            ok( $EVAL_ERROR, "Exception occured with query and query_file" );
+            $sbe->settings->query_reset;
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, "No Exception occured with correct query_file" )
+                    || diag $EVAL_ERROR;
+
+            $sbe->settings->query_file('&& ls *;');
+            eval { $sbe->search };
+            ok( $EVAL_ERROR, "No Exception occured with unsafe query_file" );
+            $sbe->settings->query_file_reset;
+            $sbe->settings->query_length_reset;
+        }    
+        $sbe->settings->query_file_reset;
+        $sbe->settings->query_reset;
         eval { $sbe->search() };
-        ok( $EVAL_ERROR, "Exception occured with wrong query_length" );
-        $sbe->settings->query_length(10);
-        eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
-        || diag $EVAL_ERROR;
-        $sbe->settings->query_length_reset;
-        eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
-        || diag $EVAL_ERROR;
+        ok( $EVAL_ERROR =~ 'query not defined', "Exception occured when query and query_file undef" );
+
+        $sbe->settings->query($tmp_query);
         goto CLEANUP if $backendname eq 'GUUGle';
         
         if ($backendname eq 'Vmatch') {
@@ -702,7 +741,37 @@ my $long_query =
                         qspeedup => 2,
                   });  
             };
-            ok( $EVAL_ERROR, 'No exception occured without up/down' );
+            ok( $EVAL_ERROR, 'Exception occured without qspeedup and complete' );
+            
+            eval { $sbe->search({
+                        query_file => 't/Test_query.fasta',
+                  });  
+            };
+            ok( $EVAL_ERROR =~ /You have to specify complete/, 
+                 'Exception occured missing complete or query_file' );
+            eval { $sbe->search({
+                        query_file => 't/Test_query.fasta',
+                        complete   => 1,
+                  });  
+            };
+            ok( !$EVAL_ERROR, 'No exception occured with complete' ) || diag $EVAL_ERROR;
+            
+            eval { $sbe->search({
+                        query_file => 't/Test_query.fasta',
+                        query_length   => 30,
+                  });  
+            };
+            ok( !$EVAL_ERROR, 'No exception occured with query_length' ) || diag $EVAL_ERROR;
+            
+            diag("\n** Now you should see a Vmatch error **\n");
+            eval { $sbe->search({
+                        query => 'AACCCTCAAAGCC',
+                        mismatches => 10,
+                        maxhits => 100,
+                  }); };
+            ok( $EVAL_ERROR =~ /Vmatch error: Query not valid/, 
+                 'Exception occured with too many mismatches' );
+
             $sbe->search({
                         query => 'AACCCTCAAAGCC',
                         reverse_complement => 0,

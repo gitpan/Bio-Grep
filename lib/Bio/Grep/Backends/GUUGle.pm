@@ -13,7 +13,7 @@ use File::Basename;
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.5.0');
+use version; our $VERSION = qv('0.6.0');
 
 sub new {
     my $self = shift;
@@ -25,7 +25,6 @@ sub new {
     delete $all_features{INSERTIONS};
     delete $all_features{EDITDISTANCE};
     delete $all_features{ONLINE};
-    delete $all_features{SORT};
     delete $all_features{COMPLETE};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};

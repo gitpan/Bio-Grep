@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.5.0');
+use version; our $VERSION = qv('0.6.0');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -115,7 +115,14 @@ Not all back-ends will support every option.
 
 =item C<new()>
 
-This function constructs a SearchSettings object
+This function constructs an Bio::Grep::Container::SearchSettings object. The
+back-end adds an object of this module into C<$sbe-E<gt>settings>, so you
+should never have to call this constructor directly. If you want to reset all
+settings to their default values, call
+
+  $sbe->settings->set({});
+
+See set().
 
 =item C<set($hash_ref)>
 

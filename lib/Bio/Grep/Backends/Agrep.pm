@@ -12,7 +12,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.5.2');
+use version; our $VERSION = qv('0.6.0');
 
 sub new {
     my $self = shift;
@@ -31,7 +31,8 @@ sub new {
     delete $all_features{SORT};
     delete $all_features{MAXHITS};
     delete $all_features{COMPLETE};
-    delete $all_features{QUERYFILE};
+    delete $all_features{QUERY_FILE};
+    delete $all_features{QUERY_LENGTH};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
     delete $all_features{HXDROP};
@@ -47,7 +48,6 @@ sub search {
     $self->_check_search_settings($arg_ref);
     
     my $query = $self->_prepare_query();
-    $s->query_length( length($query) ) unless $s->query_length_isset;
 
     # now generate the command string
     my $mm = 0;
@@ -203,7 +203,7 @@ sub _parse_next_res {
             unless $s->no_alignments;
 
         my $res = Bio::Grep::Container::SearchResult->new( $seq_subject,
-            $s->upstream, $s->upstream + $s->query_length,
+            $s->upstream, $s->upstream + length($query),
             $alignment, $seq_subject->id, "" );
         # agrep does not support multiple queries yet    
         $res->query(Bio::Seq->new( -display_id => "Query", -seq => $s->query));

@@ -25,6 +25,7 @@ t/20.Filter.t
 t/30.Utils.t
 t/40.synopsis.t
 t/Test.fasta
+t/TestFilter.pm
 t/TestGUUGleExtend.fasta
 t/Test_pep.fasta
 t/Test_query.fasta

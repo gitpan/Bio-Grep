@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.5.0');
+use version; our $VERSION = qv('0.6.0');
 
 sub new {
     my $self = shift;
@@ -21,6 +21,8 @@ sub new {
     delete $all_features{EVALUE};
     delete $all_features{PERCENT_IDENTITY};
     delete $all_features{EDITDISTANCE};
+    delete $all_features{QUERY_FILE};
+    delete $all_features{QUERY_LENGTH};
     delete $all_features{SORT};
     delete $all_features{COMPLETE};
     delete $all_features{SHOWDESC};
