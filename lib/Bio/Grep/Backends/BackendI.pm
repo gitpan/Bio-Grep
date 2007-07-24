@@ -18,11 +18,11 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.7.2');
+use version; our $VERSION = qv('0.7.3');
 
 use Class::MethodMaker [
     new      => 'new2',
-    scalar   => [qw / settings _output_fh _output_fn _current_res_id/],
+    scalar   => [qw / settings _output_fh _output_fn _current_res_id _tmp_var/],
     array    => [qw / _query_seqs _results/],
     hash     => [qw / features _mapping/],
     abstract => [
@@ -541,7 +541,7 @@ sub _create_tmp_query_file {
     if ($s->query_isset && $s->query_file_isset) {
         $self->throw(
         -class => 'Bio::Root::BadParameter',
-        -text  => "query and query_file is set. I am confused ...",
+        -text  => "query and query_file are set. I am confused ...",
         -value => $s->query . ' and ' . $s->query_file,
         );
     }    
@@ -846,13 +846,27 @@ $sbe->settings->database(). Example:
 $sbe->generate_database_out_of_fastafile('ATH1.cdna");
 $sbe->settings->database('ATH1.cdna');
    
-
-
 =item C<Database not valid (insecure characters)>
 
 The database name is not valid. Allowed characters are 'a-z', 'A-z','0-9', '.'
 , '-' and '_'.
 
+=item C<query not defined>
+
+You forgot to define a query or a query_file.
+
+=item C<query and query_file are set. I am confused ...>
+
+You specified a query and a query_file. 
+
+=item C<Alphabet of query and database not equal>
+
+You tried to search with DNA/RNA query in protein database or vice versa.
+
+=item C<Back-end does not support protein data>
+
+You tried to generate a protein database with a back-end that does not support
+protein data.
 
 =back
 
@@ -880,7 +894,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

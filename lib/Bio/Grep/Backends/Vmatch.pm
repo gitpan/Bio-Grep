@@ -12,7 +12,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.9.3');
 
 sub new {
     my $self = shift;
@@ -469,19 +469,7 @@ Bio::Grep::Backends::Vmatch - Vmatch back-end
   # (see vmatch manual) for performance reasons 
   $sbe->settings->showdesc(100)
   
- # now try to search. we use bioperls Exceptions
- try {
-    $sbe->search();
- } catch Bio::Root::SystemException with {
-    my $E = shift;
-    print STDERR 'Back-end call failed: ' . 	
-    $E->{'-text'} . ' (' .  $E->{'-line'} . ")\n";
-    exit(1);	
- } otherwise {        
-	my $E = shift;
-    	print STDERR "An unexpected exception occurred: \n$E";
-      exit(1);	
- };
+  $sbe->search();
 
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res ) {
@@ -563,23 +551,49 @@ See L<Bio::Grep::Backends::BackendI> for other diagnostics.
 
 =item C<Bio::Root::SystemException>
 
-
 =over 2
 
-=item 
+=item C<Vmatch error: Query not valid ... > 
 
 It was not possible to run Vmatch in function C<search>. Check the search
 settings.
 
-=item 
+=item C<Vmatch error: Cannot generate suffix array> 
 
 It was not possible to generate a suffix array in function
 C<generate_database_out_of_fastafile>. Check permissions and paths.
 
-=item 
+=item C<Vmatch error: Cannot fetch sequence out of suffix array> 
 
 It was not possible to get some sequences out of suffix array in function
 C<get_sequences>. Check sequence ids.
+
+=back
+
+=item C<Bio::Root::BadParameter>
+
+=over 2
+
+=item C<You can't use showdesc() with upstream or downstream.>
+
+We need the tool C<vsubseqselect> of the Vmatch package for the upstream and 
+downstream regions. That tools requires as parameter an internal vmatch
+sequence id, which is not shown in the Vmatch output when showdesc is on.
+
+=item C<You have to specify complete or querylength. ...'>
+
+The Vmatch parameters -complete and -l cannot combined. See the Vmatch 
+documentation.
+
+=item C<Vmatch: You can't combine qspeedup and complete>
+
+The Vmatch parameters -complete and -qspeedup cannot combined. See the Vmatch 
+documentation.
+
+=item C<unsupported alphabet of file>
+
+The method generate_database_out_of_fastafile() could not determine the
+alphabet (DNA or Protein) of the specified Fasta file.
 
 =back
 
@@ -601,7 +615,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

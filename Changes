@@ -1,5 +1,14 @@
 Revision history for Perl extension Bio::Grep.
 
+0.7.0  Tue Jul  24 16:55:00 2007
+    - POD improvements:
+       * added section exception handling in Bio::Grep
+       * removed exception handling in the back-ends
+         SYNOPSIS
+       * polishing 
+    - Bugfixes:
+       * Agrep back-end: called two times 
+
 0.6.0  Tue Mar  27 14:09:10 2007
     - POD improvements
     - BackendI code cleanups 

@@ -1,53 +1,15 @@
----
-name: Bio-Grep
-version: v0.6.0
-author:
-  - 'Markus Riester <mriester@gmx.de>'
-abstract: Perl extension for searching in Fasta files
-license: perl
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Bio-Grep
+version:      v0.7.0
+version_from: lib/Bio/Grep.pm
+installdirs:  site
 requires:
-  Class::MethodMaker: 2.02
-  Getopt::Long: 2.32
-  IO::String: 1
-  Pod::Usage: 0
-  version: 0
-generated_by: Module::Build version 0.2806
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
-provides:
-  Bio::Grep:
-    file: lib/Bio/Grep.pm
-    version: v0.6.0
-  Bio::Grep::Backends::Agrep:
-    file: lib/Bio/Grep/Backends/Agrep.pm
-    version: v0.6.0
-  Bio::Grep::Backends::BackendI:
-    file: lib/Bio/Grep/Backends/BackendI.pm
-    version: v0.7.2
-  Bio::Grep::Backends::GUUGle:
-    file: lib/Bio/Grep/Backends/GUUGle.pm
-    version: v0.6.0
-  Bio::Grep::Backends::Hypa:
-    file: lib/Bio/Grep/Backends/Hypa.pm
-    version: v0.6.0
-  Bio::Grep::Backends::Vmatch:
-    file: lib/Bio/Grep/Backends/Vmatch.pm
-    version: v0.9.2
-  Bio::Grep::Container::SearchResult:
-    file: lib/Bio/Grep/Container/SearchResult.pm
-    version: v0.6.0
-  Bio::Grep::Container::SearchSettings:
-    file: lib/Bio/Grep/Container/SearchSettings.pm
-    version: v0.6.0
-  Bio::Grep::Filter::FilterI:
-    file: lib/Bio/Grep/Filter/FilterI.pm
-    version: v0.6.0
-  Bio::Grep::Filter::FilterRemoveDuplicates:
-    file: lib/Bio/Grep/Filter/FilterRemoveDuplicates.pm
-    version: v0.6.0
-  Bio::Grep::Root:
-    file: lib/Bio/Grep/Root.pm
-    version: 0.1
-resources:
-  license: http://dev.perl.org/licenses/
+    Class::MethodMaker:            2.02
+    Getopt::Long:                  2.32
+    IO::String:                    1
+    Pod::Usage:                    0
+    version:                       0
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.30

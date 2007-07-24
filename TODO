@@ -2,5 +2,9 @@
  - filter priority (fast filters like FilterRemoveDuplicates should run first automatically)
  - queryfile for Hypa [ maybe we dump Hypa ]
  - interface for multiple queries
- - support other file formats (Genbank,...)
+ - support other file formats (Genbank,...) and input sources (maybe even
+   databases?)
  - support agreps regular expressions
+ - support PoSSuM back-end
+ - create a simple backend that does not require additional software
+ - make EMBOSS and bioperl-run optional

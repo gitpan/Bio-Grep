@@ -12,7 +12,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.6.0');
+use version; our $VERSION = qv('0.7.0');
 
 sub new {
     my $self = shift;
@@ -74,7 +74,6 @@ sub search {
         warn $command . "\n";
     }
 
-    my $output = `$command`;
     my $cmd_ok = $self->_execute_command($command);
 
     # delete temporary files
@@ -264,12 +263,7 @@ Bio::Grep::Backends::Agrep - Agrep back-end
   
   # now try to search, agrep back-end will also throw an exception if no hit
   # was found
-  try {
-     $sbe->search();
-  } catch Error::Simple with {
-     my $E = shift;
-     print  $E->{'-text'} . ' (' .  $E->{'-line'} . ")";
-  };
+  $sbe->search();
   
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res) {
@@ -359,7 +353,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

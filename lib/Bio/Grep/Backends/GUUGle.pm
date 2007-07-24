@@ -13,7 +13,7 @@ use File::Basename;
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.6.0');
+use version; our $VERSION = qv('0.7.0');
 
 sub new {
     my $self = shift;

@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backends::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.6.0');
+use version; our $VERSION = qv('0.7.0');
 
 sub new {
     my $self = shift;
@@ -405,20 +405,7 @@ Bio::Grep::Backends::Hypa - HyPa back-end
      print "\nBack-end does not support wobble pairs\n";
   }	
  
-  # now try to search. we use bioperls Exceptions
-  try {
-     $sbe->search();
-  } catch Bio::Root::SystemException with {
-     my $E = shift;
-     print STDERR 'Back-end call failed: ' . 	
-     $E->{'-text'} . ' (' .  $E->{'-line'} . ")\n";
-     exit(1);	
-  } otherwise {        
- 	my $E = shift;
-     	print STDERR "An unexpected exception occurred: \n$E";
-     exit(1);	
- 
-  };
+  $sbe->search();
  
   # output all informations we have!
   while ( my $res = $sbe->next_res ) {

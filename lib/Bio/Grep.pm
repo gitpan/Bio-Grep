@@ -10,7 +10,7 @@ use Bio::Grep::Backends::GUUGle;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.6.0');
+use version; our $VERSION = qv('0.7.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -22,13 +22,19 @@ sub new {
    my $self = shift->new2;
    my $backendname  = shift;
    $backendname = 'Vmatch' unless defined $backendname;
+   my %known_backends = (
+       Agrep => 1,
+       Vmatch => 1,
+       Hypa => 1,
+       GUUGle => 1,
+   );    
 
-   unless ($backendname eq 'Agrep' || $backendname eq 'Vmatch' || 
-           $backendname eq 'Hypa'  || $backendname eq 'GUUGle') {
+   if (!defined $known_backends{$backendname}) {
       $self->throw(-class => 'Bio::Root::BadParameter',
                    -text  => 'Unknown back-end.',
                    -value => $backendname . ' not supported.');
    }
+
    my $backendpackage = "Bio::Grep::Backends::$backendname";
    
    $self->backend( $backendpackage->new() );
@@ -44,7 +50,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.6.0
+This document describes Bio::Grep version 0.7.0
 
 =head1 SYNOPSIS
 
@@ -460,6 +466,44 @@ To apply your filter:
 
 See L<Bio::Grep::Filter::FilterI>.
 
+=head1 ERROR HANDLING
+
+Bio::Grep throws Bioperl exceptions when errors occur. You can use the 
+module L<Error> to catch these exceptions:
+
+   use Error qw(:try);
+  
+   ...
+  
+   try {
+       $sbe->search();
+   } catch Bio::Root::SystemException with {
+       my $E = shift;
+       print STDERR 'Back-end call failed: ' .     
+       $E->{'-text'} . ' (' .  $E->{'-line'} . ")\n";
+       exit(1);    
+   } catch Bio::Root::BadParameter with {
+       my $E = shift;
+       print STDERR 'Wrong Settings: ' .     
+       $E->{'-text'} . ' (' .  $E->{'-line'} . ")\n";
+       exit(1);    
+   } otherwise {        
+       my $E = shift;
+       print STDERR "An unexpected exception occurred: \n$E";
+       exit(1);  
+   };
+
+Bio::Grep throws a C<SystemException> when a C<system> call failed,
+C<BadParameter> whenever Bio::Grep recognizes some problems in the settings.
+Be aware that Bio::Grep does not find all of these problems. In such a case,
+the back-end call will fail and Bio::Grep will throw a C<SystemException>.
+
+An C<IOException> is thrown when it was not possible to copy, close, delete or
+write a file, a C<FileOpenException> is thrown when opening a file was not
+possible.
+
+See L<Bio::Root::Exception>.
+
 =head1 SECURITY
 
 The use of Bio::Grep (in Web Services for example) should be quite secure. All
@@ -509,7 +553,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

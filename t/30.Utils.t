@@ -21,7 +21,7 @@ BEGIN{
     }
 }
 
-plan tests => 29;
+plan tests => 21;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -53,8 +53,6 @@ my $not_tainted_integer = $sbe->is_integer($tainted_integer);
 ok( !tainted $not_tainted_integer, $not_tainted_integer . ' not tainted' );
 my $not_tainted_word = $sbe->is_word($tainted_word);
 ok( !tainted $not_tainted_word, $not_tainted_word . ' not tainted' );
-my $not_tainted_real = $sbe->is_real($tainted_real);
-ok( !tainted $not_tainted_real, $not_tainted_real . ' not tainted' );
 
 is( $sbe->is_integer('1234'), 1234 );
 eval { $sbe->is_integer('1234.5'); };
@@ -63,16 +61,6 @@ eval { $sbe->is_integer('10 && ls *'); };
 ok($EVAL_ERROR);
 is( $sbe->is_integer(undef), undef );
 
-is( $sbe->is_real('1234'),     1234 );
-is( $sbe->is_real('1234.'),    '1234.' );
-is( $sbe->is_real('-1234.12'), '-1234.12' );
-is( $sbe->is_real(undef),      undef );
-eval { $sbe->is_real('1234.5.1'); };
-ok($EVAL_ERROR);
-eval { $sbe->is_real('1234 .5'); };
-ok($EVAL_ERROR);
-eval { $sbe->is_real('10 && ls *'); };
-ok($EVAL_ERROR);
 
 is( $sbe->is_word('1234'),           1234 );
 is( $sbe->is_word('1234-valid.txt'), '1234-valid.txt' );

@@ -30,12 +30,6 @@ sub is_path {
     => 'path');
 }
 
-sub is_real {
-    my ( $self, $variable, $desc) = @_;
-    return $self->_check_variable( variable => $variable, desc => $desc, regex
-    => 'real' );
-}
-
 sub is_sentence {
     my ( $self, $variable, $desc) = @_;
     return $self->_check_variable( variable => $variable, desc => $desc, regex
@@ -115,12 +109,6 @@ This superclass adds some useful methods to all Bio::Grep packages.
 
 Returns the variable, but it is now not tainted anymore. Throws an exception
 if the specified variable is not an integer. If a second argument is passed,
-it will be used in the exception text.
-
-=item C<is_real($var_to_check, 'Description')>
-
-Returns the variable, but it is now not tainted anymore. Throws an exception
-if the specified variable is not a number. If a second argument is passed,
 it will be used in the exception text.
 
 =item C<is_word($var_to_check, 'Description')>
