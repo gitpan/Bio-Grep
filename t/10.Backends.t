@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 66, Vmatch => 140, Hypa => 81, GUUGle => 41 );
+our %tests = ( Agrep => 70, Vmatch => 145, Hypa => 80, GUUGle => 43, RE => 34 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -47,7 +47,8 @@ use Bio::Perl;
 
 # the number of files we assume in the data directory after
 # database generation.
-my %backend_filecnt = ( Agrep => 6, Vmatch => 16, Hypa => 31, GUUGle => 4 );
+my %backend_filecnt = ( Agrep => 6, Vmatch => 16, Hypa => 31, GUUGle => 4, 
+    RE => 6);
 
 # the hits in Test.fasta we assume with n mismatches
 my %hits = (
@@ -81,6 +82,7 @@ my $tests = 0;
 my %sort_modes = (
     GUUGle  => [ 'ga', 'gd' ],
     Hypa    => [ 'ga', 'gd' ],
+    RE      => [ 'ga', 'gd' ],
     Agrep   => [ ],
     Vmatch  => [ sort(              
                qw(la ld ia id ja jd ea ed sa sd ida idd ga gd) ) ],
@@ -90,7 +92,8 @@ my %sort_modes = (
 BACKEND:
 foreach my $backendname ( sort keys %tests ) {
 SKIP: {
-        if ( BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
+        #if ( $backendname eq 'RE' || BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
+        if ( $backendname ne 'RE' && BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
             skip "$backendname not found in path", $tests{$backendname};
         }
         else {
@@ -109,25 +112,26 @@ SKIP: {
         $sbe->settings->tmppath('t/tmp');
         mkdir("t/tmp");
         mkdir("t/data");
+        mkdir("t/data2");
         BioGrepTest::delete_files;
         
 
         $sbe->settings->datapath('t/data');
         eval {
-        $sbe->generate_database_out_of_fastafile( 't/wrong\ named.fasta',
+        $sbe->generate_database( 't/wrong\ named.fasta',
              'Description for wrong\ named.fasta' );
         };
         ok( $EVAL_ERROR, "exception occured with invalid filename" );
         
         eval {
-            $sbe->generate_database_out_of_fastafile( 't/wrong.fasta',
+            $sbe->generate_database( 't/wrong.fasta',
                 'Description for wrong.fasta' );
         };
         ok( $EVAL_ERROR, "exception occured with not existing file" );
 
         $sbe->settings->datapath('t/wrongdata');
         eval {
-            $sbe->generate_database_out_of_fastafile( 't/Test.fasta',
+            $sbe->generate_database( 't/Test.fasta',
                 'Description for Test.fasta' );
         };
         ok( $EVAL_ERROR, "exception occured with not existing datapath" );
@@ -135,7 +139,7 @@ SKIP: {
         $sbe->settings->datapath('t/data');
 
         eval {
-            $sbe->generate_database_out_of_fastafile( 't/Test.fasta',
+            $sbe->generate_database( 't/Test.fasta',
                 'Description for Test.fasta' );
         };
         ok( !$EVAL_ERROR, "no exception occured with dna fasta ($backendname)" );
@@ -168,7 +172,7 @@ SKIP: {
         );
 
         eval {
-            $sbe->generate_database_out_of_fastafile( 't/Test_pep.fasta',
+            $sbe->generate_database( 't/Test_pep.fasta',
                 'Description for Test_pep.fasta' );
         };
         
@@ -273,7 +277,31 @@ SKIP: {
             $sbe->settings->set({});   
         }
 
-        goto ENDLONGSEQS if $backendname eq 'GUUGle';
+        if ($sbe->features->{DIRECT_AND_REV_COM}) {
+            my $sbe2        = Bio::Grep->new($backendname)->backend;
+            $sbe2->settings->datapath('t/data2');
+            $sbe2->generate_database( 't/TestRevCom.fasta' );
+            $sbe2->search({
+                query => 'GAGCCCTT',
+                direct_and_rev_com => 1,
+                database => 'TestRevCom.fasta',
+            });
+            my @drc_results;
+            while (my $res = $sbe2->next_res ) {
+                #   warn Dumper $res;    
+                push @drc_results, $res->sequence->id . ':' .
+                $res->alignment->get_seq_by_pos(1)->start;
+            }    
+            @drc_results = sort @drc_results;
+            is_deeply(\@drc_results, [sort('both:29' ,'both:3', 'first:6',
+                    'second:21' )  ], 
+                "Direct and Rev_Com works");
+            #warn Dumper $sbe2->get_databases;
+            is_deeply({ $sbe2->get_databases} , {'TestRevCom.fasta' =>
+                    'TestRevCom.fasta' }, 'filename as description when no desc');
+
+        }
+        goto ENDLONGSEQS if ($backendname eq 'GUUGle' || $backendname eq 'RE');
 
         my $test_seq_internal_id = '';
         $sequence             = 'tgacagaagagagtgagcac';
@@ -361,7 +389,7 @@ SKIP: {
             push ( @ids, $res->sequence->id );
         }
         my @shouldbe = qw( At1g67120 );
-        ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
+        is_deeply( \@ids, \@shouldbe , "Results ok" );
         
         if (defined $sbe->features->{COMPLETE}) {
             $sbe->settings->complete(1);
@@ -372,7 +400,7 @@ SKIP: {
          while (my $res = $sbe->next_res  ) {
             push ( @ids, $res->sequence->id );
         }
-        ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
+        is_deeply( \@ids, \@shouldbe,   "Results ok" );
 
         $sbe->settings->query_reset;
         if ($backendname eq 'Vmatch') {
@@ -455,7 +483,8 @@ my $long_query =
             ok( defined( $sbe->features->{DOWNSTREAM} ),
                 "$backendname does support downstream"
             );
-            goto EXCEPTIONS if $backendname eq 'GUUGle';
+            goto EXCEPTIONS if ($backendname eq 'GUUGle' || $backendname eq
+            'RE');
             my $sequence = 'tgacagaagagagtgagcac';
             if( defined( $sbe->features->{COMPLETE} )) {
                 $sbe->settings->complete(0);
@@ -495,13 +524,20 @@ my $long_query =
         SKIP: {
                 skip "Bug in downstream/upstream in hypa", 1
                     if $backendname eq "Hypa";
-                ok( compare_arrays( \@shouldbe, \@ids ), "Results ok" );
+                is_deeply(  \@shouldbe, \@ids , "Results ok" );
             }
 
         }
         
         EXCEPTIONS:
+        $sbe->settings->database('BLA');
+        eval { $sbe->search() };
+
+        cmp_ok($EVAL_ERROR, '=~', qr{Database not found}, 
+            'Database not found') || diag $EVAL_ERROR;
+
         # check exceptions with insecure sortmode
+        $sbe->settings->database('Test.fasta');
         $sbe->settings->query(substr($long_query,0,25));
         $sbe->settings->sort('&& ls *;');
         eval { $sbe->search() };
@@ -523,7 +559,37 @@ my $long_query =
         }
 
         $sbe->settings->sort_reset;
+        
+        if (defined $sbe->features->{MISMATCHES} &&
+            defined $sbe->features->{EDITDISTANCE} ) {
+            $sbe->settings->mismatches(1);
+            $sbe->settings->editdistance(1);
+            eval { $sbe->search() };
+            cmp_ok( $EVAL_ERROR, '=~', 
+                "Can't combine editdistance and mismatches",
+                'Exception with editdistance and mismatches' );
 
+            $sbe->settings->mismatches(0);
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, 
+             'No Exception with editdistance and 0 mismatches' ) || diag
+             $EVAL_ERROR;
+
+            $sbe->settings->mismatches_reset;
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, 
+             'No Exception with editdistance and undef mismatches' ) || diag
+             $EVAL_ERROR;
+
+            $sbe->settings->mismatches(0);
+            $sbe->settings->editdistance(0);
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, 
+             'No Exception with 0 editdistance and 0 mismatches' ) || diag
+             $EVAL_ERROR;
+
+            $sbe->settings->editdistance_reset;
+        }    
         #check exceptions with insecure database
         $sbe->settings->database('&& ls *;');
         eval { $sbe->search() };
@@ -602,10 +668,10 @@ my $long_query =
         $sbe->settings->query_file_reset;
         $sbe->settings->query_reset;
         eval { $sbe->search() };
-        ok( $EVAL_ERROR =~ 'query not defined', "Exception occured when query and query_file undef" );
+        ok( $EVAL_ERROR =~ 'Query not defined.', "Exception occured when query and query_file undef" );
 
         $sbe->settings->query($tmp_query);
-        goto CLEANUP if $backendname eq 'GUUGle';
+        goto CLEANUP if ($backendname eq 'GUUGle' || $backendname eq 'RE');
         
         if ($backendname eq 'Vmatch') {
             $sbe->settings->hxdrop('&& ls *;');
@@ -679,14 +745,7 @@ my $long_query =
         $sbe->settings->mismatches(1);
         eval { $sbe->search() };
         ok( !$EVAL_ERROR, "No Exception occured with correct editdistance" );
-        {
-            $sbe->settings->editdistance(1);
-            $sbe->settings->mismatches(1);
-            $sbe->verbose(2);
-            eval { $sbe->search() };
-            ok( $EVAL_ERROR, "warning occured ($backendname)" );
-            $sbe->verbose(1);
-        }
+        
         $sbe->settings->database('Test_pep.fasta');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured when searching dna seq in pep db" );
@@ -786,7 +845,15 @@ my $long_query =
             is_deeply( \@ids, ['At1g01040.1', 'At1g01040.1', 'At1g67120',
                 'At3g47170'],'sorting works' );
 
-        }    
+        }
+        elsif ( $backendname eq 'Agrep' ) {
+            eval { $sbe->search({
+                        query => 'CCCCCCCACCCCCCCCCCCCCCCCCC',
+                        mismatches => 0,
+                  }); };
+            cmp_ok( $EVAL_ERROR, '=~', qr{Agrep call failed. Command was}, 
+                 'Exception occured when agrep call failed' );
+        }            
         
 ################################################################################
         #  exit if $backendname eq "Hypa";
@@ -794,14 +861,22 @@ my $long_query =
         CLEANUP:
         foreach my $file (@files) {
             $file = $sbe->is_word($file);
-            unlink("t/data/$file");
+            unlink("t/data/$file") || diag "Can't delete $file: $!";
         }
+        #diag (`ls -lah t/data/`);
+        #diag (`cat t/data/*`);
+        #diag join("\n", 'XXX', readdir(DIR), 'ZZZ');
+         rmdir("t/tmp"),
+         rmdir("t/data"),
 #        ok( rmdir("t/tmp"),
         #           "Can remove tmp directory (all temp files deleted)" );
-        ok( rmdir("t/data"),
-            "Can remove data directory (all data files deleted-just a test for the test)"
-        );
+        # caused problems on NFS drives
+        #ok( rmdir("t/data"),
+        #    "Can remove data directory (all data files deleted-just a test for the test)"
+        #) or diag $!;
+        #exit if $backendname eq 'RE'
     }    #SKIP
+
 }
 
 eval { Bio::Grep->new('UnknownBackend'); };

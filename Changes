@@ -1,5 +1,18 @@
 Revision history for Perl extension Bio::Grep.
 
+0.8.0  Mon Jul  30 19:20:00 2007
+    - POD improvements
+    - direct_and_rev_com
+    - RE back-end
+    - use Fatal qw(open close), removed own exception handling
+    - replaced global dirhandle in BackendI with local dirhandle
+    - more tests
+    - renamed generate_database_out_of_fastafile() to
+      generate_database()
+    - renamed Backends/ to Backend  
+    - Bugfixes:
+        - GUUGle back-end confused when sequence description missing
+
 0.7.0  Tue Jul  24 16:55:00 2007
     - POD improvements:
        * added section exception handling in Bio::Grep

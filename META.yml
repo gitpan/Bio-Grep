@@ -1,15 +1,56 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Bio-Grep
-version:      v0.7.0
-version_from: lib/Bio/Grep.pm
-installdirs:  site
+---
+name: Bio-Grep
+version: v0.8.0
+author:
+  - 'Markus Riester <mriester@gmx.de>'
+abstract: Perl extension for searching in Fasta files
+license: perl
 requires:
-    Class::MethodMaker:            2.02
-    Getopt::Long:                  2.32
-    IO::String:                    1
-    Pod::Usage:                    0
-    version:                       0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+  Class::MethodMaker: 2.02
+  Getopt::Long: 2.32
+  IO::String: 1
+  Pod::Usage: 0
+  version: 0
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
+provides:
+  Bio::Grep:
+    file: lib/Bio/Grep.pm
+    version: v0.8.0
+  Bio::Grep::Backend::Agrep:
+    file: lib/Bio/Grep/Backend/Agrep.pm
+    version: v0.8.0
+  Bio::Grep::Backend::BackendI:
+    file: lib/Bio/Grep/Backend/BackendI.pm
+    version: v0.8.0
+  Bio::Grep::Backend::GUUGle:
+    file: lib/Bio/Grep/Backend/GUUGle.pm
+    version: v0.8.0
+  Bio::Grep::Backend::Hypa:
+    file: lib/Bio/Grep/Backend/Hypa.pm
+    version: v0.8.0
+  Bio::Grep::Backend::RE:
+    file: lib/Bio/Grep/Backend/RE.pm
+    version: v0.8.0
+  Bio::Grep::Backend::Vmatch:
+    file: lib/Bio/Grep/Backend/Vmatch.pm
+    version: v0.9.4
+  Bio::Grep::Container::SearchResult:
+    file: lib/Bio/Grep/Container/SearchResult.pm
+    version: v0.8.0
+  Bio::Grep::Container::SearchSettings:
+    file: lib/Bio/Grep/Container/SearchSettings.pm
+    version: v0.8.0
+  Bio::Grep::Filter::FilterI:
+    file: lib/Bio/Grep/Filter/FilterI.pm
+    version: v0.8.0
+  Bio::Grep::Filter::FilterRemoveDuplicates:
+    file: lib/Bio/Grep/Filter/FilterRemoveDuplicates.pm
+    version: v0.8.0
+  Bio::Grep::Root:
+    file: lib/Bio/Grep/Root.pm
+    version: v0.8.0
+resources:
+  license: http://dev.perl.org/licenses/

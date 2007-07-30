@@ -3,14 +3,15 @@ package Bio::Grep;
 use strict;
 use warnings;
 
-use Bio::Grep::Backends::Vmatch;
-use Bio::Grep::Backends::Agrep;
-use Bio::Grep::Backends::Hypa;
-use Bio::Grep::Backends::GUUGle;
+use Bio::Grep::Backend::Vmatch;
+use Bio::Grep::Backend::Agrep;
+use Bio::Grep::Backend::Hypa;
+use Bio::Grep::Backend::GUUGle;
+use Bio::Grep::Backend::RE;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -23,10 +24,11 @@ sub new {
    my $backendname  = shift;
    $backendname = 'Vmatch' unless defined $backendname;
    my %known_backends = (
-       Agrep => 1,
+       Agrep  => 1,
        Vmatch => 1,
-       Hypa => 1,
+       Hypa   => 1,
        GUUGle => 1,
+       RE     => 1,
    );    
 
    if (!defined $known_backends{$backendname}) {
@@ -35,7 +37,7 @@ sub new {
                    -value => $backendname . ' not supported.');
    }
 
-   my $backendpackage = "Bio::Grep::Backends::$backendname";
+   my $backendpackage = "Bio::Grep::Backend::$backendname";
    
    $self->backend( $backendpackage->new() );
    $self->backend->settings->tmppath( File::Spec->tmpdir() );
@@ -50,7 +52,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.7.0
+This document describes Bio::Grep version 0.8.0
 
 =head1 SYNOPSIS
 
@@ -67,7 +69,7 @@ This document describes Bio::Grep version 0.7.0
   mkdir($sbe->settings->datapath);	
   
   # now generate a suffix array. you have to do this only once.
-  $sbe->generate_database_out_of_fastafile('t/Test.fasta', 'Description for the test Fastafile');
+  $sbe->generate_database('t/Test.fasta', 'Description for the test Fastafile');
   
   # search in this suffix array
   $sbe->settings->database('Test.fasta');
@@ -120,8 +122,9 @@ tools.
 
 =item C<new($backend)>
 
-This function constructs a C<Bio::Grep> object. Available back-ends
-are Vmatch, Agrep, GUUGle and Hypa. Vmatch is default.
+This function constructs a C<Bio::Grep> object. Available external back-ends
+are C<Vmatch>, C<Agrep>, C<GUUGle> and C<Hypa>. Perl regular
+expressions are available in the C<RE> back-end. C<Vmatch> is default.
 
 Sets temporary path to C<File::Spec-E<gt>tmpdir();>
 
@@ -132,8 +135,9 @@ Sets temporary path to C<File::Spec-E<gt>tmpdir();>
 =item C<backend()>
 
 Get/set the back-end. This is a object that uses L<Bio::Grep::Backend::BackendI> 
-as base class. See L<Bio::Grep::Backends::BackendI>, L<Bio::Grep::Backends::Vmatch>,
-L<Bio::Grep::Backends::Agrep>, L<Bio::Grep::Backends::GUUGle> and L<Bio::Grep::Backends::Hypa>
+as base class. See L<Bio::Grep::Backend::BackendI>, L<Bio::Grep::Backend::Vmatch>,
+L<Bio::Grep::Backend::Agrep>, L<Bio::Grep::Backend::GUUGle>,
+L<Bio::Grep::Backend::RE> and L<Bio::Grep::Backend::Hypa>
 
 =back
 
@@ -143,9 +147,9 @@ L<Bio::Grep::Backends::Agrep>, L<Bio::Grep::Backends::GUUGle> and L<Bio::Grep::B
 
 =item 
 
-We support most of the features of the back-ends. If a particular feature is not
-supported, then we probably did not need it until now. But in general it should be easy to 
-integrate. For a complete list of supported features, see
+Bio::Grep supports most of the features of the back-ends. If you need a 
+particular feature that is not supported, write a feature request. In general it 
+should be easy to integrate. For a complete list of supported features, see
 L<Bio::Grep::Container::SearchSettings>, for an overview see 
 L<"FEATURE COMPARISON">.
 
@@ -171,8 +175,8 @@ checks the settings carefully before calling back-ends. See L<"SECURITY">.
 =head1 QUICK START
 
 This is only a short overview of the functionality of this module.
-You should also read L<Bio::Grep::Backends::BackendI> and the documentation of
-the back-end you want to use (e.g. L<Bio::Grep::Backends::Vmatch>).
+You should also read L<Bio::Grep::Backend::BackendI> and the documentation of
+the back-end you want to use (e.g. L<Bio::Grep::Backend::Vmatch>).
 
 =head2 GENERATE DATABASES 
 
@@ -186,7 +190,7 @@ For example:
 
   my $sbe = Bio::Grep->new('Vmatch')->backend;	
   $sbe->settings->datapath('data');
-  $sbe->generate_database_out_of_fastafile('../t/Test.fasta', 'Description for the test Fastafile');
+  $sbe->generate_database('../t/Test.fasta', 'Description for the test Fastafile');
 
 Now, in a second script:
 
@@ -281,20 +285,37 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 
 =begin html
 
-<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>HyPa</th><th>Vmatch</th></tr><tr><td>Persistent Index<sup>1</sup></td>
+<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>HyPa</th><th>RE</th><th>Vmatch</th></tr><tr><td>Suffix Arrays/Trees</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Sliding Window</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+</tr>
+<tr><td>Persistent Index<sup>1</sup></td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Mismatches</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Edit Distance</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -304,16 +325,19 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
 <tr><td>Deletions</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
 <tr><td>Multiple Queries<sup>2</sup></td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
@@ -322,8 +346,10 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
 <tr><td>DNA/RNA</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -334,8 +360,17 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+</tr>
+<tr><td>Direct and Revcom</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Reverse Complement</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -346,9 +381,11 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Filters</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -357,34 +394,47 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
-</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches</div>
+<tr><td>Regular Expressions<sup>5</sup></td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
+<td style="text-align:center;background-color: #ffe0e0;">no</td>
+</tr>
+</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches</div><br/><sup>5</sup>Agrep soon</div>
 
 =end html
 
 =begin man
 
-     Features                    || Agrep  | GUUGle |  HyPa  | Vmatch 
-     Persistent Index 1          ||   no   |   no   |  yes   |  yes   
-     Mismatches                  ||  yes   |   no   |  yes   |  yes   
-     Edit Distance               ||  yes   |   no   |   no   |  yes   
-     Insertions                  ||   no   |   no   |  yes   |   no   
-     Deletions                   ||   no   |   no   |  yes   |   no   
-     Multiple Queries 2          ||   no   |  yes   |   no   |  yes   
-     GU 3                        ||   no   |  yes   |  yes   |   no   
-     DNA/RNA                     ||  yes   |  yes   |  yes   |  yes   
-     Protein                     ||  yes   |   no   |  yes   |  yes   
-     Reverse Complement          ||  yes   |  yes   |  yes   |  yes   
-     Upstream/Downstream Regions ||   no   |  yes   |  yes   |  yes   
-     Filters                     ||   no   |  yes   |  yes   |  yes   
-     Query Length 4              ||   no   |  yes   |   no   |  yes   
+     Features                       || Agrep  | GUUGle |  HyPa  |   RE   | Vmatch 
+     Suffix Arrays/Trees            ||   no   |  yes   |  yes   |   no   |  yes   
+     Sliding Window                 ||  yes   |   no   |   no   |  yes   |   no   
+     Persistent Index 1             ||   no   |   no   |  yes   |   no   |  yes   
+     Mismatches                     ||  yes   |   no   |  yes   |   no   |  yes   
+     Edit Distance                  ||  yes   |   no   |   no   |   no   |  yes   
+     Insertions                     ||   no   |   no   |  yes   |   no   |   no   
+     Deletions                      ||   no   |   no   |  yes   |   no   |   no   
+     Multiple Queries 2             ||   no   |  yes   |   no   |   no   |  yes   
+     GU 3                           ||   no   |  yes   |  yes   |   no   |   no   
+     DNA/RNA                        ||  yes   |  yes   |  yes   |  yes   |  yes   
+     Protein                        ||  yes   |   no   |  yes   |  yes   |  yes   
+     Direct and Revcom              ||   no   |  yes   |   no   |  yes   |  yes   
+     Reverse Complement             ||  yes   |  yes   |  yes   |  yes   |  yes   
+     Upstream/Downstream Regions    ||   no   |  yes   |  yes   |  yes   |  yes   
+     Filters                        ||   no   |  yes   |  yes   |  yes   |  yes   
+     Query Length 4                 ||   no   |  yes   |   no   |   no   |  yes   
+     Regular Expressions 5          ||   no   |   no   |   no   |  yes   |   no   
 
 ------------------------------------------------------------------------------------
  1 Needs precalculation and (much) more memory but queries are in general faster
  2 With query_file
  3 HyPa also allows that GU counts only as 0.5 mismatches
  4 Matches if a substring of the query of size n or larger matches
+ 5 Agrep soon
 
 =end man
 
@@ -498,17 +548,16 @@ C<BadParameter> whenever Bio::Grep recognizes some problems in the settings.
 Be aware that Bio::Grep does not find all of these problems. In such a case,
 the back-end call will fail and Bio::Grep will throw a C<SystemException>.
 
-An C<IOException> is thrown when it was not possible to copy, close, delete or
-write a file, a C<FileOpenException> is thrown when opening a file was not
-possible.
+An C<croak> (L<Carp>) is called when it was not possible to open, copy, close, delete or
+write a file.
 
-See L<Bio::Root::Exception>.
+See L<Bio::Root::Exception>, L<Carp>.
 
 =head1 SECURITY
 
 The use of Bio::Grep (in Web Services for example) should be quite secure. All
-test run in taint mode. We check the settings before we generate the string
-for the C<system()> call. We use L<File::Temp> for all temporary files.
+test run in taint mode. Bio::Grep checks the settings before it generates the string
+for the C<system()> call. Bio::Grep uses L<File::Temp> for all temporary files.
 
 =head1 INCOMPATIBILITIES
 
@@ -532,11 +581,11 @@ L<http://rt.cpan.org>.
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Backends::BackendI>
-L<Bio::Grep::Backends::Vmatch>
-L<Bio::Grep::Backends::Agrep>
-L<Bio::Grep::Backends::Hypa>
-L<Bio::Grep::Backends::GUUGle>
+L<Bio::Grep::Backend::BackendI>
+L<Bio::Grep::Backend::Vmatch>
+L<Bio::Grep::Backend::Agrep>
+L<Bio::Grep::Backend::Hypa>
+L<Bio::Grep::Backend::GUUGle>
 
 
 =head2 PUBLICATIONS

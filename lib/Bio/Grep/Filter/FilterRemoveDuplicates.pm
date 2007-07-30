@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -63,7 +63,7 @@ a L<Bio::Grep::Container::SearchResult> object
 
 =head1 INTERNAL METHODS
 
-Only L<Bio::Grep::Backends::BackendI> should need to call them. 
+Only L<Bio::Grep::Backend::BackendI> should need to call them. 
 
 =over
 
@@ -76,7 +76,7 @@ Only L<Bio::Grep::Backends::BackendI> should need to call them.
 =head1 SEE ALSO
 
 L<Bio::Grep::Filter::FilterI>
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 
 =head1 AUTHOR
 

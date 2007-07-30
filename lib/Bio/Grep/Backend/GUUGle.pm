@@ -1,19 +1,19 @@
-package Bio::Grep::Backends::GUUGle;
+package Bio::Grep::Backend::GUUGle;
 
 use strict;
 use warnings;
 
 use Bio::Grep::Container::SearchResult;
-use Bio::Grep::Backends::BackendI;
+use Bio::Grep::Backend::BackendI;
 
-use base 'Bio::Grep::Backends::BackendI';
+use base 'Bio::Grep::Backend::BackendI';
 
 use File::Basename;
 
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 sub new {
     my $self = shift;
@@ -31,6 +31,8 @@ sub new {
     delete $all_features{PROTEINS};
     delete $all_features{HXDROP};
     delete $all_features{EXDROP};
+    #delete $all_features{DIRECT_AND_REV_COM};
+    delete $all_features{NATIVE_D_A_REV_COM};
     $self->settings->gumismatches(0);
     $self->features(%all_features);
     $self;
@@ -50,7 +52,7 @@ sub search {
         $eflag = ' -e ' . max($s->upstream,$s->downstream) . ' ';     
     }
     
-    if ($s->gumismatches > 0) {
+    if ($s->gumismatches > 0 && !$s->direct_and_rev_com) {
         $self->warn('GUUGle counts GU always as no mismatch. ' .
             'Set gumismatches(0) to hide this warning.'
         );
@@ -113,7 +115,8 @@ sub search {
     foreach my $query_seq (@{ $self->_query_seqs }) {
         # simulate how this sequence would look in guugle output
         my $query_desc = $query_seq->id;
-        $query_desc .= ' ' . $query_seq->desc if length $query_seq->desc;
+        $query_desc .= ' ' . $query_seq->desc if ($query_seq->desc &&
+        length($query_desc) > 0);
         $query_desc_lookup{$query_desc} = $query_seq;
     }
     $self->_mapping(%query_desc_lookup);
@@ -126,7 +129,7 @@ sub get_databases {
     return $self->_get_databases('.al1');
 }
 
-sub generate_database_out_of_fastafile {
+sub generate_database {
     my ( $self, $file, $description ) = @_;
     my ( $filename ) = fileparse($file);
 
@@ -189,15 +192,22 @@ sub _parse_next_res {
         chomp $line;
 
         if ( $line =~ m{MatchLength} ) {
-            ( $matchlength, $subject_id, $subject_desc, $subject_pos, 
+            ( $matchlength, $subject_id, $subject_pos, 
                 $query_desc, $query_pos ) = $line =~ m{\A
                 MatchLength:\s(\d+)\s
-                "(.*?)\s(.*?)"
+                "(.*?)"
                 \sat\s(\d+)\s
                 vs\.\s
                 "(.*?)"\s
                 at\s(\d+)
              }xms;
+             if ( $subject_id =~ m{(.*?)\s(.*)}xms) {
+                 $subject_id = $1;
+                 $subject_desc = $2;
+             }
+             else {
+                 $subject_desc = '';
+             }    
              next LINE;   
         }    
         elsif ( $line =~ m{ \A > }xms ) { # -e mode
@@ -226,7 +236,9 @@ sub _parse_next_res {
 
         # find the query that belongs to the match
         my $query = $self->_mapping->{$query_desc};
-        
+        use Data::Dumper; 
+        #warn "BLA $query_desc "; 
+        #warn Data::Dumper->Dump( [$self->_mapping ]); 
         # already reverse, so just the complement here:
         $query_seq =~ tr[UTGCAutgca][AACGUaacgu];
 
@@ -326,15 +338,15 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::GUUGle - GUUGle back-end  
+Bio::Grep::Backend::GUUGle - GUUGle back-end  
 
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backends::GUUGle;
+  use Bio::Grep::Backend::GUUGle;
  
   # construct the GUUGle back-end	
-  my $sbe = Bio::Grep::Backends::GUUGle->new();
+  my $sbe = Bio::Grep::Backend::GUUGle->new();
  
   $sbe->settings->tmppath('tmp');
   $sbe->settings->datapath('data');
@@ -343,19 +355,17 @@ Bio::Grep::Backends::GUUGle - GUUGle back-end
   # GUUGle does not create a persistent index right now.
   # This function generates an fast index for $sbe->get_sequences
   # and files with a description and the alphabet (only DNA/RNA allowed)
-  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 
+  $sbe->generate_database('ATH1.cdna', 
      'AGI Transcripts (- introns, + UTRs)');
  
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
  
-  # take first available database in our test
+  # take first available database 
   $sbe->settings->database($local_dbs[0]);
  
-  my $seq = 'UGAACAGAAAGCUCAUGAGCC'; 
- 
   # search for the reverse complement
-  $sbe->settings->query($seq);
+  $sbe->settings->query('UGAACAGAAAGCUCAUGAGCC');
   $sbe->settings->reverse_complement(1);
   
   # display 5 bases upstream and downstream of the match
@@ -373,7 +383,7 @@ Bio::Grep::Backends::GUUGle - GUUGle back-end
    
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backends::GUUGle> searches for a query in a GUUGle suffix array. 
+B<Bio::Grep::Backend::GUUGle> searches for a query in a GUUGle suffix array. 
 
 NOTE 1: GUUGle always searches for the reverse complement. If you specify a
 query file, Bio::Grep throws an exception if reverse_complement is not set.
@@ -384,15 +394,15 @@ mismatch.
 
 =head1 METHODS
 
-See L<Bio::Grep::Backends::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for other methods. 
 
 =over 2
 
-=item Bio::Grep::Backends::GUUGle-E<gt>new()
+=item Bio::Grep::Backend::GUUGle-E<gt>new()
 
     This function constructs a GUUGle back-end object
 
-   my $sbe = Bio::Grep::Backends::GUUGle->new();
+   my $sbe = Bio::Grep::Backend::GUUGle->new();
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -418,7 +428,7 @@ these two sort options require that we load all results in memory.
 
 =head1 DIAGNOSTICS
 
-See L<Bio::Grep::Backends::BackendI> for other diagnostics. 
+See L<Bio::Grep::Backend::BackendI> for other diagnostics. 
 
 =over
 
@@ -450,7 +460,7 @@ You have specified a query_file and forgot to set query_length.
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 L<Bio::Grep::Container::SearchSettings>
 L<Bio::Seq>
 

@@ -8,7 +8,7 @@ use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -132,7 +132,7 @@ L<Bio::AlignIO> for details.
 Getter/Setter for sequence ID in database. This is an internal ID of the
 back-end, not any ID of some annotation in the sequence name. The internal ID 
 can be used in the back-end function get_sequences 
-(L<Bio::Grep::Backends::BackendI>).
+(L<Bio::Grep::Backend::BackendI>).
 
 =item C<begin()>
 
@@ -197,7 +197,7 @@ L<Bio::LocatableSeq>
 L<Bio::AlignIO> 
 L<Bio::Seq>
 L<Bio::SeqIO>
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 
 =head1 AUTHOR
 

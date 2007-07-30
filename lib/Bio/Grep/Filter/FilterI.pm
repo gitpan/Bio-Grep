@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 use base 'Bio::Root::Root';
 
@@ -104,17 +104,17 @@ This function constructs a filter object.
 
 This function returns 1 if query and subject pass the filter, 0 otherwise. You
 have to set the search result with the function
-C<$filter-E<gt>search_result> before. L<Bio::Grep::Backends::BackendI>
+C<$filter-E<gt>search_result> before. L<Bio::Grep::Backend::BackendI>
 takes care of that.
 
-Internal method: Only L<Bio::Grep::Backends::BackendI> should call this method.
+Internal method: Only L<Bio::Grep::Backend::BackendI> should call this method.
 
 =item C<$filter-E<gt>reset()>
 
 Get/set reset. A flag needed by some Filters like FilterRemoveDuplicates to tell them, it
 is a new search, forget everything. 
 
-Internal method: Only L<Bio::Grep::Backends::BackendI> should call this method.
+Internal method: Only L<Bio::Grep::Backend::BackendI> should call this method.
 
 =item C<$filter-E<gt>supports_alphabet()>
 
@@ -126,7 +126,7 @@ Get supported alphabets. Returns a hash. Keys are the supported alphabets.
 
 =head1 INTERNAL METHODS
 
-Only L<Bio::Grep::Backends::BackendI> should call them directly.
+Only L<Bio::Grep::Backend::BackendI> should call them directly.
 
 =over
 
@@ -164,7 +164,7 @@ the code in your script is easier to understand and maintain.
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 L<Bio::Grep::Container::SearchResult>
 
 =head1 AUTHOR

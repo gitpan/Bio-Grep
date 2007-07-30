@@ -82,9 +82,9 @@ BioGrepTest::delete_files;
 
 $sbe->settings->reverse_complement(0);
 $sbe->settings->datapath('t/data');
-$sbe->generate_database_out_of_fastafile( 't/Test.fasta',
+$sbe->generate_database( 't/Test.fasta',
  'Description for Test.fasta' );
-$sbe->generate_database_out_of_fastafile( 't/TestGUUGleExtend.fasta',
+$sbe->generate_database( 't/TestGUUGleExtend.fasta',
  'Description for Test.fasta' );
 $sbe->settings->query('auggaggaucaaguugg');
 $sbe->settings->database('TestGUUGleExtend.fasta');

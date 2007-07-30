@@ -1,18 +1,20 @@
-package Bio::Grep::Backends::Vmatch;
+package Bio::Grep::Backend::Vmatch;
 
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchResult;
-use Bio::Grep::Backends::BackendI;
+use Fatal qw(open close);
 
-use base 'Bio::Grep::Backends::BackendI';
+use Bio::Grep::Container::SearchResult;
+use Bio::Grep::Backend::BackendI;
+
+use base 'Bio::Grep::Backend::BackendI';
 
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.9.3');
+use version; our $VERSION = qv('0.9.4');
 
 sub new {
     my $self = shift;
@@ -47,8 +49,10 @@ sub search {
     }    
     # now generate the command string
     my $fuzzy = '';
-    $fuzzy = ' -h ' . $s->mismatches . ' ' if $s->mismatches > 0;
-    if ( $s->editdistance_isset ) {
+    if ($s->mismatches_isset && $s->mismatches > 0) {
+        $fuzzy = ' -h ' . $s->mismatches . ' ' ;
+    }    
+    if ( $s->editdistance_isset && $s->editdistance > 0) {
         $fuzzy = ' -e ' . $s->editdistance . ' ';
     }
     my $online = '';
@@ -95,7 +99,10 @@ sub search {
    
     my $pflag = '';
     $pflag = ' -p ' if ($s->query_file && $s->reverse_complement);
-
+    
+    if ($s->direct_and_rev_com) {
+        $pflag = ' -p -d ';
+    }    
     my $command =
         $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
         . $tmp_query_file
@@ -136,7 +143,8 @@ sub search {
         foreach my $query_seq (@{ $self->_query_seqs }) {
             # simulate how this sequence would look in vmatch output
             my $query_desc = $query_seq->id;
-            $query_desc .= '_' . $query_seq->desc if length $query_seq->desc;
+            $query_desc .= ' ' . $query_seq->desc if ($query_seq->desc &&
+            length($query_desc) > 0);
             $query_desc = substr $query_desc, 0, $s->showdesc;
             $query_desc =~ s{ }{_}g;
             $query_desc_lookup{$query_desc} = $query_seq;
@@ -154,13 +162,12 @@ sub get_databases {
 }
 
 
-sub generate_database_out_of_fastafile {
+sub generate_database {
     my $self        = shift;
     my $file        = shift;
     my $description = shift;
     my ( $filename, $oldpath ) = fileparse($file);
 
-#    my $olddir = getcwd();
 
     $self->_copy_fasta_file_and_create_nfo( $file, $filename, $description );
     
@@ -431,24 +438,23 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::Vmatch - Vmatch back-end  
+Bio::Grep::Backend::Vmatch - Vmatch back-end  
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backends::Vmatch;
+  use Bio::Grep::Backend::Vmatch;
   
   use Bio::Root::Exception;
-  use Error qw(:try);
   
   # configure our search back-end, in this case Vmatch
-  my $sbe = Bio::Grep::Backends::Vmatch->new();
+  my $sbe = Bio::Grep::Backend::Vmatch->new();
   
   $sbe->settings->execpath('/usr/local/vmatch');
   $sbe->settings->tmppath('/tmp');
   $sbe->settings->datapath('data');
   
   # generate a Vmatch suffix array. you have to do this only once.
-  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
   
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
@@ -480,19 +486,19 @@ Bio::Grep::Backends::Vmatch - Vmatch back-end
   
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backends::Vmatch> searches for a query in a Vmatch suffix array. 
+B<Bio::Grep::Backend::Vmatch> searches for a query in a Vmatch suffix array. 
 
 =head1 METHODS
 
-See L<Bio::Grep::Backends::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for other methods. 
 
 =over 2
 
-=item Bio::Grep::Backends::Vmatch-E<gt>new()
+=item Bio::Grep::Backend::Vmatch-E<gt>new()
 
 This function constructs a Vmatch back-end object
 
-   my $sbe = Bio::Grep::Backends::Vmatch->new();
+   my $sbe = Bio::Grep::Backend::Vmatch->new();
 
 
 =item C<$sbe-E<gt>available_sort_modes()>
@@ -545,7 +551,7 @@ Otherwise it will take the first array element as query.
 
 =head1 DIAGNOSTICS
 
-See L<Bio::Grep::Backends::BackendI> for other diagnostics. 
+See L<Bio::Grep::Backend::BackendI> for other diagnostics. 
 
 =over
 
@@ -561,7 +567,7 @@ settings.
 =item C<Vmatch error: Cannot generate suffix array> 
 
 It was not possible to generate a suffix array in function
-C<generate_database_out_of_fastafile>. Check permissions and paths.
+C<generate_database>. Check permissions and paths.
 
 =item C<Vmatch error: Cannot fetch sequence out of suffix array> 
 
@@ -592,7 +598,7 @@ documentation.
 
 =item C<unsupported alphabet of file>
 
-The method generate_database_out_of_fastafile() could not determine the
+The method generate_database() could not determine the
 alphabet (DNA or Protein) of the specified Fasta file.
 
 =back
@@ -605,7 +611,7 @@ Did you set showdesc(100)? Yes? Write a bugreport!
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 L<Bio::Grep::Container::SearchSettings>
 L<Bio::SeqIO>
 

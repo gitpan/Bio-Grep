@@ -10,7 +10,7 @@ use base 'Bio::Root::Root';
 use File::Spec;
 use File::Copy;
 
-our $VERSION = '0.1';
+use version; our $VERSION = qv('0.8.0');
 
 sub is_integer {
     my ( $self, $variable, $desc) = @_;

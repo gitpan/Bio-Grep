@@ -92,6 +92,7 @@ my $settings_dump =<<EOT
                  'upstream' => '0',
                  'insertions' => '0',
                  'reverse_complement' => 1,
+                 'direct_and_rev_com' => '',
                  'tmppath' => '$tmp',
                  'mismatches' => '',
                  'downstream' => '0',

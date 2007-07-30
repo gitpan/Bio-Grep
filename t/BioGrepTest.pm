@@ -56,6 +56,11 @@ sub delete_files {
         warn $file if !defined $filename;
         unlink "t/data/$filename";
     }
+    foreach my $file ( <t/data2/*> ) {
+        my ( $filename ) = $file =~ m{\A t/data2/ ([\d\w\.\-]+) \z}xms;
+        warn $file if !defined $filename;
+        unlink "t/data2/$filename";
+    }
     return 1;
 }        
 

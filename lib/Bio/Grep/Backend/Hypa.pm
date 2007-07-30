@@ -1,17 +1,19 @@
-package Bio::Grep::Backends::Hypa;
+package Bio::Grep::Backend::Hypa;
 
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchResult;
-use Bio::Grep::Backends::BackendI;
+use Fatal qw(open close);
 
-use base 'Bio::Grep::Backends::BackendI';
+use Bio::Grep::Container::SearchResult;
+use Bio::Grep::Backend::BackendI;
+
+use base 'Bio::Grep::Backend::BackendI';
 
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 sub new {
     my $self = shift;
@@ -30,6 +32,8 @@ sub new {
     delete $all_features{HXDROP};
     delete $all_features{EXDROP};
     delete $all_features{REVCOM_DEFAULT};
+    delete $all_features{DIRECT_AND_REV_COM};
+    delete $all_features{NATIVE_D_A_REV_COM};
     $self->features(%all_features);
     $self;
 }
@@ -198,7 +202,7 @@ sub get_databases {
     return $self->_get_databases('.rev.suf');
 }
 
-sub generate_database_out_of_fastafile {
+sub generate_database {
     my $self        = shift;
     my $file        = shift;
     my $description = shift;
@@ -358,24 +362,22 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::Hypa - HyPa back-end
+Bio::Grep::Backend::Hypa - HyPa back-end
 
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backends::Hypa;
+  use Bio::Grep::Backend::Hypa;
  
-  use Bio::Root::Exception;
-  use Error qw(:try);
  
   # construct the Hypa back-end	
-  my $sbe = Bio::Grep::Backends::Hypa->new();
+  my $sbe = Bio::Grep::Backend::Hypa->new();
  
   $sbe->settings->tmppath('tmp');
   $sbe->settings->datapath('data');
   
   # generate a Hypa suffix array. you have to do this only once.
-  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
  
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
@@ -416,7 +418,7 @@ Bio::Grep::Backends::Hypa - HyPa back-end
    
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backends::Hypa> searches for a query in a Hypa suffix array. 
+B<Bio::Grep::Backend::Hypa> searches for a query in a Hypa suffix array. 
 
 NOTE 1: Hypa can not calculate alignments. But because we have the exact position
 of the match, the alignment calculation shouldn't be too slow (In agrep, we align query 
@@ -426,15 +428,15 @@ NOTE 2: -online is available. But it is not recommended.
 
 =head1 METHODS
 
-See L<Bio::Grep::Backends::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for other methods. 
 
 =over 2
 
-=item Bio::Grep::Backends::Hypa-E<gt>new()
+=item Bio::Grep::Backend::Hypa-E<gt>new()
 
 This function constructs a Hypa back-end object
 
-   my $sbe = Bio::Grep::Backends::Hypa->new();
+   my $sbe = Bio::Grep::Backend::Hypa->new();
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -474,7 +476,7 @@ L<http://rt.cpan.org>.
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 L<Bio::Grep::Container::SearchSettings>
 L<Bio::SeqIO>
 

@@ -37,7 +37,7 @@ my $code =<<'EOT'
   mkdir($sbe->settings->datapath);	
   
   # now generate a suffix array. you have to do this only once.
-  $sbe->generate_database_out_of_fastafile('t/Test.fasta', 'Description for the test Fastafile');
+  $sbe->generate_database('t/Test.fasta', 'Description for the test Fastafile');
   
   # search in this suffix array
   $sbe->settings->database('Test.fasta');

@@ -6,5 +6,7 @@
    databases?)
  - support agreps regular expressions
  - support PoSSuM back-end
- - create a simple backend that does not require additional software
+ - create a simple backend that does not require additional software [DONE]
  - make EMBOSS and bioperl-run optional
+ - cleanup testcases
+ - configfile for bgrep

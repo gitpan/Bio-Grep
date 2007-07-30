@@ -1,18 +1,19 @@
-package Bio::Grep::Backends::Agrep;
+package Bio::Grep::Backend::Agrep;
 
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchSettings;
-use Bio::Grep::Container::SearchResult;
-use Bio::Grep::Backends::BackendI;
+use Fatal qw(open close);
 
-use base 'Bio::Grep::Backends::BackendI';
+use Bio::Grep::Container::SearchResult;
+use Bio::Grep::Backend::BackendI;
+
+use base 'Bio::Grep::Backend::BackendI';
 
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 sub new {
     my $self = shift;
@@ -38,6 +39,8 @@ sub new {
     delete $all_features{HXDROP};
     delete $all_features{EXDROP};
     delete $all_features{REVCOM_DEFAULT};
+    delete $all_features{DIRECT_AND_REV_COM};
+    delete $all_features{NATIVE_D_A_REV_COM};
     $self->features(%all_features);
     $self;
 }
@@ -51,16 +54,15 @@ sub search {
 
     # now generate the command string
     my $mm = 0;
-    $mm = $s->mismatches if $s->mismatches > 0;
+    if ($s->mismatches_isset && $s->mismatches > 0) {
+        $mm = $s->mismatches;
+    }    
 
     # make insertions and deletions to expensive
     my $fuzzy = "-$mm -D" . ( $mm + 1 ) . " -I" . ( $mm + 1 );
 
     if ( $s->editdistance_isset ) {
         $fuzzy = "-" . $s->editdistance;
-        $self->warn(
-            "Ignoring mismatch settings because edit distance is set.")
-            if $s->mismatches > 0;
     }
 
 
@@ -81,7 +83,7 @@ sub search {
 
     $self->throw(
         -class => 'Bio::Root::SystemException',
-        -text  => "Agrep error: Query not valid.\n\nCommand was:\n\t$command"
+        -text  => "Agrep call failed. Command was:\n\t$command"
         )
         if !$cmd_ok;
     #$self->_output_parser($output);
@@ -95,7 +97,7 @@ sub get_databases {
     return $self->_get_databases('.map');
 }
 
-sub generate_database_out_of_fastafile {
+sub generate_database {
     my ( $self, $file, $description ) = @_;
     my ( $filename ) = fileparse($file);
 
@@ -104,38 +106,18 @@ sub generate_database_out_of_fastafile {
     $filename = $self->_cat_path_filename($self->settings->datapath,
         $filename);
 
-    open my $DATFILE, '>',  "$filename.dat" 
-        or $self->throw(
-        -class => 'Bio::Root::FileOpenException',
-        -text  => "Can't open $filename.dat for writing",
-        -value => $!
-        );
+    open my $DATFILE, '>',  "$filename.dat"; 
     
-    open my $MAPFILE, '>', "$filename.map"
-        or $self->throw(
-        -class => 'Bio::Root::FileOpenException',
-        -text  => "Can't open $filename.map for writing",
-        -value => $!
-        );
+    open my $MAPFILE, '>', "$filename.map";
 
     my $in = Bio::SeqIO->new( -file => $filename, -format => 'Fasta' );
     my $i = 0;
     
     while ( my $seq = $in->next_seq() ) {
         print $MAPFILE $i . "\t" . $seq->id
-            . "\n"
-            or $self->throw(
-            -class => 'Bio::Root::IOException',
-            -text  => "Can't write to $filename.map",
-            -value => $!
-            );
-        print $DATFILE $i . ":" . $seq->seq
-            . "\n"
-            or $self->throw(
-            -class => 'Bio::Root::IOException',
-            -text  => "Can't write to $filename.dat",
-            -value => $!
-            );
+            . "\n";
+        print $DATFILE $i . ':' . $seq->seq
+            . "\n";
         $i++;
     }
     close $DATFILE;
@@ -152,12 +134,7 @@ sub _load_mapping {
 
     my %mapping = ();
 
-    open my $MAPFILE, '<', $mapfile 
-        or $self->throw(
-        -class => 'Bio::Root::FileOpenException',
-        -text  => "Can't open $mapfile for reading",
-        -value => $!
-        );
+    open my $MAPFILE, '<', $mapfile; 
 
     while ( my $line = <$MAPFILE> ) {
         chomp $line;
@@ -226,24 +203,22 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::Agrep - Agrep back-end  
+Bio::Grep::Backend::Agrep - Agrep back-end  
 
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backends::Agrep;
-  
-  use Error qw(:try);
+  use Bio::Grep::Backend::Agrep;
   
   # configure our search back-end, in this case Agrep
-  my $sbe = Bio::Grep::Backends::Agrep->new();
+  my $sbe = Bio::Grep::Backend::Agrep->new();
   
   $sbe->settings->execpath('/usr/bin');
   $sbe->settings->tmppath('tmp');
   $sbe->settings->datapath('data_agrep');
   
   # generate a database. you have to do this only once. 
-  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
   
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
@@ -275,20 +250,20 @@ Bio::Grep::Backends::Agrep - Agrep back-end
 
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backends::Agrep> searches for a query with agrep. 
+B<Bio::Grep::Backend::Agrep> searches for a query with agrep. 
 
 
 =head1 METHODS
 
-See L<Bio::Grep::Backends::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for other methods. 
 
 =over 2
 
-=item C<Bio::Grep::Backends::Agrep-E<gt>new()>
+=item C<Bio::Grep::Backend::Agrep-E<gt>new()>
 
 This function constructs an agrep back-end object
 
-   my $sbe = Bio::Grep::Backends::Agrep->new();
+   my $sbe = Bio::Grep::Backend::Agrep->new();
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -308,39 +283,37 @@ Available sortmodes in Agrep:
 
 =head1 DIAGNOSTICS
 
-See L<Bio::Grep::Backends::BackendI> for other diagnostics. 
+See L<Bio::Grep::Backend::BackendI> for other diagnostics. 
 
 =over
 
-=item C<Bio::Root::SystemException>
+=item C<Agrep call failed. Command was: ...> 
 
-It was not possible to run agrep in function C<search>. Check the search
-settings. Agrep returns also exit(1) if no hit was found!
+It was not possible to run agrep in function search(). Check the search
+settings. Agrep returns also exit(1) whenever no hit is found! If you want to
+reproduce the C<system> call, you can set the environment variable
+BIOGREPDEBUG. If this variable is set, then the temporary files won't get
+deleted.
 
-=item C<Bio::Root::FileOpenException>
+Class: C<Bio::Root::SystemException>
+
+=item C<IO Exceptions:>
 
 =over 2
 
 =item In function C<search>: It was not possible to open the database. Check
 permissions and paths.
 
-=item In function C<generate_database_out_of_fastafile>: It was not possible to
+=item In function C<generate_database>: It was not possible to
 write the database to disk. Check permissions and paths.
 
 =back
 
-
-=item C<Bio::Root::IOException>
-
-It was not possible to write the database in
-C<generate_database_out_of_fastafile>. Check free diskspace.
-
 =back
-
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 L<Bio::Grep::Container::SearchSettings>
 L<Bio::SeqIO>
 L<Bio::Index::Fasta>

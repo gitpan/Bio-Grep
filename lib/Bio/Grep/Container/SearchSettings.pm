@@ -5,15 +5,15 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.7.0');
+use version; our $VERSION = qv('0.8.0');
 
 use Class::MethodMaker [
    new    => 'new2',
    scalar => [
       qw / mismatches insertions deletions editdistance query query_length
       _real_query gumismatches upstream downstream maxhits no_alignments
-      datapath database online tmppath execpath reverse_complement sort
-      complete query_file showdesc qspeedup hxdrop exdrop/
+      datapath database online tmppath execpath reverse_complement direct_and_rev_com
+      sort complete query_file showdesc qspeedup hxdrop exdrop/
    ],
    array => [ qw / filters / ],
 ];
@@ -36,6 +36,7 @@ sub _init {
    $self->upstream(0);
    $self->downstream(0);
    $self->reverse_complement(0);
+   $self->direct_and_rev_com(0);
    $self->query_reset;
    $self->query_file_reset;
    $self->online_reset;
@@ -71,10 +72,10 @@ Bio::Grep::Container::SearchSettings - Data structure for all search settings
 =head1 SYNOPSIS
 
  
- use Bio::Grep::Backends::Vmatch;
+ use Bio::Grep::Backend::Vmatch;
 
  # configure our search back-end, in this case VMATCH
- my $sbe = Bio::Grep::Backends::Vmatch->new();
+ my $sbe = Bio::Grep::Backend::Vmatch->new();
  
  # the back-end automatically generates a SearchSettings
  # object. You can use this now to configure the
@@ -135,8 +136,10 @@ values.
 
 =item C<query()>
 
-Get/Set the query, a simple string. Maybe this will change in future
-versions to allow multiple queries.
+Get/Set the query, a simple string. Queries are DNA, RNA, Protein or regular
+exressions but not all back-ends support all three query types.
+
+Maybe this will change in future versions to allow multiple queries.
 
    $sbe->settings->query('tgacagaagagagtgagcac');
 
@@ -161,6 +164,13 @@ Get/set reverse_complement.
    
    #  don't search for the reverse complement (default)
    $sbe->settings->reverse_complement(0)
+
+=item C<direct_and_rev_com()>
+
+Get/set direct_and_rev_com. Searches for direct matches and the reverse
+complement. 
+
+Currently only available in the Vmatch (-d AND -p flag) and GUUGle backend.
 
 =item C<mismatches()>
 
@@ -330,14 +340,14 @@ Get/Set allowed deletions.
 
 
 NOTE: You can use the hash C<features> from the back-end to check if some
-feature is available or not. See L<Bio::Grep::Backends::BackendI>
+feature is available or not. See L<Bio::Grep::Backend::BackendI>
 for details.
 
 =head1 SEE ALSO
 
 L<Bio::Grep::Filter::FilterI>
 L<Bio::Grep::Container::SearchResult>
-L<Bio::Grep::Backends::BackendI>
+L<Bio::Grep::Backend::BackendI>
 
 =head1 AUTHOR
 
@@ -345,7 +355,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

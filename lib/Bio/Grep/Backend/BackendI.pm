@@ -1,7 +1,9 @@
-package Bio::Grep::Backends::BackendI;
+package Bio::Grep::Backend::BackendI;
 
 use strict;
 use warnings;
+
+use Fatal qw (open close opendir closedir);
 
 use Bio::Grep::Container::SearchSettings;
 use Bio::Grep::Root;
@@ -18,7 +20,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.7.3');
+use version; our $VERSION = qv('0.8.0');
 
 use Class::MethodMaker [
     new      => 'new2',
@@ -27,7 +29,7 @@ use Class::MethodMaker [
     hash     => [qw / features _mapping/],
     abstract => [
         qw / search get_sequences get_databases
-        generate_database_out_of_fastafile _parse_next_res/
+        generate_database _parse_next_res/
     ],
 ];
 
@@ -49,57 +51,60 @@ sub new {
 sub _get_all_possible_features {
     my ( $self ) = @_;
     return {
-        MISMATCHES        => 1,
-        GUMISMATCHES      => 1,
-        EDITDISTANCE      => 1,
-        INSERTIONS        => 1,
-        DELETIONS         => 1,
-        FILTERS           => 1,
-        NATIVE_ALIGNMENTS => 1,
-        EVALUE            => 1,
-        PERCENT_IDENTITY  => 1,
-        PROTEINS          => 1,
-        ONLINE            => 1,
-        UPSTREAM          => 1,
-        DOWNSTREAM        => 1,
-        SORT              => 1,
-        MAXHITS           => 1,
-        COMPLETE          => 1,
-        QUERY             => 1,
-        QUERY_FILE        => 1,
-        QUERY_LENGTH      => 1,
-        SHOWDESC          => 1,
-        QSPEEDUP          => 1,
-        HXDROP            => 1,
-        EXDROP            => 1,
-        REVCOM_DEFAULT    => 1,
+        MISMATCHES         => 1,
+        GUMISMATCHES       => 1,
+        EDITDISTANCE       => 1,
+        INSERTIONS         => 1,
+        DELETIONS          => 1,
+        FILTERS            => 1,
+        NATIVE_ALIGNMENTS  => 1,
+        EVALUE             => 1,
+        PERCENT_IDENTITY   => 1,
+        PROTEINS           => 1,
+        ONLINE             => 1,
+        UPSTREAM           => 1,
+        DOWNSTREAM         => 1,
+        SORT               => 1,
+        MAXHITS            => 1,
+        COMPLETE           => 1,
+        QUERY              => 1,
+        QUERY_FILE         => 1,
+        QUERY_LENGTH       => 1,
+        SHOWDESC           => 1,
+        QSPEEDUP           => 1,
+        HXDROP             => 1,
+        EXDROP             => 1,
+        REGEX              => 1,
+        REVCOM_DEFAULT     => 1,
+        DIRECT_AND_REV_COM => 1,
+        NATIVE_D_A_REV_COM => 1, # backend supports searching for
+                                 # direct and revcom matches or
+                                 # do we have to emulate it? 
     };
 }   
 
 sub _get_databases {
     my ( $self, $suffix ) = @_;
     my %result = ();
-    opendir( DIR, $self->settings->datapath );
-    my @files = grep {/${suffix}$/} readdir(DIR);
-    closedir DIR;
+    opendir my $DIR, $self->settings->datapath ;
+    my @files = grep {/${suffix}$/} readdir $DIR;
+    closedir $DIR;
+    FILE:
     foreach my $file (@files) {
         my $prefix = $file;
         $prefix =~ s/$suffix//;
         $result{$prefix} = $prefix;
         $file =~ s/$suffix/\.nfo/;
         $file = $self->_cat_path_filename( $self->settings->datapath, $file );
-        open my $FILE, '<', $file or next;
+        next FILE if !-e $file;
+        open my $FILE, '<', $file;
         my $desc = "";
         while ( my $line = <$FILE> ) {
             chomp $line;
             $desc .= $line;
         }
         $result{$prefix} = $desc;
-        close $FILE
-            or $self->throw(
-            -class => 'Bio::Root::IOException',
-            -text  => "Can't close $file" -value => $!
-            );
+        close $FILE;
     }
     return %result;
 }
@@ -184,9 +189,8 @@ sub _get_alignment {
     my $outfile =
         $self->_cat_path_filename( $self->settings->tmppath,
         $seq_a->id . ".out" );
-    my @seqs    = qw($seq_b);
     my $gapopen = '5.0';
-    $gapopen = '50.0' unless $self->settings->editdistance_isset;
+    $gapopen = '50.0' if !$self->settings->editdistance_isset;
 
     $prog->run(
         {   -asequence => $seq_a,
@@ -233,6 +237,7 @@ sub _check_search_settings {
     my %skip = (
         FILTERS           => 1,  # checked later
         NATIVE_ALIGNMENTS => 1,  
+        NATIVE_D_A_REV_COM=> 1,  
         PERCENT_IDENTITY  => 1,  # no user setting
         PROTEINS          => 1,  # no user setting
         SORT              => 1,  # checked later
@@ -240,6 +245,7 @@ sub _check_search_settings {
         QUERY             => 1,  # checked later
         EVALUE            => 1,  # no user setting
         REVCOM_DEFAULT    => 1,  # no user setting
+        REGEX             => 1,  # no user setting
     );
     
     INT_FEATURE:
@@ -267,7 +273,7 @@ sub _check_search_settings {
         if ( $found_sort_mode == 0 ) {
             $self->throw(
                 -class => 'Bio::Root::BadParameter',
-                -text  => 'Sort mode not valid',
+                -text  => 'Sort mode not valid.',
                 -value => 'sort mode'
             );
         }
@@ -279,21 +285,30 @@ sub _check_search_settings {
     if ( defined $self->settings->database ) {
         $self->settings->database(
             $self->is_word( $self->settings->database ) );
+        my %available_dbs = $self->get_databases;
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Database not found.',
+            -value => $self->settings->database,
+        ) if !defined $available_dbs{$self->settings->database};
+        
     }
     else {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
-            -text  => 'Database not defined',
+            -text  => 'Database not defined.',
         );
     }
 
     # some warnings if user requests features that are not available
     %skip = ( 
         NATIVE_ALIGNMENTS => 1,
+        NATIVE_D_A_REV_COM=> 1,  
         PERCENT_IDENTITY  => 1,
         REVCOM_DEFAULT    => 1,
         PROTEINS          => 1,
         EVALUE            => 1,
+        REGEX             => 1,  # no user setting
     );
     
     FEATURE:
@@ -314,10 +329,12 @@ sub _check_search_settings {
     }
     if (defined $self->settings->editdistance && defined $self->settings->mismatches &&
     $self->settings->editdistance > 0 && $self->settings->mismatches > 0) {
-        $self->settings->editdistance_reset;
-        $self->warn(
-            "Ignoring edit distance settings because mismatches is set.")
-          ;
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  =>"Can't combine editdistance and mismatches.",
+            -value => $self->settings->editdistance . ' and ' .
+                      $self->settings->mismatches,                      
+           );
     }
     if ( $ENV{BIOGREPDEBUG} ) {
         warn $self->settings->to_string();
@@ -355,23 +372,9 @@ sub _copy_fasta_file_and_create_nfo {
         );
 
     if ( defined($description) ) {
-        open my $NFOFILE, '>', $newfile
-            . '.nfo'
-            or $self->throw(
-            -class => 'Bio::Root::FileOpenException',
-            -text  => "Can't open $filename.nfo for writing" -value => $!
-            );
-        print $NFOFILE $description
-            or $self->throw(
-            -class => 'Bio::Root::IOException',
-            -text  => "Can't write to $filename.nfo" -value => $!
-            );
-        close $NFOFILE
-            or $self->throw(
-            -class => 'Bio::Root::IOException',
-            -text  => "Can't close $filename.nfo" -value => $!
-            );
-
+        open my $NFOFILE, '>', $newfile . '.nfo';
+        print $NFOFILE $description;
+        close $NFOFILE;
     }
 }
 
@@ -388,9 +391,12 @@ sub _prepare_query {
     my $query = $self->settings->query;
     if (!defined $query) {
         $self->throw( -class => 'Bio::Root::BadParameter',
-                      -text  => 'query not defined',
+                      -text  => 'Query not defined.',
                     );
     }    
+    #if (!$self->settings->reverse_complement_isset) {
+    #    $self->settings->reverse_complement(0)
+    #}
     my $db_alphabet =
     $self->get_alphabet_of_database($self->settings->database);
     
@@ -404,17 +410,18 @@ sub _prepare_query {
                       -value => 'Seq: '. $seq->alphabet . ", DB: $db_alphabet"
                     );
     }
-    $self->settings->reverse_complement(0)
-        unless $self->settings->reverse_complement_isset;
-    if ($self->settings->reverse_complement) {
+    if ($self->settings->reverse_complement ||
+        $self->settings->direct_and_rev_com) {
         if ($db_alphabet eq 'dna') {
-            $query = $seq->revcom->seq unless defined 
-                $self->features->{REVCOM_DEFAULT}; 
+            $query = $seq->revcom->seq if (!defined 
+                $self->features->{REVCOM_DEFAULT} ||
+                $self->settings->direct_and_rev_com); 
         }
         else {
             $self->warn("Setting reverse complement only available for DNA
             databases. I will unset reverse complement");
             $self->settings->reverse_complement(0);
+            $self->settings->direct_and_rev_com(0);
         }
     }
     elsif (defined $self->features->{REVCOM_DEFAULT} && $db_alphabet eq 'dna') {    
@@ -423,6 +430,13 @@ sub _prepare_query {
     $self->settings->_real_query( uc($query) );
     return $self->settings->_real_query();
 }
+
+sub generate_database_out_of_fastafile {
+    my ( $self, @args ) = @_;
+    $self->deprecated("generate_database_out_of_fastafile() is deprecated.\n".
+        "Use generate_database() instead.");
+    return $self->generate_database(@args);
+}    
 
 sub available_sort_modes {
     my ($self) = @_;
@@ -506,12 +520,7 @@ sub _create_index_and_alphabet_file {
         );
     }    
     # create a vmatch alphabet file 
-    open my $ALFILE, '>', "$filename.al1"
-        or $self->throw(
-        -class => 'Bio::Root::FileOpenException',
-        -text  => "Can't open $filename.al1 for writing",
-        -value => $!
-        );
+    open my $ALFILE, '>', "$filename.al1";
     if ($alphabet eq 'dna') {
         print $ALFILE "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n";
     }
@@ -541,7 +550,7 @@ sub _create_tmp_query_file {
     if ($s->query_isset && $s->query_file_isset) {
         $self->throw(
         -class => 'Bio::Root::BadParameter',
-        -text  => "query and query_file are set. I am confused ...",
+        -text  => "Query and query_file are set. I am confused...",
         -value => $s->query . ' and ' . $s->query_file,
         );
     }    
@@ -559,16 +568,25 @@ sub _create_tmp_query_file {
         # construct a temporary fasta file with the query for vmatch
         my $seqobj = Bio::Seq->new(
             -id => 'Query',
-            -desc       => $tmp_query_file,
             -seq        => $query
         );
-
+        
+        
         my $outseqio = Bio::SeqIO->new(
             -fh     => $tmp_fh,
             -format => 'fasta'
         );
         $outseqio->write_seq($seqobj);
+
         push @query_seqs, $seqobj;
+        if($s->direct_and_rev_com && !defined
+            $self->features->{NATIVE_D_A_REV_COM}) {
+            my $seqobj2 = $seqobj->revcom;
+            $seqobj2->display_id('QueryRC');
+            $outseqio->write_seq($seqobj2);
+            push @query_seqs, $seqobj2;
+        }    
+
     }
     else {
         $tmp_query_file = $query_file;
@@ -586,7 +604,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Backends::BackendI - Superclass for all back-ends  
+Bio::Grep::Backend::BackendI - Superclass for all back-ends  
 
 =head1 SYNOPSIS
 
@@ -594,7 +612,7 @@ See the back-end modules for example code.
 
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backends::BackendI> is the superclass for all back-ends. Don't use this class
+B<Bio::Grep::Backend::BackendI> is the superclass for all back-ends. Don't use this class
 directly. 
 
 =head1 METHODS
@@ -603,7 +621,7 @@ directly.
 
 =item C<new()>
 
-This function constructs a Bio::Grep::Backends::BackendI object and is never used 
+This function constructs a Bio::Grep::Backend::BackendI object and is never used 
 directly. Rather, all other back-ends in this package inherit the methods of
 this interface and call its constructor internally.
 
@@ -651,8 +669,8 @@ If you need an array with all search results, you should use the following code:
 Get available features. This is a hash. Valid features are
 MISMATCHES, GUMISMATCHES, EDITDISTANCE, INSERTIONS, DELETIONS, 
 FILTERS, NATIVE_ALIGNMENTS, PROTEINS, UPSTREAM, DOWNSTREAM, MAXHITS, COMPLETE,
-QUERY, QUERY_FILE, QUERY_LENGTH, SHOWDESC, QSPEEDUP, HXDROP, EXDROP, EVALUE and 
-PERCENT_IDENTITY.
+QUERY, QUERY_FILE, QUERY_LENGTH, DIRECT_AND_REV_COM, SHOWDESC, QSPEEDUP, HXDROP, 
+EXDROP, EVALUE and PERCENT_IDENTITY.
 
   if (defined($sbe->features->{GUMISMATCHES})) {
           # $sbe->settings->gumismatches(0);
@@ -714,9 +732,10 @@ Returns a hash with all available databases. The keys are the filenames,
 the values are descriptions (or the filename if no description is available).
 
 Descriptions can be set in info files. For example, if you indexed file
-ATH1.cdna, Vmatch and HyPA construct a lot of ATH1.cdna.* files. Now simply create a file 
-ATH1.cdna.nfo and write a description in that file. The function C<generate_database_out_of_fastafile> will
-create this file for you if you add a description as second argument.
+ATH1.cdna, Vmatch and HyPA construct a lot of ATH1.cdna.* files. Now simply
+create a file ATH1.cdna.nfo and write a description in that file. The function
+generate_database() will create this file for you if you add a description as
+second argument.
 
   my %local_dbs_description = $sbe->get_databases();
   my @local_dbs = sort keys %local_dbs_description;
@@ -725,15 +744,20 @@ create this file for you if you add a description as second argument.
   $sbe->settings->database($local_dbs[0]);
 
 
-=item C<$sbe-E<gt>generate_database_out_of_fastafile($fastafile)>
+=item C<$sbe-E<gt>generate_database($fastafile)>
 
-Copies the specified file in the datapath directory (C<$sbe-E<gt>settings-E<gt>datapath>)
-and generates a database (HyPa/Vmatch: a suffix array). You can get the
-available databases with C<$sbe-E<gt>get_databases()>. You have to do this
-only once. Vmatch and HyPa need a lot of RAM for the construction of their enhanced
+Copies the specified Fasta file in the datapath directory 
+(C<$sbe-E<gt>settings-E<gt>datapath>) and generates a database 
+(HyPa/Vmatch: a suffix array). You can get the available databases with 
+C<$sbe-E<gt>get_databases()>. You have to do this only once. Vmatch and HyPa 
+need a lot of RAM for the construction of their enhanced
 suffix arrays.
 
-  $sbe->generate_database_out_of_fastafile('ATH1.cdna', 'AGI Transcripts');
+  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts');
+
+=item C<$sbe-E<gt>generate_database_out_of_fastafile($fastafile)>
+
+DEPRECATED. Use generate_database() instead.
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -765,7 +789,7 @@ necessary, returns the prepared query. settings->query is unchanged!
 
 =item C<_copy_fasta_file_and_create_nfo>
 
-The generate_database_out_of_fastafile implementation of your back-end class
+The generate_database() implementation of your back-end class
 should use this function to copy the specified Fasta file to the data
 directory  and to generate an info file, containing the description of the
 Fasta file.
@@ -785,14 +809,17 @@ info file with that name. The content of that file will be used as description.
 When no file is found, the description will be the filename without the suffix:
 
 
-   %dbs = _get_databases('.al1');  # finds file ATH1.cdna.al1, searches for ATH1.cdna.nfo
-   print $dbs{'ATH1.cdna'};      # prints content of ATH1.cdna.nfo or 'ATH1.cdna'
+   %dbs = _get_databases('.al1');  # finds file ATH1.cdna.al1, searches for
+                                   # ATH1.cdna.nfo
+   print $dbs{'ATH1.cdna'};        # prints content of ATH1.cdna.nfo or 
+                                   # 'ATH1.cdna'
 
 
 =item C<_get_sequences_from_bio_index($id)>
 
-GUUGle, Hypa and Agrep back-ends use L<Bio::Index> for sequence id queries (implemented
-in this this method. Returns a L<Bio::SeqIO> object like abstract the method get_sequences should.
+GUUGle, Hypa and Agrep back-ends use L<Bio::Index> for sequence id queries 
+(implemented in this this method. Returns a L<Bio::SeqIO> object like abstract
+the method get_sequences should.
 
 =item C<_create_tmp_query_file()>
 
@@ -812,63 +839,62 @@ Creates an Vmatch alphabet file.
 
 =over
 
-=item C<Bio::Root::IOException>
+=item C<Can't combine editdistance and mismatches.> 
 
-It was not possible to copy the Fasta file in
-C<generate_database_out_of_fastafile> into the data directory or
-it was not possible to write to the Fasta file in the data directory.
-Check permissions, data path and free disk space.
+Set either C<editdistance> or C<mismatches>, not both.
 
-=item C<Bio::Root::FileOpenException>
+Class: C<Bio::Root::BadParameter>
 
-It was not possible to open the Fasta file in the data directory for
-writing. Check permissions.
 
-=item C<Bio::Root::BadParameter>
-
-You started the search with invalid search settings. 
-
-=over
-
-=item C<Sort mode not valid>
+=item C<Sort mode not valid.>
 
 The specified sort mode ($sbe->settings->sort) is not valid.
 You can get all valid sort modes with $sbe->available_sort_modes()
-See L<Bio::Grep::Backends::Vmatch>, L<Bio::Grep::Backends::Hypa>,
-L<Bio::Grep::Backends::Agrep> for details.
+See L<Bio::Grep::Backend::Vmatch>, L<Bio::Grep::Backend::Hypa>,
+L<Bio::Grep::Backend::Agrep> for details. Class: C<Bio::Root::BadParameter>.
 
-=item C<Database not defined>
+=item C<Database not defined.>
 
 You forgot to define a database. You have to build a database with
-$sbe->generate_database_out_of_fastafile (once) and set it with
+$sbe->generate_database (once) and set it with
 $sbe->settings->database(). Example:
 
-$sbe->generate_database_out_of_fastafile('ATH1.cdna");
-$sbe->settings->database('ATH1.cdna');
+  $sbe->generate_database('ATH1.cdna");
+  $sbe->settings->database('ATH1.cdna');
+
+Class: C<Bio::Root::BadParameter>.
+
+=item C<Database not found.>
+
+The specified database was not found. Check name and
+C<$sbe-E<gt>settings-E<gt>datapath>. Class: C<Bio::Root::BadParameter>.
    
 =item C<Database not valid (insecure characters)>
 
 The database name is not valid. Allowed characters are 'a-z', 'A-z','0-9', '.'
-, '-' and '_'.
+, '-' and '_'. Class: C<Bio::Root::BadParameter>.
 
-=item C<query not defined>
+=item C<Query not defined.>
 
-You forgot to define a query or a query_file.
+You forgot to define a query or a query_file. Class:
+C<Bio::Root::BadParameter>.
 
-=item C<query and query_file are set. I am confused ...>
+=item C<Query and query_file are set. I am confused...>
 
-You specified a query and a query_file. 
+You specified a query and a query_file. Class:
+C<Bio::Root::BadParameter>.
+
 
 =item C<Alphabet of query and database not equal>
 
-You tried to search with DNA/RNA query in protein database or vice versa.
+You tried to search with DNA/RNA query in protein database or vice versa. Class:
+C<Bio::Root::BadParameter>.
+
 
 =item C<Back-end does not support protein data>
 
 You tried to generate a protein database with a back-end that does not support
-protein data.
-
-=back
+protein data. Class: C<Bio::Root::BadParameter>.
 
 =back
 
@@ -878,7 +904,8 @@ protein data.
 Requires EMBOSS and L<Bio::Factory::EMBOSS> for the Needleman-Wunsch local 
 alignment implementation from EMBOSS. The internal method 
 C<_get_alignment($seq_a, $seq_b)> can than calculate an alignment for 
-back-ends that do not generate a alignment (like Hypa, agrep).
+back-ends that do not generate a alignment (like L<Bio::Grep::Backend::Hypa>
+or L<Bio::Grep::Backend::Agrep>).
 
 
 =head1 SEE ALSO

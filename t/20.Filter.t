@@ -24,7 +24,7 @@ BEGIN{
 
 use TestFilter;
 
-my %tests = ( Agrep => 3, Vmatch => 15, Hypa => 15, GUUGle => 15 );
+my %tests = ( Agrep => 2, Vmatch => 13, Hypa => 13, GUUGle => 13, RE => 13 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -41,7 +41,7 @@ use Bio::Perl;
 
 # the number of files we assume in the data directory after
 # database generation. NOT TESTED HERE
-my %backend_filecnt = ( Agrep => 5, Vmatch => 16, Hypa => 31, GUUGle => 3  );
+my %backend_filecnt = ( Agrep => 4, Vmatch => 15, Hypa => 30, GUUGle => 2  );
 
 my $tests = 0;
 mkdir("t/tmp");
@@ -49,7 +49,7 @@ mkdir("t/data");
 
 foreach my $backendname ( sort keys %tests ) {
 SKIP: {
-        if ( BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
+        if ( $backendname ne 'RE' && BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
             skip "$backendname not found in path", $tests{$backendname};
         }
         else {
@@ -66,15 +66,21 @@ SKIP: {
         $sbe->settings->datapath('t/data');
         BioGrepTest::delete_files;
 
-        $sbe->generate_database_out_of_fastafile( 't/Test2.fasta',
+        $sbe->generate_database( 't/Test2.fasta',
             'Description for Test2.fasta' );
 
         $sbe->settings->database('Test2.fasta');
         my $sequence = 'tgacagaagagagtgagcac';
         my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
-        for my $j ( 0 .. 2 ) {
-            $sbe->settings->query($sequence);
-            $sbe->settings->reverse_complement(1);
+        for my $j ( 0 .. 1 ) {
+            if ($backendname eq 'RE') {
+                $sbe->settings->query('[CG]TGC[AT]CTCTCTCTTCT[CG]TCA');
+                $sbe->settings->reverse_complement(0);
+            }   
+            else {
+                $sbe->settings->query($sequence);
+                $sbe->settings->reverse_complement(1);
+            }    
             if (defined $sbe->features->{MISMATCHES}) {
                 $sbe->settings->mismatches(3);
             }
@@ -115,8 +121,8 @@ SKIP: {
         ok($filter->supports_alphabet_exists('protein'));
         ok(!$filter->supports_alphabet_exists('rna'));
         my @filters = ( $filter );        
-        for my $j ( 0 .. 2 ) {
-            if ($j == 2 && defined $sbe->features->{FILTERS}) {
+        for my $j ( 0 .. 1 ) {
+            if ($j == 1 && defined $sbe->features->{FILTERS}) {
                 push @filters, TestFilter->new();
                 $sbe->settings->sort('ga');
             }    
@@ -126,7 +132,11 @@ SKIP: {
             if (defined $sbe->features->{MISMATCHES}) {
                 $sbe->settings->mismatches(3);
             }
-            if ($backendname eq 'GUUGle') {
+            if ($backendname eq 'RE') {
+                $sbe->settings->query('[CG]TGC[AT]CTCTCTCTTCT[CG]TCA');
+                $sbe->settings->reverse_complement(0);
+            }   
+            elsif ($backendname eq 'GUUGle') {
                 $sbe->settings->gumismatches(0);
                 $sbe->settings->query_length(13);
             }
@@ -138,7 +148,7 @@ SKIP: {
             my @ids = ();
             my $start_dg = -100;
             while (my $res = $sbe->next_res  ) {
-                if ($j == 2 && defined $sbe->features->{FILTERS}) {
+                if ($j == 1 && defined $sbe->features->{FILTERS}) {
                     cmp_ok($res->dG, '>=', $start_dg, 'sorting works');
                     cmp_ok($res->dG, '<=', 0, 'sorting works');
                     is($res->remark,'passed', 'remark ok')
