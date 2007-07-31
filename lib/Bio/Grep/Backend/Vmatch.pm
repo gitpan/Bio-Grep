@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.1');
+use version; our $VERSION = qv('0.8.2');
 
 sub new {
     my $self = shift;

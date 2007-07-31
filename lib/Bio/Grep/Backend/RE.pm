@@ -10,7 +10,7 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.8.1');
+use version; our $VERSION = qv('0.8.2');
 
 sub new {
     my $self = shift;
@@ -223,7 +223,7 @@ See L<Bio::Grep::Backend::BackendI> for other methods.
 
 This function constructs an RE back-end object
 
-   my $sbe = Bio::Grep::Backend::StringApprox->new();
+   my $sbe = Bio::Grep::Backend::RE->new();
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -304,6 +304,7 @@ RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
 FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
 SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGES.
+
 =cut
 
 # vim: ft=perl sw=4 ts=4 expandtab

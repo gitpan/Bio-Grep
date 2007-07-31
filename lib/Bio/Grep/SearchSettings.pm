@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.8.1');
+use version; our $VERSION = qv('0.8.2');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -67,7 +67,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::s - Data structure for all search settings 
+Bio::Grep::SearchSettings - Data structure for all search settings 
 
 =head1 SYNOPSIS
 

@@ -22,7 +22,7 @@ BEGIN{
     }
 }
 
-our %tests = ( Agrep => 70, Vmatch => 145, Hypa => 80, GUUGle => 43, RE => 34 );
+our %tests = ( Agrep => 71, Vmatch => 146, Hypa => 80, GUUGle => 43, RE => 34 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -381,13 +381,19 @@ SKIP: {
         $sbe->settings->query('CGAGCTGATGCAAAGCTCGCGGGACTGA');
         $sbe->settings->reverse_complement(0);
         $sbe->settings->mismatches(0);
+        $sbe->settings->no_alignments(1);
         $sbe->settings->gumismatches(0) if $backendname eq "GUUGle";
         $sbe->search();
         
         my @ids = ();
+        my $alignment_string = '';
         while (my $res = $sbe->next_res  ) {
             push ( @ids, $res->sequence->id );
+            $alignment_string .= $res->alignment_string;
         }
+        is($alignment_string,'','alignmentstring empty') if $backendname
+                eq 'Agrep';
+        $sbe->settings->no_alignments_reset;
         my @shouldbe = qw( At1g67120 );
         is_deeply( \@ids, \@shouldbe , "Results ok" );
         
@@ -442,6 +448,10 @@ SKIP: {
                 $sbe->settings->showdesc_reset;
                 $sbe->settings->reverse_complement_reset;
             }
+            my $seqio = $sbe->get_sequences(['At2g42200']);
+            my $db_seq = $seqio->next_seq;
+            is($db_seq->seq,$test_seq{seq},
+                "vmatch get_sequences with description works");
         }
 
         $sbe->settings->complete_reset();
@@ -514,6 +524,7 @@ my $long_query =
                     "sequence und marking subject correct."
                 );
                 push ( @ids, $res->sequence->id );
+
             }
             my @shouldbe = _get_ids_where_mm_smaller(5);
             foreach (@shouldbe) {
@@ -894,16 +905,6 @@ sub _get_ids_where_mm_smaller {
         push ( @results, $key ) if $hits{$key} <= $mm;
     }
     return sort @results;
-}
-
-sub compare_arrays {
-    my ( $first, $second ) = @_;
-    no warnings;    # silence spurious -w undef complaints
-    return 0 unless @$first == @$second;
-    for ( my $i = 0; $i < @$first; $i++ ) {
-        return 0 if $first->[$i] ne $second->[$i];
-    }
-    return 1;
 }
 
 1;

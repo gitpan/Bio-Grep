@@ -81,7 +81,7 @@ of all possible motifs (Solution A) can often be the best method.
 =head1 FEEDBACK
 
 Have you solved your (not too exotic ;)) problem with L<Bio::Grep> and a
-solution is not yet listed here? Contributing it to this
+solution is not yet listed here? Contribute it to this
 Cookbook!
 
 Please report any bugs, feature requests and recipes to

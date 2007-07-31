@@ -20,7 +20,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.8.1');
+use version; our $VERSION = qv('0.8.2');
 
 use Class::MethodMaker [
     new      => 'new2',

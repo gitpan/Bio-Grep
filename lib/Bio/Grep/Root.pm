@@ -10,7 +10,7 @@ use base 'Bio::Root::Root';
 use File::Spec;
 use File::Copy;
 
-use version; our $VERSION = qv('0.8.1');
+use version; our $VERSION = qv('0.8.2');
 
 sub is_integer {
     my ( $self, $variable, $desc) = @_;
@@ -73,18 +73,15 @@ sub _check_variable {
        ( $value ) = $args{variable} =~ m{  \A ([\w.\-/|:(),;]+)  }xms;
    }    
    else {
-       ( $value ) = $args{variable} =~ m{ ( \A -? \d+ \.? \d* \z ) }xms;
-   }
+      $self->throw( -class => 'Bio::Root::BadParameter',
+                  -text  => 'Unknown regex.',
+                  -value => $args{regex} );
+   }    
    
-#   my ( $value ) = $args{variable} =~ m{ (\d+) }xms;
-   use Scalar::Util qw/tainted/;
-
-   warn 'TAINTED' if tainted $args{regex};
-   if ( !defined $value  || $value ne $args{variable}) {
-      $value = '*undef*' if !defined $value;
+   if ( !defined $value ) {
       $self->throw( -class => 'Bio::Root::BadParameter',
                   -text  => $args{desc} . ' looks not valid.',
-                  -value => $args{variable} . ' vs ' . $value );
+                  -value => $args{variable} );
    }              
    return $value;
 }
@@ -136,12 +133,16 @@ WARNING: make sure that command line arguments are quoted ( my $command = "...
 
 =head1 INTERNAL METHODS
 
-Only packages should call them
-
 =over 
 
-=item C<_check_variable( variable => $var_to_check, regex => $regex, desc =>
-'Description')>
+=item C<_check_variable( variable =E<gt> $var_to_check, regex =E<gt> $regex,
+desc =E<gt> 'Description')>
+
+Checks C<$var_to_check> if it matches $regex, which is one of the four 
+predefined regular expressions:  C<int>, C<word>, C<path> or C<sentence>.
+Throws an exception if not, otherwise it returns the untainted value of
+C<$var_to_check>. Don't use this method, instead use the public methods
+is_integer(), is_word() ... .
 
 =back
 
@@ -149,9 +150,20 @@ Only packages should call them
 
 =over
 
-=item C<Bio::Root::BadParameter>
+=item C< ... looks not valid.>
 
 Some variable does not match the specified regular expression.
+C<Bio::Root::BadParameter>.
+
+=item C<Missing arguments: require hash with keys "regex" ... >
+
+You called _check_variable() without a valid hashref. See 
+L<"INTERNAL METHODS">. C<Bio::Root::BadParameter>.
+
+=item C<Unknown regex.>
+
+You called _check_variable() with an invalid regex.  See 
+L<"INTERNAL METHODS">. C<Bio::Root::BadParameter>.
 
 =back
 

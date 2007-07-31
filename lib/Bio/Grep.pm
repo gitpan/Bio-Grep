@@ -11,7 +11,7 @@ use Bio::Grep::Backend::RE;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.1');
+use version; our $VERSION = qv('0.8.2');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -52,7 +52,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.8.1
+This document describes Bio::Grep version 0.8.2
 
 =head1 SYNOPSIS
 
@@ -379,7 +379,7 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
-<tr><td>Upstream/Downstream Regions</td>
+<tr><td>Upstream/Downstream</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -413,26 +413,26 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 
 =begin man
 
-     Features                       || Agrep  | GUUGle |  HyPa  |   RE   | Vmatch 
-     Suffix Arrays/Trees            ||   no   |  yes   |  yes   |   no   |  yes   
-     Sliding Window                 ||  yes   |   no   |   no   |  yes   |   no   
-     Persistent Index 1             ||   no   |   no   |  yes   |   no   |  yes   
-     Mismatches                     ||  yes   |   no   |  yes   |   no   |  yes   
-     Edit Distance                  ||  yes   |   no   |   no   |   no   |  yes   
-     Insertions                     ||   no   |   no   |  yes   |   no   |   no   
-     Deletions                      ||   no   |   no   |  yes   |   no   |   no   
-     Multiple Queries 2             ||   no   |  yes   |   no   |   no   |  yes   
-     GU 3                           ||   no   |  yes   |  yes   |   no   |   no   
-     DNA/RNA                        ||  yes   |  yes   |  yes   |  yes   |  yes   
-     Protein                        ||  yes   |   no   |  yes   |  yes   |  yes   
-     Direct and Revcom              ||   no   |  yes   |   no   |  yes   |  yes   
-     Reverse Complement             ||  yes   |  yes   |  yes   |  yes   |  yes   
-     Upstream/Downstream Regions    ||   no   |  yes   |  yes   |  yes   |  yes   
-     Filters                        ||   no   |  yes   |  yes   |  yes   |  yes   
-     Query Length 4                 ||   no   |  yes   |   no   |   no   |  yes   
-     Regular Expressions 5          ||   no   |   no   |   no   |  yes   |   no   
+     Features                 || Agrep  | GUUGle |  HyPa  |   RE   | Vmatch 
+     Suffix Arrays/Trees      ||   no   |  yes   |  yes   |   no   |  yes   
+     Sliding Window           ||  yes   |   no   |   no   |  yes   |   no   
+     Persistent Index 1       ||   no   |   no   |  yes   |   no   |  yes   
+     Mismatches               ||  yes   |   no   |  yes   |   no   |  yes   
+     Edit Distance            ||  yes   |   no   |   no   |   no   |  yes   
+     Insertions               ||   no   |   no   |  yes   |   no   |   no   
+     Deletions                ||   no   |   no   |  yes   |   no   |   no   
+     Multiple Queries 2       ||   no   |  yes   |   no   |   no   |  yes   
+     GU 3                     ||   no   |  yes   |  yes   |   no   |   no   
+     DNA/RNA                  ||  yes   |  yes   |  yes   |  yes   |  yes   
+     Protein                  ||  yes   |   no   |  yes   |  yes   |  yes   
+     Direct and Revcom        ||   no   |  yes   |   no   |  yes   |  yes   
+     Reverse Complement       ||  yes   |  yes   |  yes   |  yes   |  yes   
+     Upstream/Downstream      ||   no   |  yes   |  yes   |  yes   |  yes   
+     Filters                  ||   no   |  yes   |  yes   |  yes   |  yes   
+     Query Length 4           ||   no   |  yes   |   no   |   no   |  yes   
+     Regular Expressions 5    ||   no   |   no   |   no   |  yes   |   no   
 
-------------------------------------------------------------------------------------
+--
  1 Needs precalculation and (much) more memory but queries are in general faster
  2 With query_file
  3 HyPa also allows that GU counts only as 0.5 mismatches
@@ -440,7 +440,6 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
  5 Agrep soon
 
 =end man
-
 
 Vmatch is fast but needs a lot of memory. Agrep is the best choice if you allow many 
 mismatches in short sequences, if you want to search in Fasta files 

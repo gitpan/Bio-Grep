@@ -21,7 +21,7 @@ BEGIN{
     }
 }
 
-plan tests => 21;
+plan tests => 24;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -67,6 +67,19 @@ is( $sbe->is_word('1234-valid.txt'), '1234-valid.txt' );
 is( $sbe->is_word('1234-valid.txt_'), '1234-valid.txt_' );
 eval { $sbe->is_word('valid && ls *'); };
 ok($EVAL_ERROR);
+
+no warnings;
+eval {$sbe->_check_variable()};
+cmp_ok($EVAL_ERROR, '=~', qr{Missing arguments: require hash with keys},
+    "Exception with missing argument");
+use warnings;
+eval {$sbe->_check_variable( bla => 1 )};
+cmp_ok($EVAL_ERROR, '=~', qr{Missing arguments: require hash with keys},
+    "Exception with missing argument");
+
+eval {$sbe->_check_variable( variable => 'bla',  regex => 'real' )};
+cmp_ok($EVAL_ERROR, '=~', qr{Unknown regex},
+    "Exception with unknown regex");
 
 $sbe=Bio::Grep->new('GUUGle')->backend;
 
