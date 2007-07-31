@@ -10,3 +10,4 @@
  - make EMBOSS and bioperl-run optional
  - cleanup testcases
  - configfile for bgrep
+ - Bio::Grep::Cookbook

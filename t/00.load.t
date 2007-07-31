@@ -25,8 +25,8 @@ use_ok( 'Bio::Grep::Backend::GUUGle' );
 use_ok( 'Bio::Grep::Backend::Hypa' );
 use_ok( 'Bio::Grep::Backend::RE' );
 use_ok( 'Bio::Grep::Backend::Vmatch' );
-use_ok( 'Bio::Grep::Container::SearchResult' );
-use_ok( 'Bio::Grep::Container::SearchSettings' );
+use_ok( 'Bio::Grep::SearchResult' );
+use_ok( 'Bio::Grep::SearchSettings' );
 use_ok( 'Bio::Grep::Filter::FilterI' );
 use_ok( 'Bio::Grep::Filter::FilterRemoveDuplicates' );
 }

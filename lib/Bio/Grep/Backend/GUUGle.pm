@@ -3,7 +3,7 @@ package Bio::Grep::Backend::GUUGle;
 use strict;
 use warnings;
 
-use Bio::Grep::Container::SearchResult;
+use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
@@ -13,7 +13,7 @@ use File::Basename;
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 sub new {
     my $self = shift;
@@ -79,7 +79,7 @@ sub search {
         else {
             $self->throw( 
                 -class => 'Bio::Root::BadParameter',
-                -text => 'settings->query_length not set. See -d flag in the '. 
+                -text => 'query_length not set. See -d flag in the '. 
                 'GUUGle documentation. ',
          );     
         }    
@@ -105,7 +105,7 @@ sub search {
 
     $self->throw(
         -class => 'Bio::Root::SystemException',
-        -text  => "GUUGle: Maybe query not valid. Command was:\n\t$command"
+        -text  => "GUUGle call failed. Command was:\n\t$command"
         )
         if !$cmd_ok;
 
@@ -308,7 +308,7 @@ sub _parse_next_res {
             )
         );
         my $res = $self->_filter_result(
-            Bio::Grep::Container::SearchResult->new( $fasta,
+            Bio::Grep::SearchResult->new( $fasta,
             $upstream, $upstream +$matchlength,
             $tmp_aln, $fasta->id, '' )
             );
@@ -386,7 +386,7 @@ Bio::Grep::Backend::GUUGle - GUUGle back-end
 B<Bio::Grep::Backend::GUUGle> searches for a query in a GUUGle suffix array. 
 
 NOTE 1: GUUGle always searches for the reverse complement. If you specify a
-query file, Bio::Grep throws an exception if reverse_complement is not set.
+query file, Bio::Grep throws an exception if C<reverse_complement> is not set.
 
 NOTE 2: GUUGle only allows search for exact matches. It counts GU as no
 mismatch.
@@ -398,9 +398,9 @@ See L<Bio::Grep::Backend::BackendI> for other methods.
 
 =over 2
 
-=item Bio::Grep::Backend::GUUGle-E<gt>new()
+=item C<Bio::Grep::Backend::GUUGle-E<gt>new()>
 
-    This function constructs a GUUGle back-end object
+This function constructs a GUUGle back-end object.
 
    my $sbe = Bio::Grep::Backend::GUUGle->new();
 
@@ -432,36 +432,29 @@ See L<Bio::Grep::Backend::BackendI> for other diagnostics.
 
 =over
 
-=item C<Bio::Root::SystemException>
+=item C<GUUGle call failed. Command was: ...> 
 
-=over 2
+It was not possible to run GUUGle in function search(). Check the search
+settings. If you want to reproduce the system() call, you can set the 
+environment variable C<BIOGREPDEBUG>. If this variable is set, then the temporary
+files won't get deleted. C<Bio::Root::SystemException>.
 
-=item 
+=item C<GUUGle searches only for the reverse complement.> 
 
-It was not possible to run GUUGle in function C<search>. 
+You have specified a query_file and C<reverse_complement> is not set. 
+C<Bio::Root::BadParameter>.
 
-=back
-
-=item C<Bio::Root::BadParameter>
-
-=over 2
-
-=item C<GUUGle searches only for the reverse complement> 
-
-You have specified a query_file and reverse_complement is not set.
-
-=item C<settings-E<gt>query_length not set. See -d flag...>
+=item C<query_length not set. See -d flag in the...>
 
 You have specified a query_file and forgot to set query_length.
-
-=back
+C<Bio::Root::BadParameter>.
 
 =back
 
 =head1 SEE ALSO
 
 L<Bio::Grep::Backend::BackendI>
-L<Bio::Grep::Container::SearchSettings>
+L<Bio::Grep::SearchSettings>
 L<Bio::Seq>
 
 

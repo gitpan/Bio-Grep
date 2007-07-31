@@ -5,7 +5,7 @@ use warnings;
 
 use Fatal qw (open close opendir closedir);
 
-use Bio::Grep::Container::SearchSettings;
+use Bio::Grep::SearchSettings;
 use Bio::Grep::Root;
 
 use Bio::AlignIO;
@@ -20,7 +20,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 use Class::MethodMaker [
     new      => 'new2',
@@ -37,7 +37,7 @@ sub new {
     my $self = shift->new2;
 
     # initialize standard settings
-    my $settings = Bio::Grep::Container::SearchSettings->new();
+    my $settings = Bio::Grep::SearchSettings->new();
 
     $self->settings($settings);
 
@@ -359,7 +359,7 @@ sub _copy_fasta_file_and_create_nfo {
     my ( $self, $file, $filename, $description ) = @_;
     
     # throw exception if filename looks wrong
-    $self->is_word($filename, 'FASTA filename');
+    $self->is_word($filename, 'Fasta filename');
     
     my $newfile =
         $self->_cat_path_filename( $self->settings->datapath, $filename );
@@ -629,7 +629,7 @@ this interface and call its constructor internally.
 
 =item C<$sbe-E<gt>settings()>
 
-Get the settings. This is a L<Bio::Grep::Container::SearchSettings> object
+Get the settings. This is a L<Bio::Grep::SearchSettings> object
 
   # search for the reverse complement and allow 4 mismatches
   $sbe->settings->database('ATH1.cdna');
@@ -639,7 +639,7 @@ Get the settings. This is a L<Bio::Grep::Container::SearchSettings> object
 
 =item C<$sbe-E<gt>results()>
 
-Get the results. This is an array of L<Bio::Grep::Container::SearchResults> objects.
+Get the results. This is an array of L<Bio::Grep::SearchResults> objects.
 
   # output the searchresults with alignments
   foreach my $res (@{$sbe->results}) {
@@ -695,14 +695,14 @@ Every back-end must implement this methods.
 =item C<$sbe-E<gt>search>
 
 This function searches for the query specified in the 
-L<Bio::Grep::Container::SearchSettings> object 
+L<Bio::Grep::SearchSettings> object 
 C<$sbe-E<gt>settings>
  
     $sbe->search();
 
 =item C<$sbe-E<gt>next_res>
 
-Returns next result. L<Bio::Grep::Container::SearchResult> object
+Returns next result. L<Bio::Grep::SearchResult> object
 
     while ( my $res = $sbe->next_res ) {
         # output result
@@ -839,19 +839,24 @@ Creates an Vmatch alphabet file.
 
 =over
 
+=item C<Alphabet of query and database not equal>
+
+You tried to search with DNA/RNA query in protein database or vice versa. 
+C<Bio::Root::BadParameter>.
+
+=item C<Back-end does not support protein data>
+
+You tried to generate a protein database with a back-end that does not support
+protein data. C<Bio::Root::BadParameter>.
+
 =item C<Can't combine editdistance and mismatches.> 
 
-Set either C<editdistance> or C<mismatches>, not both.
+Set either C<editdistance> or C<mismatches>, not both. C<Bio::Root::BadParameter>
 
-Class: C<Bio::Root::BadParameter>
+=item C<Can't copy ... to ...>
 
-
-=item C<Sort mode not valid.>
-
-The specified sort mode ($sbe->settings->sort) is not valid.
-You can get all valid sort modes with $sbe->available_sort_modes()
-See L<Bio::Grep::Backend::Vmatch>, L<Bio::Grep::Backend::Hypa>,
-L<Bio::Grep::Backend::Agrep> for details. Class: C<Bio::Root::BadParameter>.
+It was not possible to copy the Fasta file in generate_database() in the
+I<data> directory. Check path and permissions. C<Bio::Root::IOException>.
 
 =item C<Database not defined.>
 
@@ -862,42 +867,34 @@ $sbe->settings->database(). Example:
   $sbe->generate_database('ATH1.cdna");
   $sbe->settings->database('ATH1.cdna');
 
-Class: C<Bio::Root::BadParameter>.
+C<Bio::Root::BadParameter>.
 
 =item C<Database not found.>
 
 The specified database was not found. Check name and
-C<$sbe-E<gt>settings-E<gt>datapath>. Class: C<Bio::Root::BadParameter>.
+C<$sbe-E<gt>settings-E<gt>datapath>. C<Bio::Root::BadParameter>.
    
-=item C<Database not valid (insecure characters)>
+=item C<Database not valid (insecure characters).>
 
 The database name is not valid. Allowed characters are 'a-z', 'A-z','0-9', '.'
-, '-' and '_'. Class: C<Bio::Root::BadParameter>.
-
-=item C<Query not defined.>
-
-You forgot to define a query or a query_file. Class:
-C<Bio::Root::BadParameter>.
+, '-' and '_'. C<Bio::Root::BadParameter>.
 
 =item C<Query and query_file are set. I am confused...>
 
-You specified a query and a query_file. Class:
-C<Bio::Root::BadParameter>.
+You specified a query and a query_file. C<Bio::Root::BadParameter>.
 
+=item C<Query not defined.>
 
-=item C<Alphabet of query and database not equal>
+You forgot to define a query or a query_file. C<Bio::Root::BadParameter>.
 
-You tried to search with DNA/RNA query in protein database or vice versa. Class:
-C<Bio::Root::BadParameter>.
+=item C<Sort mode not valid.>
 
-
-=item C<Back-end does not support protein data>
-
-You tried to generate a protein database with a back-end that does not support
-protein data. Class: C<Bio::Root::BadParameter>.
+The specified sort mode ($sbe->settings->sort) is not valid.
+You can get all valid sort modes with $sbe->available_sort_modes()
+See L<Bio::Grep::Backend::Vmatch>, L<Bio::Grep::Backend::Hypa>,
+L<Bio::Grep::Backend::Agrep> for details. C<Bio::Root::BadParameter>.
 
 =back
-
 
 =head1 FILES
 
@@ -910,8 +907,8 @@ or L<Bio::Grep::Backend::Agrep>).
 
 =head1 SEE ALSO
 
-L<Bio::Grep::Container::SearchSettings> 
-L<Bio::Grep::Container::SearchResults> 
+L<Bio::Grep::SearchSettings> 
+L<Bio::Grep::SearchResults> 
 
 
 =head1 AUTHOR

@@ -1,11 +1,11 @@
-package Bio::Grep::Container::SearchSettings;
+package Bio::Grep::SearchSettings;
 
 use strict;
 use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -67,7 +67,7 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Container::SearchSettings - Data structure for all search settings 
+Bio::Grep::s - Data structure for all search settings 
 
 =head1 SYNOPSIS
 
@@ -90,7 +90,7 @@ Bio::Grep::Container::SearchSettings - Data structure for all search settings
  $sbe->settings->database("ATH1.cdna");
  
  # retrieve upstream and downstream regions
- # see perldoc Bio::Grep::Container::SearchResult
+ # see perldoc Bio::Grep::SearchResult
  # how to get them out of the search results
  $sbe->settings->upstream(3);
  $sbe->settings->downstream(3);
@@ -107,7 +107,7 @@ Bio::Grep::Container::SearchSettings - Data structure for all search settings
 
 =head1 DESCRIPTION
 
-B<Bio::Grep::Container::SearchSettings> is the data structure for all search settings.
+B<Bio::Grep::SearchSettings> is the data structure for all search settings.
 Not all back-ends will support every option.
 
 =head1 METHODS
@@ -116,7 +116,7 @@ Not all back-ends will support every option.
 
 =item C<new()>
 
-This function constructs an Bio::Grep::Container::SearchSettings object. The
+This function constructs an Bio::Grep::SearchSettings object. The
 back-end adds an object of this module into C<$sbe-E<gt>settings>, so you
 should never have to call this constructor directly. If you want to reset all
 settings to their default values, call
@@ -170,7 +170,8 @@ Get/set reverse_complement.
 Get/set direct_and_rev_com. Searches for direct matches and the reverse
 complement. 
 
-Currently only available in the Vmatch (-d AND -p flag) and GUUGle backend.
+Currently only available in Vmatch (-d AND -p flag), GUUGle (query file with two queries), and RE (regex
+C<$query|$rev_com_query>).
 
 =item C<mismatches()>
 
@@ -346,8 +347,8 @@ for details.
 =head1 SEE ALSO
 
 L<Bio::Grep::Filter::FilterI>
-L<Bio::Grep::Container::SearchResult>
-L<Bio::Grep::Backend::BackendI>
+L<Bio::Grep::SearchResult>
+n<Bio::Grep::Backend::BackendI>
 
 =head1 AUTHOR
 

@@ -5,7 +5,7 @@ use warnings;
 
 use Fatal qw(open close);
 
-use Bio::Grep::Container::SearchResult;
+use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 sub new {
     my $self = shift;
@@ -332,7 +332,7 @@ sub _parse_next_res {
         $alignment = $self->_get_alignment( $seq_query, $seq_subject )
             unless $s->no_alignments;
         my $res = $self->_filter_result(
-            Bio::Grep::Container::SearchResult->new( $tmp_seq,
+            Bio::Grep::SearchResult->new( $tmp_seq,
             length($upstream), length($upstream) + length($match),
             $alignment, $tmp_seq->id, '' )
             );
@@ -424,7 +424,7 @@ NOTE 1: Hypa can not calculate alignments. But because we have the exact positio
 of the match, the alignment calculation shouldn't be too slow (In agrep, we align query 
 and sequence, here query and approximate match).
 
-NOTE 2: -online is available. But it is not recommended.
+NOTE 2: C<online> is available. But it is not recommended.
 
 =head1 METHODS
 
@@ -477,7 +477,7 @@ L<http://rt.cpan.org>.
 =head1 SEE ALSO
 
 L<Bio::Grep::Backend::BackendI>
-L<Bio::Grep::Container::SearchSettings>
+L<Bio::Grep::SearchSettings>
 L<Bio::SeqIO>
 
 
@@ -488,7 +488,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

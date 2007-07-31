@@ -1,5 +1,6 @@
 Changes
 lib/Bio/Grep.pm
+lib/Bio/Grep/Cookbook.pod
 lib/Bio/Grep/Root.pm
 lib/Bio/Grep/Backend/Agrep.pm
 lib/Bio/Grep/Backend/BackendI.pm
@@ -7,8 +8,8 @@ lib/Bio/Grep/Backend/GUUGle.pm
 lib/Bio/Grep/Backend/Hypa.pm
 lib/Bio/Grep/Backend/Vmatch.pm
 lib/Bio/Grep/Backend/RE.pm
-lib/Bio/Grep/Container/SearchResult.pm
-lib/Bio/Grep/Container/SearchSettings.pm
+lib/Bio/Grep/SearchResult.pm
+lib/Bio/Grep/SearchSettings.pm
 lib/Bio/Grep/Filter/FilterI.pm
 lib/Bio/Grep/Filter/FilterRemoveDuplicates.pm
 script/bgrep

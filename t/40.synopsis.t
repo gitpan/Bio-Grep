@@ -14,14 +14,20 @@ elsif (!$prereq{bioperl_run}) {
     plan skip_all => 'Bioperl-run not found';
 }
 
+plan tests => 5;
+
+# VMATCH 
+
 my $backendname  = 'Vmatch';
-plan skip_all => 'Vmatch binary not in path' if
-    BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
 
-# make taint happy    
-BioGrepTest::set_path( ( 'vmatch' ) );
+SKIP:{
 
-plan tests => 2;
+    skip 'Vmatch binary not in path', 3 if
+        BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
+
+    # make taint happy    
+    BioGrepTest::set_path( ( 'vmatch' ) );
+
 
 my $code =<<'EOT'
   use Bio::Grep;
@@ -32,7 +38,7 @@ my $code =<<'EOT'
   my $sbe = $search_obj->backend;
  
   # define the location of the suffix arrays
-  $sbe->settings->datapath('data');
+  $sbe->settings->datapath('t/data');
   
   mkdir($sbe->settings->datapath);	
   
@@ -78,13 +84,107 @@ my $code =<<'EOT'
 EOT
 ;
 
+    eval $code;
+    ok(!$@,"SYNOPSIS compiles") || diag $@;
+
+$code =<<'EOT'
+  use Bio::Grep;
+  use Bio::SeqIO;
+ 
+  my $sbe = Bio::Grep->new('Vmatch')->backend;
+ 
+  my $out = Bio::SeqIO->new( -format => 'Fasta',
+                             -file   => '>motifs.fasta',
+                           );
+ 
+  # you have an array with DNA sequences
+  my @motifs = ( 'aaaaaa', 'gggggg' );
+  
+  for my $i (0 .. $#motifs ) {
+     my $seq = Bio::Seq->new(
+             -id => $i,
+             -seq => $motifs[$i],
+         );
+     $out->write_seq($seq);
+  }
+ 
+  $sbe->search({
+     datapath   => 't/data',
+     database   => 'Test.fasta',
+     query_file => 'motifs.fasta',
+     complete   => 1,
+  });
+
+EOT
+;
+    eval $code;
+    ok(!$@,"Cookbook recipe motifs solution a compiles") || diag $@;
+
+    unlink 'motifs.fasta';
+}
+
+# RE
+
+my $code =<<'EOT'
+  use Bio::Grep::Backend::RE;
+  
+  # configure our search back-end, in this case RE
+  my $sbe = Bio::Grep::Backend::RE->new();
+  
+  $sbe->settings->datapath('t/data');
+  
+  # generate a database. you have to do this only once. 
+  $sbe->generate_database('t/Test.fasta');
+  
+  $sbe->settings->database('Test.fasta');
+  
+  # search for the reverse complement 
+  $sbe->settings->query('TGAACAGAAAGCTCATGAGCC');
+  $sbe->settings->reverse_complement(1);
+  
+  $sbe->search();
+  
+  # output the searchresults with nice alignments
+  while ( my $res = $sbe->next_res) {
+     print $res->sequence->id . "\n";
+     print $res->mark_subject_uppercase() . "\n";
+     print $res->alignment_string() . "\n\n";
+  }
+
+  # sequences with at least 10 As
+  $sbe->search({ query => '[A]{10,}' });
+ 
+  # some SNPs
+  $sbe->search({query => '[CG]TGC[AT]CTCTTCT[CG]TCA'});
+
+
+EOT
+;
 eval $code;
-ok(!$@,"SYNOPSIS compiles") || diag $@;
+ok(!$@,"RE SYNOPSIS compiles") || diag $@;
+
+$code =<<'EOT'
+  use Bio::Grep;
+ 
+  my $sbe = Bio::Grep->new('RE')->backend;
+ 
+  my $motif = '[AC]{4}TAAAA[AGCT]GG';
+ 
+  $sbe->search({
+     datapath  => 't/data',
+     database  => 'Test.fasta',
+     query      => $motif,
+  });
+EOT
+;
+eval $code;
+ok(!$@,"Cookbook recipe motifs solution b compiles") || diag $@;
 
 $code = 'bllll';
 eval $code;
 ok($@,"bllll not compiles");
 
+BioGrepTest::delete_files;
 
 1;
 

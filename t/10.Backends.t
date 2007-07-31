@@ -828,7 +828,7 @@ my $long_query =
                         mismatches => 10,
                         maxhits => 100,
                   }); };
-            ok( $EVAL_ERROR =~ /Vmatch error: Query not valid/, 
+            ok( $EVAL_ERROR =~ /Vmatch call failed/, 
                  'Exception occured with too many mismatches' );
 
             $sbe->search({

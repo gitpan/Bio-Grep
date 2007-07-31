@@ -5,7 +5,7 @@ use warnings;
 
 use Fatal qw(open close);
 
-use Bio::Grep::Container::SearchResult;
+use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 sub new {
     my $self = shift;
@@ -178,7 +178,7 @@ sub _parse_next_res {
         $alignment = $self->_get_alignment( $seq_query, $seq_subject )
             unless $s->no_alignments;
 
-        my $res = Bio::Grep::Container::SearchResult->new( $seq_subject,
+        my $res = Bio::Grep::SearchResult->new( $seq_subject,
             $s->upstream, $s->upstream + length($query),
             $alignment, $seq_subject->id, "" );
         # agrep does not support multiple queries yet    
@@ -252,6 +252,8 @@ Bio::Grep::Backend::Agrep - Agrep back-end
 
 B<Bio::Grep::Backend::Agrep> searches for a query with agrep. 
 
+Note: L<Bio::Grep::Backend::Agrep> databases are compatible with
+L<Bio::Grep::Backend::RE> databases.
 
 =head1 METHODS
 
@@ -291,30 +293,16 @@ See L<Bio::Grep::Backend::BackendI> for other diagnostics.
 
 It was not possible to run agrep in function search(). Check the search
 settings. Agrep returns also exit(1) whenever no hit is found! If you want to
-reproduce the C<system> call, you can set the environment variable
-BIOGREPDEBUG. If this variable is set, then the temporary files won't get
-deleted.
-
-Class: C<Bio::Root::SystemException>
-
-=item C<IO Exceptions:>
-
-=over 2
-
-=item In function C<search>: It was not possible to open the database. Check
-permissions and paths.
-
-=item In function C<generate_database>: It was not possible to
-write the database to disk. Check permissions and paths.
-
-=back
+reproduce the system() call, you can set the environment variable
+C<BIOGREPDEBUG>. If this variable is set, then the temporary files won't get
+deleted.  C<Bio::Root::SystemException>.
 
 =back
 
 =head1 SEE ALSO
 
 L<Bio::Grep::Backend::BackendI>
-L<Bio::Grep::Container::SearchSettings>
+L<Bio::Grep::SearchSettings>
 L<Bio::SeqIO>
 L<Bio::Index::Fasta>
 

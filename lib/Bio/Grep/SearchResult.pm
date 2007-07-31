@@ -1,4 +1,4 @@
-package Bio::Grep::Container::SearchResult;
+package Bio::Grep::SearchResult;
 
 use strict;
 use warnings;
@@ -8,7 +8,7 @@ use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -71,14 +71,14 @@ __END__
 
 =head1 NAME
 
-Bio::Grep::Container::SearchResult - Data structure for a back-end search hit
+Bio::Grep::SearchResult - Data structure for a back-end search hit
 
 =head1 SYNOPSIS
   
   # output the search results with nice alignments
   while ( my $res = $sbe->next_res ) {
      # $res->sequence is a Bio::Seq object with down-/upstream regions
-     # see Bio::Grep::Container::SearchSettings
+     # see Bio::Grep::SearchSettings
      print $res->sequence->id . "\n";
      
      # $res->subject is a Bio::Seq object without down-/upstream regions 
@@ -96,7 +96,7 @@ Bio::Grep::Container::SearchResult - Data structure for a back-end search hit
 
 =head1 DESCRIPTION
 
-B<Bio::Grep::Container::SearchResult> is the data structure for one hit in the
+B<Bio::Grep::SearchResult> is the data structure for one hit in the
 database.
 
 =head1 METHODS
@@ -105,7 +105,7 @@ database.
 
 =item C<new(sequence, begin, end, alignment, sequence_id, remark)>;
 
-This function constructs a Bio::Grep::Container::SearchResult object. 
+This function constructs a Bio::Grep::SearchResult object. 
 Only called by the back-end parser. 
 
 =item C<sequence()>
@@ -178,15 +178,15 @@ Some predefined methods for printing objects.
 
 =item C<mark_subject_uppercase()>
 
-This function returns the sequence in a string. the substring from $self->begin to
-$self->end will be in uppercase, the rest in lowercase
+This function returns the sequence in a string. the substring from
+C<$self-E<gt>begin> to C<$self-E<gt>end> will be in uppercase, the rest in 
+lowercase.
 
 =item C<alignment_string()>
 
 This function returns a string with the formated alignment. We use CLUSTALW
 Format without many blank lines and CLUSTAL header. In some back-ends like
-Agrep, this function will return an empty string if no_alignments is true
-in the back-end search settings (L<Bio::Grep::Container::SearchSettings>).
+Agrep, this function will return an empty string if C<no_alignments> is true.
 
 =back
 
@@ -205,7 +205,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

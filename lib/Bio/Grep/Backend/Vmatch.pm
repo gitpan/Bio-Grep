@@ -5,7 +5,7 @@ use warnings;
 
 use Fatal qw(open close);
 
-use Bio::Grep::Container::SearchResult;
+use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.9.4');
+use version; our $VERSION = qv('0.8.1');
 
 sub new {
     my $self = shift;
@@ -84,7 +84,7 @@ sub search {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
             -text  =>
-                "Vmatch: You can't combine qspeedup and complete",
+                "You can't combine qspeedup and complete.",
             ) if $s->complete_isset;
 
         $qspeedup = ' -qspeedup ' . $s->qspeedup . ' '; 
@@ -131,7 +131,7 @@ sub search {
     $self->throw(
         -class => 'Bio::Root::SystemException',
         -text  =>
-            "Vmatch error: Query not valid(maybe too many mismatches? Try online(1))\n\nCommand was:\n\t$command"
+            "Vmatch call failed. Command was:\n\t$command"
         )
         if !$cmd_ok;
         
@@ -182,7 +182,7 @@ sub generate_database {
     }
     else {
         $self->throw(-class => 'Bio::Root::BadParameter',
-                     -text  => 'unsupported alphabet of file',
+                     -text  => 'Unsupported alphabet of file.',
                      -value => $alphabet,);   
     }
     my $command =
@@ -191,13 +191,15 @@ sub generate_database {
         . $filename
         . $alphabet_specific_arguments;
         
-    #warn $command;
+    if ( $ENV{BIOGREPDEBUG} ) {
+        warn $command . "\n";
+    }
     my $output_dir = $self->settings->datapath;
     system(qq{ cd $output_dir ; exec $command } );
     $self->throw(
         -class => 'Bio::Root::SystemException',
         -text  =>
-            "Vmatch error: Cannot generate suffix array. Command was:\n\t$command"
+            "mkvtree call failed. Cannot generate suffix array. Command was:\n\t$command"
         )
         if ($?);
    return $filename;     
@@ -330,6 +332,9 @@ sub _parse_next_res {
                 . $start . ' '
                 . $self->_cat_path_filename( $s->datapath, $s->database );
             $output   = `$command`;
+            if ( $ENV{BIOGREPDEBUG} ) {
+                warn $command . "\n";
+            }
             my $stringio = IO::String->new($output);
             my $in       = Bio::SeqIO->new(
                 '-fh'     => $stringio,
@@ -351,7 +356,7 @@ sub _parse_next_res {
             Bio::SimpleAlign->new()
             ;    #$self->_get_alignment($seq_query, $seq_subject);
         my $result =
-            Bio::Grep::Container::SearchResult->new( $fasta, $upstream,
+            Bio::Grep::SearchResult->new( $fasta, $upstream,
             $upstream + $fields[0],
             $alignment, $internal_seq_id, '' );
         $result->evalue( $fields[8] );
@@ -397,13 +402,17 @@ sub get_sequences {
         $self->_cat_path_filename( $s->execpath, 'vseqselect' )
         . $seq_query . ' ' 
         . $self->_cat_path_filename( $s->datapath, $s->database );
-#warn $command;
+
+    if ( $ENV{BIOGREPDEBUG} ) {
+        warn $command . "\n";
+    }
+
     my $output = `$command`;
     if ($? && $output !~ m{\A \> }xms) {
     $self->throw(
         -class => 'Bio::Root::SystemException',
         -text  =>
-            "Vmatch error: Cannot fetch sequence out of suffix array. Command was:\n\t$command\n$output"
+            "vseqselect call failed. Cannot fetch sequences. Command was:\n\t$command\n$output"
         )
     }    
             unlink($tmpfile) if $tmpfile;
@@ -555,64 +564,51 @@ See L<Bio::Grep::Backend::BackendI> for other diagnostics.
 
 =over
 
-=item C<Bio::Root::SystemException>
+=item C<mkvtree call failed. Cannot generate suffix array. Command was: ...>. 
 
-=over 2
+It was not possible to generate a suffix array in generate_database().
+Check permissions and paths. C<Bio::Root::SystemException>.
 
-=item C<Vmatch error: Query not valid ... > 
+=item C<Unsupported alphabet of file.>
+
+The method generate_database() could not determine the
+alphabet (DNA or Protein) of the specified Fasta file. C<Bio::Root::BadParameter>
+
+
+=item C<Vmatch call failed. Command was: ... > 
 
 It was not possible to run Vmatch in function C<search>. Check the search
-settings.
+settings. If the number of mismatches is to high, try C<online>. 
+C<Bio::Root::SystemException>.
 
-=item C<Vmatch error: Cannot generate suffix array> 
+=item C<vseqselect call failed. Cannot fetch sequences. Command was: ...> 
 
-It was not possible to generate a suffix array in function
-C<generate_database>. Check permissions and paths.
+It was not possible to get some sequences out of the suffix array in 
+get_sequences(). Check sequence ids. C<Bio::Root::SystemException>.
 
-=item C<Vmatch error: Cannot fetch sequence out of suffix array> 
+=item C<You can't combine qspeedup and complete.>
 
-It was not possible to get some sequences out of suffix array in function
-C<get_sequences>. Check sequence ids.
-
-=back
-
-=item C<Bio::Root::BadParameter>
-
-=over 2
+The Vmatch parameters C<-complete> and C<-qspeedup> cannot combined. See the Vmatch 
+documentation. C<Bio::Root::BadParameter>.
 
 =item C<You can't use showdesc() with upstream or downstream.>
 
 We need the tool C<vsubseqselect> of the Vmatch package for the upstream and 
 downstream regions. That tools requires as parameter an internal vmatch
-sequence id, which is not shown in the Vmatch output when showdesc is on.
+sequence id, which is not shown in the Vmatch output when showdesc is on. 
+C<Bio::Root::BadParameter>.
 
 =item C<You have to specify complete or querylength. ...'>
 
 The Vmatch parameters -complete and -l cannot combined. See the Vmatch 
-documentation.
-
-=item C<Vmatch: You can't combine qspeedup and complete>
-
-The Vmatch parameters -complete and -qspeedup cannot combined. See the Vmatch 
-documentation.
-
-=item C<unsupported alphabet of file>
-
-The method generate_database() could not determine the
-alphabet (DNA or Protein) of the specified Fasta file.
-
-=back
-
-=item It is too slow, if I call vmatch on the command line, it is much faster!
-
-Did you set showdesc(100)? Yes? Write a bugreport!
+documentation. C<Bio::Root::BadParameter>.
 
 =back
 
 =head1 SEE ALSO
 
 L<Bio::Grep::Backend::BackendI>
-L<Bio::Grep::Container::SearchSettings>
+L<Bio::Grep::SearchSettings>
 L<Bio::SeqIO>
 
 =head1 AUTHOR

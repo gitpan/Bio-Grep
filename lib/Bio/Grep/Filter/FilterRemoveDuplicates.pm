@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -85,7 +85,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

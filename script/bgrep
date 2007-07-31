@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.8.0);
+use version; our $VERSION = qv(0.8.1);
 
 use Bio::Grep ;
 use Getopt::Long qw(:config auto_version);
@@ -115,7 +115,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.8.0
+This document describes bgrep version 0.8.1
 
 =head1 SYNOPSIS
 
@@ -125,8 +125,8 @@ This document describes bgrep version 0.8.0
   # to search
   bgrep [ Options ] --query_file Query.fa --database Data.fa  --datapath data
 
-    --query_file    A FASTA file with the query sequences.
-    --database      A FASTA database.
+    --query_file    A Fasta file with the query sequences.
+    --database      A Fasta database.
 
 =head1 OPTIONS
 
@@ -212,7 +212,7 @@ Vmatch only (see manual). Specifies the xdrop value for edit distance extension.
 =head1 DESCRIPTION
 
 Bio-Grep is a collection of Perl modules for searching in 
-FASTA-files. It is programmed in a modular way. There are different 
+Fasta files. It is programmed in a modular way. There are different 
 backends available. You can filter search results.
 
 bgrep is an example of how to use this library.

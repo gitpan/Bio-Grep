@@ -11,7 +11,7 @@ use Bio::Grep::Backend::RE;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 use Class::MethodMaker [
    new      => 'new2',
@@ -52,7 +52,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.8.0
+This document describes Bio::Grep version 0.8.1
 
 =head1 SYNOPSIS
 
@@ -150,7 +150,7 @@ L<Bio::Grep::Backend::RE> and L<Bio::Grep::Backend::Hypa>
 Bio::Grep supports most of the features of the back-ends. If you need a 
 particular feature that is not supported, write a feature request. In general it 
 should be easy to integrate. For a complete list of supported features, see
-L<Bio::Grep::Container::SearchSettings>, for an overview see 
+L<Bio::Grep::SearchSettings>, for an overview see 
 L<"FEATURE COMPARISON">.
 
 =item 
@@ -177,6 +177,9 @@ checks the settings carefully before calling back-ends. See L<"SECURITY">.
 This is only a short overview of the functionality of this module.
 You should also read L<Bio::Grep::Backend::BackendI> and the documentation of
 the back-end you want to use (e.g. L<Bio::Grep::Backend::Vmatch>).
+
+L<Bio::Grep::Cookbook> is a (not yet comprehensive) collection of recipes for
+common problems.
 
 =head2 GENERATE DATABASES 
 
@@ -208,7 +211,7 @@ Alternatively, you can use L<bgrep> which is part of this distribution:
   
 =head2 SEARCH SETTINGS
 
-All search settings are stored in the L<Bio::Grep::Container::SearchSettings>
+All search settings are stored in the L<Bio::Grep::SearchSettings>
 object of the back-end: 
 
   $sbe->settings
@@ -248,18 +251,18 @@ Use such a Bioperl like while loop to analyze the search results.
      print $res->alignment_string() . "\n\n";
   }
 
-See L<Bio::Grep::Container::SearchResult> for all available informations.
+See L<Bio::Grep::SearchResult> for all available informations.
 
 
 =head1 BGREP
 
-This distribution comes with a sample script called bgrep. See L<bgrep> for
+This distribution comes with a sample script called B<bgrep>. See L<bgrep> for
 details.
 
 =head1 WHICH BACKEND?
 
 
-We support this back-ends:
+We support these external back-ends:
 
 =over
 
@@ -404,7 +407,7 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
-</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches</div><br/><sup>5</sup>Agrep soon</div>
+</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches<br/><sup>5</sup>Agrep soon</div>
 
 =end html
 
@@ -543,13 +546,13 @@ module L<Error> to catch these exceptions:
        exit(1);  
    };
 
-Bio::Grep throws a C<SystemException> when a C<system> call failed,
+Bio::Grep throws a C<SystemException> when a system() call failed,
 C<BadParameter> whenever Bio::Grep recognizes some problems in the settings.
 Be aware that Bio::Grep does not find all of these problems. In such a case,
 the back-end call will fail and Bio::Grep will throw a C<SystemException>.
 
-An C<croak> (L<Carp>) is called when it was not possible to open, copy, close, delete or
-write a file.
+Whenever it is not possible to open, copy, close, delete or
+write a file, croak() (L<Carp>) is called.
 
 See L<Bio::Root::Exception>, L<Carp>.
 
@@ -557,7 +560,7 @@ See L<Bio::Root::Exception>, L<Carp>.
 
 The use of Bio::Grep (in Web Services for example) should be quite secure. All
 test run in taint mode. Bio::Grep checks the settings before it generates the string
-for the C<system()> call. Bio::Grep uses L<File::Temp> for all temporary files.
+for the system() call. Bio::Grep uses L<File::Temp> for all temporary files.
 
 =head1 INCOMPATIBILITIES
 
@@ -581,6 +584,7 @@ L<http://rt.cpan.org>.
 
 =head1 SEE ALSO
 
+L<Bio::Grep::Cookbook>
 L<Bio::Grep::Backend::BackendI>
 L<Bio::Grep::Backend::Vmatch>
 L<Bio::Grep::Backend::Agrep>

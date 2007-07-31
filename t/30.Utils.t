@@ -36,7 +36,7 @@ my @paths = ( '', '/', '/usr/local/bin' );
 
 my $sbe = Bio::Grep->new()->backend;
 
-my $result = Bio::Grep::Container::SearchResult->new();
+my $result = Bio::Grep::SearchResult->new();
 
 # todo make this platform independent
 is( $sbe->_cat_path_filename( $paths[0], 't.txt' ), 't.txt', 'concat path' );
@@ -97,7 +97,7 @@ my $settings_dump =<<EOT
                  'mismatches' => '',
                  'downstream' => '0',
                  'gumismatches' => 0
-               }, 'Bio::Grep::Container::SearchSettings' );
+               }, 'Bio::Grep::SearchSettings' );
 EOT
 ;
 

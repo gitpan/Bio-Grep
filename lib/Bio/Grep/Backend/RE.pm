@@ -5,12 +5,12 @@ use warnings;
 
 use Fatal qw(open close);
 
-use Bio::Grep::Container::SearchResult;
+use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 sub new {
     my $self = shift;
@@ -55,7 +55,9 @@ sub search {
             $regex =  $tmp->revcom->seq;
         }    
     }
-
+    
+    # I need the prefix to calculate the position of
+    # the regex match
     $self->{_regex} = qr{(.*?)($regex)}imsx;
     $self->{_puffer} = [];
     
@@ -125,7 +127,7 @@ sub _parse_next_res {
                 )
             );
             my $res = $self->_filter_result(
-                Bio::Grep::Container::SearchResult->new( $fasta,
+                Bio::Grep::SearchResult->new( $fasta,
                 $upstream, $upstream +length($subject_seq),
                 $tmp_aln, $fasta->id, '' )
                 );
@@ -200,9 +202,16 @@ Perl Regular Expression.
 
 Note 1: B<ALPHA RELEASE!> 
 
-Note 2: reverse_complement (and direct_and_rev_com ) are supported, but are
+Note 2: C<reverse_complement> (and C<direct_and_rev_com> ) are supported, but are
 only available for DNA/RNA queries, not for regular expressions.
 
+Note 3: The i modifier is added to the regex. This means that the search is
+case insensitive. 
+
+Note 4: Be careful with RNA sequences: U is not the same as T in this back-end!
+
+Note 5: L<Bio::Grep::Backend::RE> databases are compatible with
+L<Bio::Grep::Backend::Agrep> databases.
 
 =head1 METHODS
 
@@ -238,46 +247,33 @@ these two sort options require that we load all results in memory.
 
 =back
 
-
 =head1 DIAGNOSTICS
 
 See L<Bio::Grep::Backend::BackendI> for other diagnostics. 
 
 =over
 
-=item C<Query not defined.>
-
-You forgot to define C<$sbe-E<gt>settings-E<gt>query>. 
-
-Class: C<Bio::Root::BadParameter>.
-
 =item C<Query does not look like a DNA/RNA sequence.>
 
 Either C<reverse_complement> or C<direct_and_rev_com> is set and the query
-does not match the regular expression m{\A [gactu]+ \z}xmsi. 
+does not match the regular expression C<m{\A [gactu]+ \z}xmsi>. C<Bio::Root::BadParameter>.
 
-Class: C<Bio::Root::BadParameter>.
+=item C<Query not defined.>
 
-=item C<Bio::Root::IOException>
-
-It was not possible to write the database in
-generate_database(). Check free diskspace.
+You forgot to define C<$sbe-E<gt>settings-E<gt>query>. C<Bio::Root::BadParameter>.
 
 =back
-
 
 =head1 SEE ALSO
 
 L<Bio::Grep::Backend::BackendI>
-L<Bio::Grep::Container::SearchSettings>
+L<Bio::Grep::SearchSettings>
 L<Bio::SeqIO>
 L<Bio::Index::Fasta>
-
 
 =head1 AUTHOR
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
-
 
 =head1 LICENCE AND COPYRIGHT
 
@@ -285,7 +281,6 @@ Copyright (C) 2007  by M. Riester. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
-
 
 =head1 DISCLAIMER OF WARRANTY
 

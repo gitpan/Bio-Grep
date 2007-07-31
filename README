@@ -1,4 +1,4 @@
-Bio-Grep version 0.8.0
+Bio-Grep version 0.8.1
 ======================
 
 Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
@@ -40,6 +40,10 @@ This module requires these other modules, libraries and programs:
   GUUGle is the best choice if you have RNA queries (counts GU as no mismatch)
   and if you are interested in only exact matches.
 
+  RE (perldoc perlre) for Perl regular expressions. A slow sliding window
+      algorithm that searches all sequences for the specified regular
+      expression. Compared to suffix arrays this is really slow for (nearly)
+      perfect matches but requires no additional software.
 
   Vmatch (http://vmatch.de/) for the Vmatch back-end. Commercial software.
     The Vmatch tests assume that vmatch is in your path (You
@@ -105,6 +109,10 @@ DOCUMENTATION
 bgrep is an example implementation. The source code is well documented, so
 maybe it is a good starting point.
 
+A not yet comprehensive coobook is available in perldoc Bio::Grep::Cookbook.
+Please contribute recipes if you can!
+
+
 2. Performance
 --------------
 
@@ -129,7 +137,7 @@ maybe it is a good starting point.
 
 BUGS
 
-Please report any bugs or feature requests to
+Please report any bugs, recipes for the cookbook or feature requests to
 C<bug-bio-grep@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>. 
 

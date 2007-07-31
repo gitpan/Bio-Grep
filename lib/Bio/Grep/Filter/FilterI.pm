@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.8.0');
+use version; our $VERSION = qv('0.8.1');
 
 use base 'Bio::Root::Root';
 
@@ -137,7 +137,7 @@ result.
 
 =item C<$filter-E<gt>search_result()>
 
-Get/set the search_result. A L<Bio::Grep::Container::SearchResult>
+Get/set the search_result. A L<Bio::Grep::SearchResult>
 object. 
 
 =back
@@ -165,7 +165,7 @@ the code in your script is easier to understand and maintain.
 =head1 SEE ALSO
 
 L<Bio::Grep::Backend::BackendI>
-L<Bio::Grep::Container::SearchResult>
+L<Bio::Grep::SearchResult>
 
 =head1 AUTHOR
 
@@ -173,7 +173,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.
