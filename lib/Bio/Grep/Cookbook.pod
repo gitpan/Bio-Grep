@@ -33,7 +33,7 @@ large)
   use Bio::Grep;
   use Bio::SeqIO;
  
-  my $sbe = Bio::Grep->new('Vmatch')->backend;
+  my $sbe = Bio::Grep->new('Vmatch');
  
   my $out = Bio::SeqIO->new( -format => 'Fasta',
                              -file   => '>motifs.fasta',
@@ -63,7 +63,7 @@ database is small)
  
   use Bio::Grep;
  
-  my $sbe = Bio::Grep->new('RE')->backend;
+  my $sbe = Bio::Grep->new('RE');
  
   my $motif = '[AC]{4}TAAAA[AGCT]GG';
  

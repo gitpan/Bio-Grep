@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 sub new {
     my $self = shift;
@@ -377,6 +377,7 @@ sub _parse_next_res {
 sub get_sequences {
     my ( $self, $seqid)  = @_;
     my $s     = $self->settings;
+    $self->is_arrayref_of_size($seqid,1);
     $self->_check_search_settings();
     my ( $tmp_fh, $tmpfile );
     
@@ -451,47 +452,63 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backend::Vmatch;
+  use Bio::Grep;
   
-  use Bio::Root::Exception;
+  my $sbe = Bio::Grep->new('Vmatch');
   
-  # configure our search back-end, in this case Vmatch
-  my $sbe = Bio::Grep::Backend::Vmatch->new();
-  
-  $sbe->settings->execpath('/usr/local/vmatch');
-  $sbe->settings->tmppath('/tmp');
   $sbe->settings->datapath('data');
   
   # generate a Vmatch suffix array. you have to do this only once.
-  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
-  
-  my %local_dbs_description = $sbe->get_databases();
-  my @local_dbs = sort keys %local_dbs_description;
-  
-  # take first available database in our test
-  $sbe->settings->database($local_dbs[0]);
-  
+  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts');
+ 
   # search for the reverse complement and allow 4 mismatches
-  $sbe->settings->query('UGAACAGAAAGCUCAUGAGCC');
-  $sbe->settings->reverse_complement(1);
-  $sbe->settings->mismatches(4);
-  
-  # With many mismatches and short queries, the "online" algorithm
-  # is maybe faster. This alogrithm does not use the index. Test this!
-  # $sbe->settings->online(1);
+  # parse the description (max. 100 chars) directly out of the
+  # Vmatch output instead of calling vsubseqselect for every
+  # search result
 
-  # if you don't need upstream/downstream options, set showdesc
-  # (see vmatch manual) for performance reasons 
-  $sbe->settings->showdesc(100)
-  
-  $sbe->search();
+  $sbe->search({
+    query   => 'UGAACAGAAAGCUCAUGAGCC',
+    reverse_complement => 1,
+    mismatches         => 4,
+    showdesc           => 100,
+    database           => 'ATH1.cdna',
+  });
 
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
      print $res->mark_subject_uppercase() . "\n";
      print $res->alignment_string() . "\n\n";
+
+     # sequence_id now contains the gene id (e.g. At1g1234),
+     # not the Vmatch internal id 
+     # To retrieve the complete sequences, one has to
+     # call get_sequences for every gene id
+     my $seq_io = $sbe->get_sequences([$res->sequence_id]);
+     my $sequence = $seq_io->next_seq;
   }
+  
+  # for retrieving up- and downstream regions,
+  # Vmatch internal sequence ids are required
+  # (no showdesc possible)
+
+  $sbe->search({
+    query   => 'UGAACAGAAAGCUCAUGAGCC',
+    reverse_complement => 1,
+    mismatches         => 4,
+    upstream           => 30,
+    downstream         => 30,
+  });
+ 
+  my @internal_ids;
+  while ( my $res = $sbe->next_res ) {
+    # vsubseqselect is called now for every result ...
+    push @internal_ids, $res->sequence_id;
+  }
+
+  # ... but one can retrieve all complete sequences with
+  # just one call of vseqselect
+  my $seq_io = $sbe->get_sequences(\@internal_ids);
   
 =head1 DESCRIPTION
 
@@ -555,6 +572,9 @@ Otherwise it will take the first array element as query.
     # get sequences that start with At1g1
     $sbe->get_sequences(['At1g1', 'ignored']);
 
+The internal ids are stored in C<$res-E<gt>sequence_id>. If you have specified
+C<showdesc>, then C<sequence_id> will contain the gene id (e.g. At1g1234),
+NOT the Vmatch internal id.
 
 =back
 
@@ -577,7 +597,7 @@ alphabet (DNA or Protein) of the specified Fasta file. C<Bio::Root::BadParameter
 
 =item C<Vmatch call failed. Command was: ... > 
 
-It was not possible to run Vmatch in function C<search>. Check the search
+It was not possible to run Vmatch in function search(). Check the search
 settings. If the number of mismatches is to high, try C<online>. 
 C<Bio::Root::SystemException>.
 

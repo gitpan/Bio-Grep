@@ -10,7 +10,7 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 sub new {
     my $self = shift;
@@ -164,30 +164,38 @@ Bio::Grep::Backend::RE - Perl Regular Expression back-end
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backend::RE;
+  use Bio::Grep;
   
-  # configure our search back-end, in this case RE
-  my $sbe = Bio::Grep::Backend::RE->new();
+  my $sbe = Bio::Grep->new('RE');
   
   $sbe->settings->datapath('data');
   
   # generate a database. you have to do this only once. 
   $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
   
-  $sbe->settings->database('ATH1.cdna');
+  # search on both strands  
+  # retrieve up- and downstream regions of size 30
   
-  # search for the reverse complement 
-  $sbe->settings->query('TGAACAGAAAGCTCATGAGCC');
-  $sbe->settings->reverse_complement(1);
+  $sbe->search({
+    query   => 'GAGCCCTT',
+    direct_and_rev_com => 1, 
+    upstream           => 30,
+    downstream         => 30,
+    database           => 'ATH1.cdna',
+  });
   
-  $sbe->search();
+  my @internal_ids;
   
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res) {
      print $res->sequence->id . "\n";
      print $res->mark_subject_uppercase() . "\n";
      print $res->alignment_string() . "\n\n";
+     push @internal_ids, $res->sequence_id;
   }
+  
+  # get the complete sequences as Bio::SeqIO object
+  my $seq_io = $sbe->get_sequences(\@internal_ids);
 
   # sequences with at least 10 As
   $sbe->search({ query => '[A]{10,}' });
@@ -232,7 +240,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in GUUGle:
+Available sortmodes in RE:
 
 =over
 

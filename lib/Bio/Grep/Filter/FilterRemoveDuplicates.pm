@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],

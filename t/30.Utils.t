@@ -21,7 +21,7 @@ BEGIN{
     }
 }
 
-plan tests => 24;
+plan tests => 28;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -34,7 +34,7 @@ use Bio::Perl;
 
 my @paths = ( '', '/', '/usr/local/bin' );
 
-my $sbe = Bio::Grep->new()->backend;
+my $sbe = Bio::Grep->new();
 
 my $result = Bio::Grep::SearchResult->new();
 
@@ -68,6 +68,19 @@ is( $sbe->is_word('1234-valid.txt_'), '1234-valid.txt_' );
 eval { $sbe->is_word('valid && ls *'); };
 ok($EVAL_ERROR);
 
+eval { $sbe->is_arrayref_of_size('',2) };
+cmp_ok($EVAL_ERROR, '=~', qr{Argument is not an array reference}, 
+    'not an aref' );
+eval { $sbe->is_arrayref_of_size({},2) };
+cmp_ok($EVAL_ERROR, '=~', qr{Argument is not an array reference}, 
+    'not an aref' );
+eval { $sbe->is_arrayref_of_size([],2) };
+cmp_ok($EVAL_ERROR, '=~', qr{Size of argument is too small}, 
+    'Size of argument is too small' );
+
+eval { $sbe->is_arrayref_of_size([ 'a', 'b', 'c' ],2) };
+ok(!$EVAL_ERROR, 'ok' ) || diag $EVAL_ERROR;
+
 no warnings;
 eval {$sbe->_check_variable()};
 cmp_ok($EVAL_ERROR, '=~', qr{Missing arguments: require hash with keys},
@@ -81,7 +94,7 @@ eval {$sbe->_check_variable( variable => 'bla',  regex => 'real' )};
 cmp_ok($EVAL_ERROR, '=~', qr{Unknown regex},
     "Exception with unknown regex");
 
-$sbe=Bio::Grep->new('GUUGle')->backend;
+$sbe=Bio::Grep->new('GUUGle');
 
 ok($sbe->_rnas_match('agcua','agcua'), 'rna matching function');
 ok(!$sbe->_rnas_match('agcuag','agcua'), 'rna matching function');

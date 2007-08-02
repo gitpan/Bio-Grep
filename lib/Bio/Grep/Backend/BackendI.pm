@@ -20,7 +20,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 use Class::MethodMaker [
     new      => 'new2',
@@ -448,6 +448,8 @@ sub available_sort_modes {
 
 sub _get_sequences_from_bio_index {
     my ( $self, $seqid ) = @_;
+    
+    $self->is_arrayref_of_size($seqid,1);
     my $indexfile =
         $self->settings->datapath . '/' . $self->settings->database . '.idx';
     my $idx = Bio::Index::Fasta->new($indexfile);
@@ -688,7 +690,7 @@ otherwise.
 
 =head1 ABSTRACT METHODS
 
-Every back-end must implement this methods.
+Every back-end must implement these methods.
 
 =over
 

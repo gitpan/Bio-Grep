@@ -3,45 +3,38 @@ package Bio::Grep;
 use strict;
 use warnings;
 
-use Bio::Grep::Backend::Vmatch;
-use Bio::Grep::Backend::Agrep;
-use Bio::Grep::Backend::Hypa;
-use Bio::Grep::Backend::GUUGle;
-use Bio::Grep::Backend::RE;
+require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.2');
-
-use Class::MethodMaker [
-   new      => 'new2',
-   scalar   => [qw / backend/],
-];
+use version; our $VERSION = qv('0.8.3');
 
 
 sub new {
-   my $self = shift->new2;
-   my $backendname  = shift;
-   $backendname = 'Vmatch' unless defined $backendname;
+   my ( $class, $backendname) = @_;
+   my $self = $class->SUPER::new();
+
+   $backendname = 'Vmatch' if !defined $backendname;
    my %known_backends = (
        Agrep  => 1,
        Vmatch => 1,
        Hypa   => 1,
        GUUGle => 1,
        RE     => 1,
-   );    
-
+   ); 
+   
    if (!defined $known_backends{$backendname}) {
       $self->throw(-class => 'Bio::Root::BadParameter',
                    -text  => 'Unknown back-end.',
                    -value => $backendname . ' not supported.');
    }
 
-   my $backendpackage = "Bio::Grep::Backend::$backendname";
+   my $module = "Bio::Grep::Backend::$backendname";
+   $module->require;
    
-   $self->backend( $backendpackage->new() );
-   $self->backend->settings->tmppath( File::Spec->tmpdir() );
-   $self;
+   my $backend = $module->new();
+   $backend->settings->tmppath( File::Spec->tmpdir() );
+   return $backend;
 }
 1;# Magic true value required at end of module
 __END__
@@ -52,17 +45,14 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.8.2
+This document describes Bio::Grep version 0.8.3
 
 =head1 SYNOPSIS
 
   use Bio::Grep;
   
-  my $search_obj = Bio::Grep->new('Vmatch');	
+  my $sbe = Bio::Grep->new('Vmatch');	
   
-  # $sbe is now a reference to the back-end
-  my $sbe = $search_obj->backend;
- 
   # define the location of the suffix arrays
   $sbe->settings->datapath('data');
   
@@ -89,7 +79,7 @@ This document describes Bio::Grep version 0.8.2
   # (because it is likely that they don't change when search is called
   # multiple times)
 
-  $sbe->search( { query  =>  'UGAACAGAAAG',
+  $sbe->search( { query  =>  'GAGCCCTTGCT',
                   reverse_complement => 1,
                   mismatches         => 2,
                  });  
@@ -129,12 +119,9 @@ expressions are available in the C<RE> back-end. C<Vmatch> is default.
 Sets temporary path to C<File::Spec-E<gt>tmpdir();>
 
 
-  my $search_obj = Bio::Grep->new('Agrep');	
+  my $sbe = Bio::Grep->new('Agrep');	
 
-
-=item C<backend()>
-
-Get/set the back-end. This is a object that uses L<Bio::Grep::Backend::BackendI> 
+Returns an object that uses L<Bio::Grep::Backend::BackendI> 
 as base class. See L<Bio::Grep::Backend::BackendI>, L<Bio::Grep::Backend::Vmatch>,
 L<Bio::Grep::Backend::Agrep>, L<Bio::Grep::Backend::GUUGle>,
 L<Bio::Grep::Backend::RE> and L<Bio::Grep::Backend::Hypa>
@@ -191,13 +178,13 @@ this only once for every Fasta file.
 
 For example:
 
-  my $sbe = Bio::Grep->new('Vmatch')->backend;	
+  my $sbe = Bio::Grep->new('Vmatch');	
   $sbe->settings->datapath('data');
   $sbe->generate_database('../t/Test.fasta', 'Description for the test Fastafile');
 
 Now, in a second script:
 
-  my $sbe = Bio::Grep->new('Vmatch')->backend;	
+  my $sbe = Bio::Grep->new('Vmatch');	
   $sbe->settings->datapath('data');
 
   my %local_dbs_description = $sbe->get_databases();
@@ -413,24 +400,24 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 
 =begin man
 
-     Features                 || Agrep  | GUUGle |  HyPa  |   RE   | Vmatch 
-     Suffix Arrays/Trees      ||   no   |  yes   |  yes   |   no   |  yes   
-     Sliding Window           ||  yes   |   no   |   no   |  yes   |   no   
-     Persistent Index 1       ||   no   |   no   |  yes   |   no   |  yes   
-     Mismatches               ||  yes   |   no   |  yes   |   no   |  yes   
-     Edit Distance            ||  yes   |   no   |   no   |   no   |  yes   
-     Insertions               ||   no   |   no   |  yes   |   no   |   no   
-     Deletions                ||   no   |   no   |  yes   |   no   |   no   
-     Multiple Queries 2       ||   no   |  yes   |   no   |   no   |  yes   
-     GU 3                     ||   no   |  yes   |  yes   |   no   |   no   
-     DNA/RNA                  ||  yes   |  yes   |  yes   |  yes   |  yes   
-     Protein                  ||  yes   |   no   |  yes   |  yes   |  yes   
-     Direct and Revcom        ||   no   |  yes   |   no   |  yes   |  yes   
-     Reverse Complement       ||  yes   |  yes   |  yes   |  yes   |  yes   
-     Upstream/Downstream      ||   no   |  yes   |  yes   |  yes   |  yes   
-     Filters                  ||   no   |  yes   |  yes   |  yes   |  yes   
-     Query Length 4           ||   no   |  yes   |   no   |   no   |  yes   
-     Regular Expressions 5    ||   no   |   no   |   no   |  yes   |   no   
+   Features               || Agrep  | GUUGle |  HyPa  |   RE   | Vmatch 
+   Suffix Arrays/Trees    ||   no   |  yes   |  yes   |   no   |  yes   
+   Sliding Window         ||  yes   |   no   |   no   |  yes   |   no   
+   Persistent Index 1     ||   no   |   no   |  yes   |   no   |  yes   
+   Mismatches             ||  yes   |   no   |  yes   |   no   |  yes   
+   Edit Distance          ||  yes   |   no   |   no   |   no   |  yes   
+   Insertions             ||   no   |   no   |  yes   |   no   |   no   
+   Deletions              ||   no   |   no   |  yes   |   no   |   no   
+   Multiple Queries 2     ||   no   |  yes   |   no   |   no   |  yes   
+   GU 3                   ||   no   |  yes   |  yes   |   no   |   no   
+   DNA/RNA                ||  yes   |  yes   |  yes   |  yes   |  yes   
+   Protein                ||  yes   |   no   |  yes   |  yes   |  yes   
+   Direct and Revcom      ||   no   |  yes   |   no   |  yes   |  yes   
+   Reverse Complement     ||  yes   |  yes   |  yes   |  yes   |  yes   
+   Upstream/Downstream    ||   no   |  yes   |  yes   |  yes   |  yes   
+   Filters                ||   no   |  yes   |  yes   |  yes   |  yes   
+   Query Length 4         ||   no   |  yes   |   no   |   no   |  yes   
+   Regular Expressions 5  ||   no   |   no   |   no   |  yes   |   no   
 
 --
  1 Needs precalculation and (much) more memory but queries are in general faster
@@ -440,6 +427,7 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
  5 Agrep soon
 
 =end man
+
 
 Vmatch is fast but needs a lot of memory. Agrep is the best choice if you allow many 
 mismatches in short sequences, if you want to search in Fasta files 

@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 sub new {
     my $self = shift;
@@ -208,45 +208,37 @@ Bio::Grep::Backend::Agrep - Agrep back-end
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backend::Agrep;
+  use Bio::Grep;
   
-  # configure our search back-end, in this case Agrep
-  my $sbe = Bio::Grep::Backend::Agrep->new();
+  my $sbe = Bio::Grep->new('Agrep');
   
-  $sbe->settings->execpath('/usr/bin');
-  $sbe->settings->tmppath('tmp');
-  $sbe->settings->datapath('data_agrep');
+  $sbe->settings->datapath('data');
   
   # generate a database. you have to do this only once. 
   $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
   
-  my %local_dbs_description = $sbe->get_databases();
-  my @local_dbs = sort keys %local_dbs_description;
+  # search for the reverse complement and allow 2 mismatches 
+  # Don't calculate Alignments with EMBOSS
+  $sbe->search({
+    query   => 'GAGCCCTT',
+    reverse_complement => 1, 
+    mismatches         => 2,
+    no_alignments      => 1,
+    database           => 'ATH1.cdna',
+  });
   
-  # take first available database in our test
-  $sbe->settings->database($local_dbs[0]);
-  
-  my $seq = 'UGAACAGAAAGCUCAUGAGCC'; 
-  
-  # search for the reverse complement and allow 4 mismatches
-  $sbe->settings->query($seq);
-  $sbe->settings->reverse_complement(1);
-  $sbe->settings->mismatches(4);
-  
-  # things should be fast? then turn alignment calculation off
-  $sbe->settings->no_alignments(1);
-  
-  # now try to search, agrep back-end will also throw an exception if no hit
-  # was found
-  $sbe->search();
+  my @internal_ids;
   
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res) {
      print $res->sequence->id . "\n";
      print $res->mark_subject_uppercase() . "\n";
-     print $res->alignment_string() . "\n\n";
+     # print $res->alignment_string() . "\n\n";
+     push @internal_ids, $res->sequence_id;
   }
-
+  
+  # get the complete sequences as Bio::SeqIO object
+  my $seq_io = $sbe->get_sequences(\@internal_ids);
 
 =head1 DESCRIPTION
 

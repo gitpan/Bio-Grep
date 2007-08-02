@@ -9,8 +9,9 @@ use base 'Bio::Root::Root';
 
 use File::Spec;
 use File::Copy;
+use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 sub is_integer {
     my ( $self, $variable, $desc) = @_;
@@ -34,6 +35,22 @@ sub is_sentence {
     my ( $self, $variable, $desc) = @_;
     return $self->_check_variable( variable => $variable, desc => $desc, regex
     => 'sentence' );
+}
+
+sub is_arrayref_of_size {
+    my ( $self, $a_ref, $size ) = @_;
+    my $reftype = reftype $a_ref;
+    if (!defined $reftype || $reftype ne 'ARRAY') {
+        $self->throw( -class => 'Bio::Root::BadParameter',
+                    -text  => 'Argument is not an array reference',
+                    -value =>  $reftype);
+    }   
+    if (scalar @{$a_ref} < $size) {
+        $self->throw( -class => 'Bio::Root::BadParameter',
+                    -text  => 'Size of argument is too small.',
+                    -value => scalar @{$a_ref} . " vs. $size" );
+    }
+    return 1;
 }
 
 ###############################################################################
@@ -129,6 +146,11 @@ if the specified variable is not a valid sentence (It is word but accepts also
 WARNING: make sure that command line arguments are quoted ( my $command = "...
  '$sentence' ") 
 
+=item C<is_arrayref_of_size($a_ref, $size)>
+
+Checks if $a_ref is an array reference and the array is of size $size or
+larger.
+
 =back
 
 =head1 INTERNAL METHODS
@@ -155,10 +177,20 @@ is_integer(), is_word() ... .
 Some variable does not match the specified regular expression.
 C<Bio::Root::BadParameter>.
 
+=item C<Argument is not an array reference.>
+
+Method is_arrayref_of_size() is used to check arguments. You probably called
+a method with wrong arguments.
+
 =item C<Missing arguments: require hash with keys "regex" ... >
 
 You called _check_variable() without a valid hashref. See 
 L<"INTERNAL METHODS">. C<Bio::Root::BadParameter>.
+
+=item C<Size of argument is too small.>
+
+Method is_arrayref_of_size() is used to check arguments. You probably called
+a method with missing arguments.
 
 =item C<Unknown regex.>
 

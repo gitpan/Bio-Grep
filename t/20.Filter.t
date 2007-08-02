@@ -58,8 +58,7 @@ SKIP: {
         diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
             'RNAcofold' );
-        my $search_obj = Bio::Grep->new($backendname);
-        my $sbe        = $search_obj->backend;
+        my $sbe = Bio::Grep->new($backendname);
 
  # define own tmppath, so that we can check if all temporary files are deleted
         $sbe->settings->tmppath('t/tmp');

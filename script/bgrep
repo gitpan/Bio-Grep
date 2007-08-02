@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.8.2);
+use version; our $VERSION = qv(0.8.3);
 
 use Bio::Grep ;
 use Getopt::Long qw(:config auto_version);
@@ -54,11 +54,7 @@ unless ((defined $h{query_file} || defined $h{query} || defined $h{createdb}) &&
 
 # now start configuring Bio::Grep
 ##############################################################################
-my $search_obj = Bio::Grep->new($h{backend});	
-
-# $sbe is now a reference to the backend
-# perldoc Bio::Grep::Backend::BackendI	
-my $sbe = $search_obj->backend;
+my $sbe = Bio::Grep->new($h{backend});	
 
 if (!defined $h{datapath}) {
     $h{datapath} = 'data';
@@ -69,7 +65,7 @@ $sbe->settings->datapath($h{datapath});
 
 # generate a suffix array. you have to do this only once.
 if ($h{createdb}) {
-    $h{database} = $sbe->generate_database_out_of_fastafile($h{database}, 'Description for the test Fastafile');
+    $h{database} = $sbe->generate_database($h{database}, 'Description for the test Fastafile');
 }
 
 # now try to search. 
@@ -115,7 +111,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.8.2
+This document describes bgrep version 0.8.3
 
 =head1 SYNOPSIS
 

@@ -13,7 +13,7 @@ use File::Basename;
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 sub new {
     my $self = shift;
@@ -171,6 +171,16 @@ sub _rnas_match {
     return 1;
 }    
 
+sub _get_subject_id_and_desc {
+    my ( $self, $text ) = @_;
+    if ( $text =~ m{(.*?)\s(.*)}xms) {
+        return ($1,$2);
+    }
+    else {
+        return ($text,'');
+    }    
+}   
+
 sub _parse_next_res {
     my $self    = shift;
     my $s       = $self->settings;
@@ -201,25 +211,22 @@ sub _parse_next_res {
                 "(.*?)"\s
                 at\s(\d+)
              }xms;
-             if ( $subject_id =~ m{(.*?)\s(.*)}xms) {
-                 $subject_id = $1;
-                 $subject_desc = $2;
-             }
-             else {
-                 $subject_desc = '';
-             }    
+             ( $subject_id, $subject_desc) =
+                 $self->_get_subject_id_and_desc($subject_id);
+
              next LINE;   
         }    
         elsif ( $line =~ m{ \A > }xms ) { # -e mode
-            ( $subject_id, $subject_desc, $subject_pos, 
+            ( $subject_id, $subject_pos, 
                 $query_desc, $query_pos ) = $line =~ m{\A
-                >(.*?)\s
-                (.*?)
+                >(.*?)
                 _at_(\d+)
                 _with_
                 (.*?)
                 _at_(\d+)
              }xms;
+             ( $subject_id, $subject_desc) =
+                 $self->_get_subject_id_and_desc($subject_id);
              next LINE;   
         }    
         elsif ( $line =~ m{ \A 5 }xms) {
@@ -343,12 +350,10 @@ Bio::Grep::Backend::GUUGle - GUUGle back-end
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backend::GUUGle;
- 
-  # construct the GUUGle back-end	
-  my $sbe = Bio::Grep::Backend::GUUGle->new();
- 
-  $sbe->settings->tmppath('tmp');
+  use Bio::Grep;
+  
+  my $sbe = Bio::Grep->new('GUUGle');
+  
   $sbe->settings->datapath('data');
   
   # generate a GUUGle Bio::Grep database. you have to do this only once.
@@ -358,29 +363,37 @@ Bio::Grep::Backend::GUUGle - GUUGle back-end
   $sbe->generate_database('ATH1.cdna', 
      'AGI Transcripts (- introns, + UTRs)');
  
-  my %local_dbs_description = $sbe->get_databases();
-  my @local_dbs = sort keys %local_dbs_description;
- 
-  # take first available database 
-  $sbe->settings->database($local_dbs[0]);
- 
-  # search for the reverse complement
-  $sbe->settings->query('UGAACAGAAAGCUCAUGAGCC');
-  $sbe->settings->reverse_complement(1);
-  
-  # display 5 bases upstream and downstream of the match
-  $sbe->settings->upstream(5);
-  $sbe->settings->downstream(5);
-  
-  $sbe->search();
- 
+  # search on both strands (GU allowed) 
+  # retrieve up- and downstream regions of size 30
+  $sbe->search({
+    query   => 'GAGCCCTTGGGGGGG',
+    direct_and_rev_com => 1, 
+    upstream           => 30,
+    downstream         => 30,
+    gumismatches       => 0,
+    database           => 'ATH1.cdna',
+  });
+
+  my @internal_ids;
+
   # output all informations we have!
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
      print $res->mark_subject_uppercase() . "\n";
      print $res->alignment_string() . "\n\n";
+     push @internal_ids, $res->sequence_id;
   }
-   
+  
+  # get the complete sequences as Bio::SeqIO object
+  my $seq_io = $sbe->get_sequences(\@internal_ids);
+  
+  # search for targets (GU allowed)
+  $sbe->search({
+    query   => 'GAGCCCTTGGGGGGG',
+    reverse_complement => 1, 
+    gumismatches       => 0,
+  });
+
 =head1 DESCRIPTION
 
 B<Bio::Grep::Backend::GUUGle> searches for a query in a GUUGle suffix array. 

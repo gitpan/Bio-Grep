@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -71,20 +71,19 @@ Bio::Grep::SearchSettings - Data structure for all search settings
 
 =head1 SYNOPSIS
 
- 
- use Bio::Grep::Backend::Vmatch;
+ use Bio::Grep;
 
  # configure our search back-end, in this case VMATCH
- my $sbe = Bio::Grep::Backend::Vmatch->new();
+ my $sbe = Bio::Grep->new('Vmatch');
  
- # the back-end automatically generates a SearchSettings
- # object. You can use this now to configure the
- # back-end:  
-
  # tell the back-end the location of the executables
  # (only required if they are not in path)
  $sbe->settings->execpath('/usr/local/virtual.distrib');
+
+ # maybe an alternative path for temporary files
  $sbe->settings->tmppath($tmp_path);
+
+ # some query options
  $sbe->settings->mismatches(4);
  $sbe->settings->datapath($path_to_data_directory);
  $sbe->settings->database("ATH1.cdna");

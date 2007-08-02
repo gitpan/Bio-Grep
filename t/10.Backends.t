@@ -102,8 +102,7 @@ SKIP: {
         diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt),
             'RNAcofold' );
-        my $search_obj = Bio::Grep->new($backendname);
-        my $sbe        = $search_obj->backend;
+        my $sbe        = Bio::Grep->new($backendname);
         my %asm        = $sbe->available_sort_modes();
         is_deeply([ sort keys %asm ], 
                   $sort_modes{$backendname}, 'sortmodes as expected');
@@ -278,7 +277,7 @@ SKIP: {
         }
 
         if ($sbe->features->{DIRECT_AND_REV_COM}) {
-            my $sbe2        = Bio::Grep->new($backendname)->backend;
+            my $sbe2        = Bio::Grep->new($backendname);
             $sbe2->settings->datapath('t/data2');
             $sbe2->generate_database( 't/TestRevCom.fasta' );
             $sbe2->search({

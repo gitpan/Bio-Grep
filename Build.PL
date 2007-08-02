@@ -13,6 +13,7 @@ my $builder = Module::Build->new(
     		                'IO::String'         => 1.0, 
                             'Getopt::Long'       => 2.32,   
                             'Pod::Usage'         => 0,   
+                            'UNIVERSAL::require' => 0.11,   
                             },
     add_to_cleanup      => [ 'Bio-Grep-*' ],
 );

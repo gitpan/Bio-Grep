@@ -60,8 +60,7 @@ my %hits_sequences5 = (
  'At1g01010.3' => 'atggaggatcaagttgggtt',
 );
 
-my $search_obj = Bio::Grep->new($backendname);
-my $sbe        = $search_obj->backend;
+my $sbe = Bio::Grep->new($backendname);
 
 # define own tmppath, so that we can check if all temporary files are deleted
 $sbe->settings->tmppath('t/tmp');

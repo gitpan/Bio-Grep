@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.8.2');
+use version; our $VERSION = qv('0.8.3');
 
 sub new {
     my $self = shift;
@@ -367,13 +367,10 @@ Bio::Grep::Backend::Hypa - HyPa back-end
 
 =head1 SYNOPSIS
 
-  use Bio::Grep::Backend::Hypa;
+  use Bio::Grep;
  
+  my $sbe = Bio::Grep->new('Hypa');
  
-  # construct the Hypa back-end	
-  my $sbe = Bio::Grep::Backend::Hypa->new();
- 
-  $sbe->settings->tmppath('tmp');
   $sbe->settings->datapath('data');
   
   # generate a Hypa suffix array. you have to do this only once.
