@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 use base 'Bio::Root::Root';
 
@@ -78,6 +78,8 @@ be in the search results of the back-end.
 
 =head1 METHODS
 
+See L<Bio::Grep::Root> for inherited methods.
+
 =over
 
 =item C<$filter-E<gt>delete()>
@@ -89,32 +91,15 @@ Default ist 1.
 
 =back
 
-
 =head1 ABSTRACT METHODS
 
-Every filter must implement this methods. 
+Every filter must implement these methods:
 
 =over
 
 =item C<new()>
 
 This function constructs a filter object.
-
-=item C<$filter-E<gt>filter()>
-
-This function returns 1 if query and subject pass the filter, 0 otherwise. You
-have to set the search result with the function
-C<$filter-E<gt>search_result> before. L<Bio::Grep::Backend::BackendI>
-takes care of that.
-
-Internal method: Only L<Bio::Grep::Backend::BackendI> should call this method.
-
-=item C<$filter-E<gt>reset()>
-
-Get/set reset. A flag needed by some Filters like FilterRemoveDuplicates to tell them, it
-is a new search, forget everything. 
-
-Internal method: Only L<Bio::Grep::Backend::BackendI> should call this method.
 
 =item C<$filter-E<gt>supports_alphabet()>
 
@@ -129,6 +114,19 @@ Get supported alphabets. Returns a hash. Keys are the supported alphabets.
 Only L<Bio::Grep::Backend::BackendI> should call them directly.
 
 =over
+
+=item C<$filter-E<gt>filter()>
+
+This function returns 1 if query and subject pass the filter, 0 otherwise. You
+have to set the search result with the function
+C<$filter-E<gt>search_result> before. L<Bio::Grep::Backend::BackendI>
+takes care of that.
+
+=item C<$filter-E<gt>reset()>
+
+Get/set reset. A flag needed by some Filters like
+L<Bio::Grep::Filter::FilterRemoveDuplicates> to tell them, it
+is a new search, forget everything. 
 
 =item C<$filter-E<gt>message()>
 

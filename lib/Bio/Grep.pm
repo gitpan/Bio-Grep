@@ -7,7 +7,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 
 sub new {
@@ -45,7 +45,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.8.3
+This document describes Bio::Grep version 0.8.4
 
 =head1 SYNOPSIS
 

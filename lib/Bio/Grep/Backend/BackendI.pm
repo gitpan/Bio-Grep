@@ -20,7 +20,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 use Class::MethodMaker [
     new      => 'new2',
@@ -138,6 +138,10 @@ sub results {
 
 sub _prepare_results {
     my ( $self ) = @_;
+    # sorting by dG is a Bio::Grep sortmode,  not a back-end sortmode. so we
+    # have to load the results in memory and sort them.
+    # next_res() will then shift the next result in _results() (see
+    # next_res())
     if ( $self->settings->sort_isset
         && substr( $self->settings->sort, 0, 1 ) eq 'g' )
     {
@@ -260,24 +264,18 @@ sub _check_search_settings {
     } 
 
     if ( $self->settings->sort_isset ) {
-        my $found_sort_mode = 0;
         my %sort_modes      = $self->available_sort_modes();
-        foreach my $sort_mode ( keys %sort_modes ) {
-            if ( $self->settings->sort eq $sort_mode ) {
-                $sort_mode =~ /(\w+)/;
-                $self->settings->sort($1);    #make taint happy
-                $found_sort_mode = 1;
-                last;
-            }
-        }
-        if ( $found_sort_mode == 0 ) {
+        if ( defined $sort_modes{$self->settings->sort} ) {
+            my ( $sort_mode ) = $self->settings->sort =~ /(\w+)/;
+            $self->settings->sort($sort_mode);    #make taint happy
+        } 
+        else {
             $self->throw(
                 -class => 'Bio::Root::BadParameter',
                 -text  => 'Sort mode not valid.',
                 -value => 'sort mode'
             );
         }
-
     }
 
     # check if database is set and valid
@@ -619,6 +617,8 @@ directly.
 
 =head1 METHODS
 
+See L<Bio::Grep::Root> for inherited methods.
+
 =over 
 
 =item C<new()>
@@ -819,15 +819,15 @@ When no file is found, the description will be the filename without the suffix:
 
 =item C<_get_sequences_from_bio_index($id)>
 
-GUUGle, Hypa and Agrep back-ends use L<Bio::Index> for sequence id queries 
+GUUGle, Hypa, RE and Agrep back-ends use L<Bio::Index> for sequence id queries 
 (implemented in this this method. Returns a L<Bio::SeqIO> object like abstract
-the method get_sequences should.
+method get_sequences() should.
 
 =item C<_create_tmp_query_file()>
 
-Examines query, query_file and reverse_complement and generates a temporary
-Fasta file that is passed in the C<system()> call to the backend. If the
-environment variable BIOGREPDEBUG is not set, then this file will be deleted
+Examines C<query>, C<query_file> and C<reverse_complement> and generates a 
+temporary Fasta file that is passed in the system() call to the backend. If the
+environment variable C<BIOGREPDEBUG> is not set, then this file will be deleted
 when the script exits.  
 
 =item C<_create_index_and_alphabet_file($fastafile)>
@@ -838,6 +838,8 @@ Creates an Vmatch alphabet file.
 =back
 
 =head1 DIAGNOSTICS
+
+See L<Bio::Grep::Root> for other diagnostics.
 
 =over
 
@@ -863,8 +865,8 @@ I<data> directory. Check path and permissions. C<Bio::Root::IOException>.
 =item C<Database not defined.>
 
 You forgot to define a database. You have to build a database with
-$sbe->generate_database (once) and set it with
-$sbe->settings->database(). Example:
+C<$sbe-E<gt>generate_database> (once) and set it with
+C<$sbe-E<gt>settings-E<gt>database>. Example:
 
   $sbe->generate_database('ATH1.cdna");
   $sbe->settings->database('ATH1.cdna');
@@ -883,16 +885,16 @@ The database name is not valid. Allowed characters are 'a-z', 'A-z','0-9', '.'
 
 =item C<Query and query_file are set. I am confused...>
 
-You specified a query and a query_file. C<Bio::Root::BadParameter>.
+You specified a query and a query file. C<Bio::Root::BadParameter>.
 
 =item C<Query not defined.>
 
-You forgot to define a query or a query_file. C<Bio::Root::BadParameter>.
+You forgot to define a query or a query file. C<Bio::Root::BadParameter>.
 
 =item C<Sort mode not valid.>
 
 The specified sort mode ($sbe->settings->sort) is not valid.
-You can get all valid sort modes with $sbe->available_sort_modes()
+You can get all valid sort modes with C<$sbe-E<gt>available_sort_modes()>
 See L<Bio::Grep::Backend::Vmatch>, L<Bio::Grep::Backend::Hypa>,
 L<Bio::Grep::Backend::Agrep> for details. C<Bio::Root::BadParameter>.
 

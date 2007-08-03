@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.8.3);
+use version; our $VERSION = qv(0.8.4);
 
 use Bio::Grep ;
 use Getopt::Long qw(:config auto_version);
@@ -42,6 +42,7 @@ my $result = GetOptions(
          "datapath=s",
          "createdb",
          "complete",
+         "no_alignments",
          "man",
          "help|?",
                         ) or pod2usage(2);
@@ -111,7 +112,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.8.3
+This document describes bgrep version 0.8.4
 
 =head1 SYNOPSIS
 
@@ -202,6 +203,9 @@ Vmatch only (see manual). Specifies the xdrop value for hamming distance extensi
 
 Vmatch only (see manual). Specifies the xdrop value for edit distance extension.
 
+=item C<--no_alignments>
+
+Don't calculate alignments with EMBOSS.
 
 =back  
 

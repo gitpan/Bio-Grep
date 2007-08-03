@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 sub new {
     my $self = shift;
@@ -163,11 +163,8 @@ sub get_databases {
 
 
 sub generate_database {
-    my $self        = shift;
-    my $file        = shift;
-    my $description = shift;
+    my ( $self, $file, $description ) = @_;
     my ( $filename, $oldpath ) = fileparse($file);
-
 
     $self->_copy_fasta_file_and_create_nfo( $file, $filename, $description );
     
@@ -416,7 +413,7 @@ sub get_sequences {
             "vseqselect call failed. Cannot fetch sequences. Command was:\n\t$command\n$output"
         )
     }    
-            unlink($tmpfile) if $tmpfile;
+    unlink($tmpfile) if $tmpfile;
     my $stringio = IO::String->new($output);
     my $out      = Bio::SeqIO->new(
         '-fh'     => $stringio,
@@ -516,7 +513,7 @@ B<Bio::Grep::Backend::Vmatch> searches for a query in a Vmatch suffix array.
 
 =head1 METHODS
 
-See L<Bio::Grep::Backend::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
 =over 2
 
@@ -614,7 +611,7 @@ documentation. C<Bio::Root::BadParameter>.
 =item C<You can't use showdesc() with upstream or downstream.>
 
 We need the tool C<vsubseqselect> of the Vmatch package for the upstream and 
-downstream regions. That tools requires as parameter an internal vmatch
+downstream regions. This tool requires as parameter an internal Vmatch
 sequence id, which is not shown in the Vmatch output when showdesc is on. 
 C<Bio::Root::BadParameter>.
 

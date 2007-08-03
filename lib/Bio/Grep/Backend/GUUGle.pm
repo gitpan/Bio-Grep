@@ -13,7 +13,7 @@ use File::Basename;
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 sub new {
     my $self = shift;
@@ -407,7 +407,7 @@ mismatch.
 
 =head1 METHODS
 
-See L<Bio::Grep::Backend::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
 =over 2
 

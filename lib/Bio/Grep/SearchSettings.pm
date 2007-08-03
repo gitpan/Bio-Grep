@@ -5,7 +5,7 @@ use warnings;
 
 use Data::Dumper;
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -136,7 +136,7 @@ values.
 =item C<query()>
 
 Get/Set the query, a simple string. Queries are DNA, RNA, Protein or regular
-exressions but not all back-ends support all three query types.
+expressions but not all back-ends support all three query types.
 
 Maybe this will change in future versions to allow multiple queries.
 
@@ -236,8 +236,9 @@ set it, make sure that the required executables are in path.
 =item C<no_alignments()>
 
 Get/set the no_alignments. Some back-ends like Agrep don't output alignments. 
-The EMBOSS Smith-Waterman implementation will automatically generate alignments
-for a search result. For perfomance reasons, you can turn turn this feature off:
+The EMBOSS Smith-Waterman implementation will automatically generate
+alignments for a search result. For performance reasons, you can turn turn
+this feature off:
 
   # if things need to be fast, turn alignments off
   $sbe->settings->no_alignments(1);
@@ -306,10 +307,10 @@ Specifies the xdrop value for edit distance extension.
 
 =item C<showdesc()>
 
-Get/Set showdesc. This vmatch command line option makes the Vmatch parser
+Get/Set showdesc. This Vmatch command line option makes the Vmatch parser
 fetch the $sbe->result->sequence data directly out of the Vmatch output
-instead of calling C<vseqsubselect>. Because of that, it is much faster with many
-search results. You can't use this option if you want to retrieve up- or
+instead of calling C<vseqsubselect>. Because of that, it is much faster with
+many search results. You can't use this option if you want to retrieve up- or
 downstream regions or if you are interested in the Vmatch internal sequence
 id.
 
@@ -320,7 +321,7 @@ id.
 =item C<qspeedup()>
 
 Get/Set qspeedup. Specify speedup level when matching queries
-(0: fast, 2: faster; default is 2). Beware of time/space tradeoff
+(0: fast, 2: faster; default is 2). Beware of time/space tradeoff.
              
 =back
 

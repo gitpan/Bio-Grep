@@ -1,5 +1,10 @@
 Revision history for Perl extension Bio::Grep.
 
+0.8.4  Thu Jul  03 14:37:00 2007
+    - POD improvements 
+    - code cleanup
+    - RE back-end much faster
+
 0.8.3  Thu Jul  02 20:00:00 2007
     - POD improvements 
     - dynamically loaded back-ends

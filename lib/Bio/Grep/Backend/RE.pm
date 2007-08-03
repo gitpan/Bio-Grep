@@ -10,7 +10,7 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 sub new {
     my $self = shift;
@@ -58,7 +58,7 @@ sub search {
     
     # I need the prefix to calculate the position of
     # the regex match
-    $self->{_regex} = qr{(.*?)($regex)}imsx;
+    $self->{_regex} = qr{$regex}imsx;
     $self->{_puffer} = [];
     
 
@@ -89,11 +89,11 @@ sub _parse_next_res {
         # store sequence for upstream/downstream
         my $seq = $complete_seq;
 
-        my $lastpos = 0;
+        my $lastpos;
         while ( $seq =~ /$self->{_regex}/g ) {
-            my $subject_seq = $2;
-            my $subject_pos = $lastpos  + length $1;
-            $lastpos = $subject_pos + length $subject_seq; 
+            my $subject_pos = length $`;
+            my $subject_seq = $&;
+            $lastpos = $subject_pos + length($subject_seq); 
             my $up_seq = '';
             my $down_seq = '';
 
@@ -208,7 +208,7 @@ Bio::Grep::Backend::RE - Perl Regular Expression back-end
 B<Bio::Grep::Backend::RE> searches for a query with a
 Perl Regular Expression. 
 
-Note 1: B<ALPHA RELEASE!> 
+Note 1: B<BETA RELEASE!> 
 
 Note 2: C<reverse_complement> (and C<direct_and_rev_com> ) are supported, but are
 only available for DNA/RNA queries, not for regular expressions.
@@ -223,7 +223,7 @@ L<Bio::Grep::Backend::Agrep> databases.
 
 =head1 METHODS
 
-See L<Bio::Grep::Backend::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
 =over 2
 

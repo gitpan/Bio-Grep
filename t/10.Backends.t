@@ -294,7 +294,7 @@ SKIP: {
             @drc_results = sort @drc_results;
             is_deeply(\@drc_results, [sort('both:29' ,'both:3', 'first:6',
                     'second:21' )  ], 
-                "Direct and Rev_Com works");
+                "Direct and Rev_Com works") || diag join ',', @drc_results;
             #warn Dumper $sbe2->get_databases;
             is_deeply({ $sbe2->get_databases} , {'TestRevCom.fasta' =>
                     'TestRevCom.fasta' }, 'filename as description when no desc');

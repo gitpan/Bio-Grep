@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.4');
 
 sub new {
     my $self = shift;
@@ -249,7 +249,7 @@ L<Bio::Grep::Backend::RE> databases.
 
 =head1 METHODS
 
-See L<Bio::Grep::Backend::BackendI> for other methods. 
+See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
 =over 2
 
