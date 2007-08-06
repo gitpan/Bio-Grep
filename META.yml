@@ -1,6 +1,6 @@
 ---
 name: Bio-Grep
-version: v0.8.4
+version: v0.8.5
 author:
   - 'Markus Riester <mriester@gmx.de>'
 abstract: Perl extension for searching in Fasta files
@@ -19,39 +19,39 @@ meta-spec:
 provides:
   Bio::Grep:
     file: lib/Bio/Grep.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Backend::Agrep:
     file: lib/Bio/Grep/Backend/Agrep.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Backend::BackendI:
     file: lib/Bio/Grep/Backend/BackendI.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Backend::GUUGle:
     file: lib/Bio/Grep/Backend/GUUGle.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Backend::Hypa:
     file: lib/Bio/Grep/Backend/Hypa.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Backend::RE:
     file: lib/Bio/Grep/Backend/RE.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Backend::Vmatch:
     file: lib/Bio/Grep/Backend/Vmatch.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Filter::FilterI:
     file: lib/Bio/Grep/Filter/FilterI.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Filter::FilterRemoveDuplicates:
     file: lib/Bio/Grep/Filter/FilterRemoveDuplicates.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::Root:
     file: lib/Bio/Grep/Root.pm
-    version: v0.8.3
+    version: v0.8.5
   Bio::Grep::SearchResult:
     file: lib/Bio/Grep/SearchResult.pm
-    version: v0.8.4
+    version: v0.8.5
   Bio::Grep::SearchSettings:
     file: lib/Bio/Grep/SearchSettings.pm
-    version: v0.8.4
+    version: v0.8.5
 resources:
   license: http://dev.perl.org/licenses/

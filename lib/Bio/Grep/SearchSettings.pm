@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use Data::Dumper;
+use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -51,9 +52,18 @@ sub _init {
 
 sub set {
     my ( $self, $arg_ref ) = @_;
+    # set default values first
     $self->_init();
     for my $key (keys %$arg_ref) {
-        $self->$key($arg_ref->{$key});
+        my $rt = reftype $arg_ref->{$key};
+        if (defined $rt) {
+            if ($rt eq 'ARRAY') {
+                $self->$key(@{ $arg_ref->{$key} });
+            } 
+        }
+        else {
+            $self->$key($arg_ref->{$key});
+        }    
     } 
     return;
 }    
@@ -111,7 +121,7 @@ Not all back-ends will support every option.
 
 =head1 METHODS
 
-=over 2
+=over 
 
 =item C<new()>
 

@@ -1,4 +1,4 @@
-Bio-Grep version 0.8.4
+Bio-Grep version 0.8.5
 ======================
 
 Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
@@ -43,7 +43,10 @@ This module requires these other modules, libraries and programs:
   RE (perldoc perlre) for Perl regular expressions. A slow sliding window
       algorithm that searches all sequences for the specified regular
       expression. Compared to suffix arrays this is really slow for (nearly)
-      perfect matches but requires no additional software.
+      perfect matches and large databases but requires no additional software.
+      Currently it stores all hits of one sequence in memory. So this could be
+      a problem for Fasta files with huge sequences (For example whole
+      chromosomes as one sequence).
 
   Vmatch (http://vmatch.de/) for the Vmatch back-end. Commercial software.
     The Vmatch tests assume that vmatch is in your path (You

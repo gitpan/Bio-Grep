@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -44,6 +44,15 @@ __END__
 
 Bio::Grep::Filter::FilterRemoveDuplicates - Example Filter  
 
+=head1 SYNOPSIS
+
+ my $rd_filter =  Bio::Grep::Filter::FilterRemoveDuplicates->new() 
+
+ $sbe->search({
+    query   => $query,
+    filters => [ $rd_filter ],
+ });
+ 
 =head1 DESCRIPTION
 
 B<Bio::Grep::Filter::FilterRemoveDuplicates> is an example filter that allows 
@@ -54,24 +63,16 @@ characters (this normally represents alternative splice forms).
 
 =over
 
-=item C<$filter = Bio::Grep::Filter::FilterRemoveDuplicates-E<gt>new($res)>
+=item C<$filter = Bio::Grep::Filter::FilterRemoveDuplicates-E<gt>new()>
 
-This function constructs a FilterRemoveDuplicates object. Takes as parameter
-a L<Bio::Grep::Container::SearchResult> object
+This function constructs a FilterRemoveDuplicates object. 
 
-=back
-
-=head1 INTERNAL METHODS
-
-Only L<Bio::Grep::Backend::BackendI> should need to call them. 
-
-=over
-
-=item C<$filter-E<gt>filter>
-
-=item C<$filter-E<gt>reset>
 
 =back
+
+=head1 METHODS
+
+See L<Bio::Grep::FilterI> for inherited methods.
 
 =head1 SEE ALSO
 
@@ -82,7 +83,6 @@ L<Bio::Grep::Backend::BackendI>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-
 =head1 LICENCE AND COPYRIGHT
 
 Based on Weigel::Search v0.13
@@ -92,7 +92,6 @@ Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
-
 
 =head1 DISCLAIMER OF WARRANTY
 

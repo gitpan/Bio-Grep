@@ -13,7 +13,7 @@ use File::Basename;
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 sub new {
     my $self = shift;
@@ -413,9 +413,10 @@ See L<Bio::Grep::Backend::BackendI> for inherited methods.
 
 =item C<Bio::Grep::Backend::GUUGle-E<gt>new()>
 
-This function constructs a GUUGle back-end object.
+This method constructs a GUUGle back-end object and should not used directly.  
+Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
-   my $sbe = Bio::Grep::Backend::GUUGle->new();
+  my $sbe = Bio::Grep->new('GUUGle');
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -454,12 +455,12 @@ files won't get deleted. C<Bio::Root::SystemException>.
 
 =item C<GUUGle searches only for the reverse complement.> 
 
-You have specified a query_file and C<reverse_complement> is not set. 
+You have specified a query file and C<reverse_complement> is not set. 
 C<Bio::Root::BadParameter>.
 
 =item C<query_length not set. See -d flag in the...>
 
-You have specified a query_file and forgot to set query_length.
+You have specified a query file and forgot to set C<query_length>.
 C<Bio::Root::BadParameter>.
 
 =back

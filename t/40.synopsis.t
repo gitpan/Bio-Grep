@@ -31,7 +31,7 @@ BioGrepTest::delete_files;
 
 SKIP:{
 
-    skip 'Vmatch binary not in path', 4 if
+    skip 'Vmatch binary not in path', 3 if
         BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
 
     BioGrepTest::delete_files;
@@ -198,6 +198,7 @@ SKIP:{
         BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
 
     BioGrepTest::delete_files;
+    mkdir 't/data';
 
 my $code =<<'EOT'
 
@@ -248,6 +249,7 @@ SKIP:{
         BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
     
      BioGrepTest::delete_files;
+    mkdir 't/data';
 
 my $code =<<'EOT'
   use Bio::Grep;
@@ -300,6 +302,8 @@ EOT
 }
     
 # RE
+BioGrepTest::delete_files;
+mkdir 't/data';
 
 my $code =<<'EOT'
   use Bio::Grep;

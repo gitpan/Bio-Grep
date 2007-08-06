@@ -20,7 +20,7 @@ use File::Spec;
 use File::Copy;
 use File::Temp qw/ tempfile tempdir /;
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 use Class::MethodMaker [
     new      => 'new2',
@@ -352,7 +352,7 @@ sub _check_search_settings {
 # copies the specified fasta file in the data directory and cerate a file
 # <databasename>.nfo with the description, specified in the optional 2nd
 # argument
-# changes directory! so please save the oldpath before calling this function
+# changes directory! so please save the oldpath before calling this method
 sub _copy_fasta_file_and_create_nfo {
     my ( $self, $file, $filename, $description ) = @_;
     
@@ -623,12 +623,36 @@ See L<Bio::Grep::Root> for inherited methods.
 
 =item C<new()>
 
-This function constructs a Bio::Grep::Backend::BackendI object and is never used 
+This method constructs a L<Bio::Grep::Backend::BackendI> object and is never used 
 directly. Rather, all other back-ends in this package inherit the methods of
 this interface and call its constructor internally.
 
 =cut
 
+=item C<$sbe-E<gt>next_res>
+
+Returns next result as a L<Bio::Grep::SearchResult> object after search() was
+called.
+
+    $sbe->search();
+
+    while ( my $res = $sbe->next_res ) {
+        # output result
+    }
+
+=item C<$sbe-E<gt>results()>
+
+Get the results after search() was called. This is an array of 
+L<Bio::Grep::SearchResult> objects.
+  
+  $sbe->search();
+
+  foreach my $res (@{$sbe->results}) {
+        # output result
+  }
+
+This method is DEPRECATED. See next_res().
+          
 =item C<$sbe-E<gt>settings()>
 
 Get the settings. This is a L<Bio::Grep::SearchSettings> object
@@ -638,33 +662,6 @@ Get the settings. This is a L<Bio::Grep::SearchSettings> object
   $sbe->settings->query('UGAACAGAAAGCUCAUGAGCC');
   $sbe->settings->reverse_complement(1);
   $sbe->settings->mismatches(4);
-
-=item C<$sbe-E<gt>results()>
-
-Get the results. This is an array of L<Bio::Grep::SearchResults> objects.
-
-  # output the searchresults with alignments
-  foreach my $res (@{$sbe->results}) {
-     print $res->sequence->id . "\n";
-     print $res->alignment_string() . "\n\n";
-  }
-
-This method is DEPRECATED. The new syntax is
-
-  # output the searchresults with alignments
-  while ( my $res = $sbe->next_res ) {
-     print $res->sequence->id . "\n";
-     print $res->alignment_string() . "\n\n";
-  }
- 
-If you need an array with all search results, you should use the following code:
-
-  my @results;
-
-  while ( my $res = $sbe->next_res ) {
-      push @results, $res;
-  }
-          
 
 =item C<$sbe-E<gt>features()>
 
@@ -696,23 +693,22 @@ Every back-end must implement these methods.
 
 =item C<$sbe-E<gt>search>
 
-This function searches for the query specified in the 
-L<Bio::Grep::SearchSettings> object 
-C<$sbe-E<gt>settings>
+This method starts the back-end with the settings specified in the 
+L<Bio::Grep::SearchSettings> object C<$sbe-E<gt>settings>.
  
     $sbe->search();
 
-=item C<$sbe-E<gt>next_res>
+This method also accepts an hash reference with settings. In this case, all
+previous defined options except all paths and the database are set to their
+default values.
 
-Returns next result. L<Bio::Grep::SearchResult> object
+  $sbe->search({ mismatches => 2, 
+                 reverse_complement => 0, 
+                 query => $query });
 
-    while ( my $res = $sbe->next_res ) {
-        # output result
-    }
-    
 =item C<$sbe-E<gt>get_sequences>
 
-This function returns all sequences with the ids in the specified array reference as
+This method returns all sequences with the ids in the specified array reference as
 a L<Bio::SeqIO> object. 
 
 
@@ -735,7 +731,7 @@ the values are descriptions (or the filename if no description is available).
 
 Descriptions can be set in info files. For example, if you indexed file
 ATH1.cdna, Vmatch and HyPA construct a lot of ATH1.cdna.* files. Now simply
-create a file ATH1.cdna.nfo and write a description in that file. The function
+create a file ATH1.cdna.nfo and write a description in that file. The method
 generate_database() will create this file for you if you add a description as
 second argument.
 
@@ -764,7 +760,8 @@ DEPRECATED. Use generate_database() instead.
 =item C<$sbe-E<gt>available_sort_modes()>
 
 Returns a hash with the available result sort modes. Keys are the modes you
-can set with $sbe->settings->sort($mode), values a short description.
+can set with C<$sbe-E<gt>settings-E<gt>sort($mode)>, values a short 
+description.
 
 =back
 
@@ -779,34 +776,34 @@ Only back-ends should call them directly.
 Performs some basic error checking. Important security checks, because
 we use system(). So we should check, if we get what we assume.
 
-Because every back-end should call this function at the top 
-of its search function, we clean things like old search results here up
+Because every back-end should call this method at the top 
+of its search method, we clean things like old search results here up.
 
 =item C<_prepare_query>
 
 Another important method that every back-end must call.
 Prepares the query, for example calculating the reverse complement if
-necessary, returns the prepared query. settings->query is unchanged!
+necessary, returns the prepared query. C<settings-E<gt>query> is unchanged!
 
 
 =item C<_copy_fasta_file_and_create_nfo>
 
 The generate_database() implementation of your back-end class
-should use this function to copy the specified Fasta file to the data
+should use this method to copy the specified Fasta file to the data
 directory  and to generate an info file, containing the description of the
 Fasta file.
 
 =item C<_get_alignment( $seq_query, $seq_subject )>
 
 Calculates and returns an alignment of two L<Bio::Seq> objects. Requires
-EMBOSS and bioperl-run.
+B<EMBOSS> and B<bioperl-run>.
 
 =item C<_get_databases($suffix)>
 
-This function searches the data directory for files ending with $suffix
-and returns this list of files in an array
+This method searches the data directory for files ending with C<$suffix>
+and returns this list of files in an array.
 
-Substitutes $suffix with .nfo from all found files and searches for an
+Substitutes C<$suffix> with C<.nfo> from all found files and searches for an
 info file with that name. The content of that file will be used as description.
 When no file is found, the description will be the filename without the suffix:
 
@@ -820,7 +817,7 @@ When no file is found, the description will be the filename without the suffix:
 =item C<_get_sequences_from_bio_index($id)>
 
 GUUGle, Hypa, RE and Agrep back-ends use L<Bio::Index> for sequence id queries 
-(implemented in this this method. Returns a L<Bio::SeqIO> object like abstract
+(implemented in this this method). Returns a L<Bio::SeqIO> object like abstract
 method get_sequences() should.
 
 =item C<_create_tmp_query_file()>
@@ -902,8 +899,8 @@ L<Bio::Grep::Backend::Agrep> for details. C<Bio::Root::BadParameter>.
 
 =head1 FILES
 
-Requires EMBOSS and L<Bio::Factory::EMBOSS> for the Needleman-Wunsch local 
-alignment implementation from EMBOSS. The internal method 
+Requires B<EMBOSS> and L<Bio::Factory::EMBOSS> for the Needleman-Wunsch local 
+alignment implementation from B<EMBOSS>. The internal method 
 C<_get_alignment($seq_a, $seq_b)> can than calculate an alignment for 
 back-ends that do not generate a alignment (like L<Bio::Grep::Backend::Hypa>
 or L<Bio::Grep::Backend::Agrep>).

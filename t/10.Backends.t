@@ -382,7 +382,9 @@ SKIP: {
         $sbe->settings->mismatches(0);
         $sbe->settings->no_alignments(1);
         $sbe->settings->gumismatches(0) if $backendname eq "GUUGle";
+        #$sbe->verbose(-1);
         $sbe->search();
+        #$sbe->verbose(0);
         
         my @ids = ();
         my $alignment_string = '';

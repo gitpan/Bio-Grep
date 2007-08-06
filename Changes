@@ -1,6 +1,14 @@
 Revision history for Perl extension Bio::Grep.
 
-0.8.4  Thu Jul  03 14:37:00 2007
+0.8.5  Mon Jul  06 13:41:00 2007
+    - POD improvements 
+    - Bugfixes:
+       - SYNOPSIS test failed when Vmatch binary not in path. Closes ticket
+         #28656 (thanks Malcolm)
+       - arrays not possible with SearchSettings->set (and therefore also not in
+         $sbe->search)
+
+0.8.4  Fri Jul  03 14:37:00 2007
     - POD improvements 
     - code cleanup
     - RE back-end much faster

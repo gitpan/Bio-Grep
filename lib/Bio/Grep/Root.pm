@@ -11,7 +11,7 @@ use File::Spec;
 use File::Copy;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.8.3');
+use version; our $VERSION = qv('0.8.5');
 
 sub is_integer {
     my ( $self, $variable, $desc) = @_;

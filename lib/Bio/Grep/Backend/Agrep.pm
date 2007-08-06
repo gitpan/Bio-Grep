@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 sub new {
     my $self = shift;
@@ -255,9 +255,10 @@ See L<Bio::Grep::Backend::BackendI> for inherited methods.
 
 =item C<Bio::Grep::Backend::Agrep-E<gt>new()>
 
-This function constructs an agrep back-end object
+This method constructs an Agrep back-end object and should not used directly.  
+Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
-   my $sbe = Bio::Grep::Backend::Agrep->new();
+  my $sbe = Bio::Grep->new('Agrep');
 
 =item C<$sbe-E<gt>available_sort_modes()>
 

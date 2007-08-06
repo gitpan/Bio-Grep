@@ -13,7 +13,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 sub new {
     my $self = shift;
@@ -429,11 +429,12 @@ See L<Bio::Grep::Backend::BackendI> for other methods.
 
 =over 2
 
-=item Bio::Grep::Backend::Hypa-E<gt>new()
+=item C<Bio::Grep::Backend::Hypa-E<gt>new()>
 
-This function constructs a Hypa back-end object
+This method constructs an Hypa back-end object and should not used directly.  
+Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
-   my $sbe = Bio::Grep::Backend::Hypa->new();
+  my $sbe = Bio::Grep->new('Hypa');
 
 =item C<$sbe-E<gt>available_sort_modes()>
 

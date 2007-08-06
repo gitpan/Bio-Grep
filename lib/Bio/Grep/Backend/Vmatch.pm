@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 sub new {
     my $self = shift;
@@ -517,12 +517,12 @@ See L<Bio::Grep::Backend::BackendI> for inherited methods.
 
 =over 2
 
-=item Bio::Grep::Backend::Vmatch-E<gt>new()
+=item C<Bio::Grep::Backend::Vmatch-E<gt>new()>
 
-This function constructs a Vmatch back-end object
+This method constructs a Vmatch back-end object and should not used directly.  
+Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
-   my $sbe = Bio::Grep::Backend::Vmatch->new();
-
+  my $sbe = Bio::Grep->new('Vmatch');
 
 =item C<$sbe-E<gt>available_sort_modes()>
 

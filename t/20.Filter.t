@@ -24,7 +24,7 @@ BEGIN{
 
 use TestFilter;
 
-my %tests = ( Agrep => 2, Vmatch => 13, Hypa => 13, GUUGle => 13, RE => 13 );
+my %tests = ( Agrep => 2, Vmatch => 14, Hypa => 14, GUUGle => 14, RE => 14 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -55,7 +55,7 @@ SKIP: {
         else {
             $tests++;
         }
-        diag("\n*** Testing $backendname ***");
+        # diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
             'RNAcofold' );
         my $sbe = Bio::Grep->new($backendname);
@@ -64,13 +64,27 @@ SKIP: {
         $sbe->settings->tmppath('t/tmp');
         $sbe->settings->datapath('t/data');
         BioGrepTest::delete_files;
-
         $sbe->generate_database( 't/Test2.fasta',
             'Description for Test2.fasta' );
-
         $sbe->settings->database('Test2.fasta');
         my $sequence = 'tgacagaagagagtgagcac';
         my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
+        if ($backendname ne 'Agrep') {
+            $sbe->search({
+                    query   => 'ACCTAAAGTCACTG',
+                    filters => [ $filter ],
+                    reverse_complement => 0,
+                });
+            my @ids;
+            while (my $res = $sbe->next_res()) {
+                my $rs_id  = $res->sequence->id;
+                if ($rs_id =~ m{ \.\d \z }xms) {
+                    ( $rs_id ) = $rs_id =~ m{ \A (.*?) \.\d \z }xms;
+                }    
+                push @ids, $rs_id;
+            }
+            is_deeply(\@ids, [ 'At2g42200' ], 'ids correct') || diag join(',',@ids);
+        }    
         for my $j ( 0 .. 1 ) {
             if ($backendname eq 'RE') {
                 $sbe->settings->query('[CG]TGC[AT]CTCTCTCTTCT[CG]TCA');

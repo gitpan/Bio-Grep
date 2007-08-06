@@ -8,7 +8,7 @@ use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.4');
+use version; our $VERSION = qv('0.8.5');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -100,6 +100,8 @@ B<Bio::Grep::SearchResult> is the data structure for one hit in the
 database.
 
 =head1 METHODS
+
+See L<Bio::Grep::Root> for inherited methods.
 
 =over 
 
