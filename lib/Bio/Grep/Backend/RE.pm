@@ -10,7 +10,7 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 sub new {
     my $self = shift;
@@ -44,7 +44,9 @@ sub search {
     if ($s->direct_and_rev_com || $s->reverse_complement) {
         $self->throw( 
              -class => 'Bio::Root::BadParameter',
-             -text => 'Query does not look like a DNA/RNA sequence.', 
+             -text => 
+ "While doing a reverse-complement the query does not look like a DNA/RNA\n" .
+             'sequence.', 
              -value => $regex,
          ) if $regex !~ m{\A [gactu]+ \z}xmsi;
         my $tmp = Bio::Seq->new(-seq => $regex); 
@@ -171,7 +173,11 @@ Bio::Grep::Backend::RE - Perl Regular Expression back-end
   $sbe->settings->datapath('data');
   
   # generate a database. you have to do this only once. 
-  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database({ 
+    file        => 'ATH1.cdna', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
   
   # search on both strands  
   # retrieve up- and downstream regions of size 30
@@ -229,7 +235,7 @@ See L<Bio::Grep::Backend::BackendI> for inherited methods.
 
 =item C<Bio::Grep::Backend::RE-E<gt>new()>
 
-This method constructs a RE back-end object and should not used directly.  
+This method constructs a C<RE> back-end object and should not used directly.  
 Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('RE');
@@ -241,7 +247,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in RE:
+Available sortmodes in C<RE>:
 
 =over
 
@@ -262,7 +268,7 @@ See L<Bio::Grep::Backend::BackendI> for other diagnostics.
 
 =over
 
-=item C<Query does not look like a DNA/RNA sequence.>
+=item C<While doing a reverse-complement the query does not look like a...>
 
 Either C<reverse_complement> or C<direct_and_rev_com> is set and the query
 does not match the regular expression C<m{\A [gactu]+ \z}xmsi>. C<Bio::Root::BadParameter>.

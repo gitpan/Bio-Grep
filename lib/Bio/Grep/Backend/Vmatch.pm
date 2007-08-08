@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 sub new {
     my $self = shift;
@@ -29,45 +29,48 @@ sub new {
 }
 
 sub search {
-    my ($self, $arg_ref) = @_;
-    my $s    = $self->settings;
+    my ( $self, $arg_ref ) = @_;
+    my $s = $self->settings;
     $self->_check_search_settings($arg_ref);
 
-    my ( $query, $query_file, $tmp_query_file) =
-    $self->_create_tmp_query_file();
+    my ( $query, $query_file, $tmp_query_file )
+        = $self->_create_tmp_query_file();
 
-    if (($s->upstream > 0 || $s->downstream > 0) && $s->showdesc_isset) {
-        $self->throw(-class => 'Bio::Root::BadParameter',
-              -text  => "You can't use showdesc() with upstream or downstream.",
-                );
+    if ( ( $s->upstream > 0 || $s->downstream > 0 ) && $s->showdesc_isset ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => "You can't use showdesc() with upstream or downstream.",
+        );
     }
-    if ($query_file && !$s->complete && !$s->query_length_isset) {
-        $self->throw(-class => 'Bio::Root::BadParameter',
-              -text  => 'You have to specify complete or querylength. See ' .
-             'the flags -complete and -l in the Vmatch documentation.',
-                );
-    }    
+    if ( $query_file && !$s->complete && !$s->query_length_isset ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'You have to specify complete or querylength. See '
+                . 'the flags -complete and -l in the Vmatch documentation.',
+        );
+    }
+
     # now generate the command string
     my $fuzzy = '';
-    if ($s->mismatches_isset && $s->mismatches > 0) {
-        $fuzzy = ' -h ' . $s->mismatches . ' ' ;
-    }    
-    if ( $s->editdistance_isset && $s->editdistance > 0) {
+    if ( $s->mismatches_isset && $s->mismatches > 0 ) {
+        $fuzzy = ' -h ' . $s->mismatches . ' ';
+    }
+    if ( $s->editdistance_isset && $s->editdistance > 0 ) {
         $fuzzy = ' -e ' . $s->editdistance . ' ';
     }
     my $online = '';
     $online = ' -online ' if ( $s->online_isset && $s->online );
     my $auto_query_length = 0;
-    if (!defined $s->query_length && !$s->complete && !$query_file) {
+    if ( !defined $s->query_length && !$s->complete && !$query_file ) {
         $s->query_length( length($query) );
         $auto_query_length = 1;
-    }    
+    }
     my $length = '';
-    $length =  ' -l ' . $s->query_length if defined $s->query_length;
+    $length = ' -l ' . $s->query_length if defined $s->query_length;
     my $complete = '';
-    $complete = ' -complete ' if ($s->complete_isset && $s->complete);
-    
-    my $sort   = '';
+    $complete = ' -complete ' if ( $s->complete_isset && $s->complete );
+
+    my $sort = '';
 
     # dg sorting done by BackendI, not vmatch
     if ( $s->sort_isset && substr( $s->sort, 0, 1 ) ne 'g' ) {
@@ -78,40 +81,38 @@ sub search {
 
     my $showdesc = '';
     $showdesc = ' -showdesc ' . $s->showdesc . ' ' if $s->showdesc_isset;
-    
+
     my $qspeedup = '';
     if ( $s->qspeedup_isset ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
-            -text  =>
-                "You can't combine qspeedup and complete.",
-            ) if $s->complete_isset;
+            -text  => "You can't combine qspeedup and complete.",
+        ) if $s->complete_isset;
 
-        $qspeedup = ' -qspeedup ' . $s->qspeedup . ' '; 
+        $qspeedup = ' -qspeedup ' . $s->qspeedup . ' ';
 
     }
 
     my $hxdrop = '';
     $hxdrop = ' -hxdrop ' . $s->hxdrop . ' ' if $s->hxdrop_isset;
-    
+
     my $exdrop = '';
     $exdrop = ' -exdrop ' . $s->exdrop . ' ' if $s->exdrop_isset;
-   
+
     my $pflag = '';
-    $pflag = ' -p ' if ($s->query_file && $s->reverse_complement);
-    
-    if ($s->direct_and_rev_com) {
+    $pflag = ' -p ' if ( $s->query_file && $s->reverse_complement );
+
+    if ( $s->direct_and_rev_com ) {
         $pflag = ' -p -d ';
-    }    
-    my $command =
-        $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
+    }
+    my $command = $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
         . $tmp_query_file
         . $complete
         . $sort
-        . $fuzzy 
+        . $fuzzy
         . $maxhits
         . $qspeedup
-        . $showdesc 
+        . $showdesc
         . $length . ' -s '
         . $online
         . $hxdrop
@@ -122,7 +123,7 @@ sub search {
     if ( $ENV{BIOGREPDEBUG} ) {
         warn $command . "\n";
     }
-   
+
     my $cmd_ok = $self->_execute_command($command);
 
     # delete temporary files
@@ -130,26 +131,26 @@ sub search {
 
     $self->throw(
         -class => 'Bio::Root::SystemException',
-        -text  =>
-            "Vmatch call failed. Command was:\n\t$command"
-        )
-        if !$cmd_ok;
-        
-#    warn $output;   
+        -text  => "Vmatch call failed. Command was:\n\t$command"
+    ) if !$cmd_ok;
+
     $self->_prepare_results;
-    
-    if ($s->showdesc_isset) {
+
+    if ( $s->showdesc_isset ) {
         my %query_desc_lookup;
-        foreach my $query_seq (@{ $self->_query_seqs }) {
+        foreach my $query_seq ( @{ $self->_query_seqs } ) {
+
             # simulate how this sequence would look in vmatch output
             my $query_desc = $query_seq->id;
-            $query_desc .= ' ' . $query_seq->desc if ($query_seq->desc &&
-            length($query_desc) > 0);
+            $query_desc .= ' ' . $query_seq->desc
+                if ( $query_seq->desc
+                && length($query_desc) > 0 );
             $query_desc = substr $query_desc, 0, $s->showdesc;
             $query_desc =~ s{ }{_}g;
             $query_desc_lookup{$query_desc} = $query_seq;
         }
         $self->_mapping(%query_desc_lookup);
+
         #warn Data::Dumper->Dump([%query_desc_lookup]);
     }
     $self->settings->query_length_reset if $auto_query_length;
@@ -161,102 +162,110 @@ sub get_databases {
     return $self->_get_databases('.al1');
 }
 
-
 sub generate_database {
-    my ( $self, $file, $description ) = @_;
-    my ( $filename, $oldpath ) = fileparse($file);
+    my ( $self, @args ) = @_;
+    my %args = $self->_prepare_generate_database(@args);
 
-    $self->_copy_fasta_file_and_create_nfo( $file, $filename, $description );
-    
-    my $alphabet = $self->_guess_alphabet_of_file($file);
+    my $alphabet = $self->_guess_alphabet_of_file( $args{filename} );
     my $alphabet_specific_arguments = '';
-    #warn $alphabet; 
-    if ($alphabet eq 'protein') {
-        $alphabet_specific_arguments = ' -protein -pl -allout -v ';
+
+    #warn $alphabet;
+    #
+    my $verbose = '';
+    $verbose = ' -v ' if defined $args{verbose};
+
+    if ( $alphabet eq 'protein' ) {
+        $alphabet_specific_arguments = ' -protein -pl -allout ';
     }
-    elsif ($alphabet eq 'dna') {
-        $alphabet_specific_arguments = ' -dna -pl 3 -allout -v ';
+    elsif ( $alphabet eq 'dna' ) {
+        $alphabet_specific_arguments = ' -dna -pl 3 -allout ';
     }
     else {
-        $self->throw(-class => 'Bio::Root::BadParameter',
-                     -text  => 'Unsupported alphabet of file.',
-                     -value => $alphabet,);   
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Unsupported alphabet of file.',
+            -value => $alphabet,
+        );
     }
-    my $command =
-        $self->_cat_path_filename( $self->settings->execpath, 'mkvtree' )
+    my $command
+        = $self->_cat_path_filename( $self->settings->execpath, 'mkvtree' )
         . ' -db '
-        . $filename
-        . $alphabet_specific_arguments;
-        
+        . $args{basefilename}
+        . $alphabet_specific_arguments
+        . $verbose;
+
     if ( $ENV{BIOGREPDEBUG} ) {
         warn $command . "\n";
     }
     my $output_dir = $self->settings->datapath;
-    system(qq{ cd $output_dir ; exec $command } );
+    system(qq{ cd $output_dir ; exec $command });
     $self->throw(
         -class => 'Bio::Root::SystemException',
-        -text  =>
+        -text =>
             "mkvtree call failed. Cannot generate suffix array. Command was:\n\t$command"
-        )
-        if ($?);
-   return $filename;     
+    ) if ($?);
+    return $args{filename};
 }
 
 sub _parse_next_res {
     my $self                = shift;
-    my @query_seqs = $self->_query_seqs;
+    my @query_seqs          = $self->_query_seqs;
     my $s                   = $self->settings;
     my @results             = ();
     my $alignment_in_output = -1;
     my $skip_next_alignment = 0;
-    my $skipped_lines = 0;
+    my $skipped_lines       = 0;
     my $subject;
     my $tmp_aln;
-    
-    my ($command, $output);  
+
+    my ( $command, $output );
 
     my $FH = $self->_output_fh;
-    LINE:
-    while (my $line = <$FH>) { 
+LINE:
+    while ( my $line = <$FH> ) {
         chomp $line;
         $line =~ s/\s+/ /g;
-        if ($line !~ /\s/) {
+        if ( $line !~ /\s/ ) {
             $skipped_lines++;
-            if ($skipped_lines == 2) {
+            if ( $skipped_lines == 2 ) {
                 $results[-1]->alignment($tmp_aln);
                 my $real_subject = $subject;
+
                 # remove gaps out of alignment
                 $real_subject =~ s{-}{}g;
-                $results[-1]->sequence->seq($real_subject) if $s->showdesc_isset;
-    #            $results[-1]->query->seq($query);
-                my $res = $self->_filter_result($results[-1]);
+                $results[-1]->sequence->seq($real_subject)
+                    if $s->showdesc_isset;
+
+                #            $results[-1]->query->seq($query);
+                my $res = $self->_filter_result( $results[-1] );
                 return $res if $res;
                 $alignment_in_output = -1;
                 next LINE;
-            } 
+            }
             else {
                 next LINE;
-            }    
+            }
         }
         else {
             $skipped_lines = 0;
-        }    
+        }
         my @fields = split ' ', $line;
-        $alignment_in_output = 0 if ( $line =~ /^Sbjct:/ && !$skip_next_alignment );
+        $alignment_in_output = 0
+            if ( $line =~ /^Sbjct:/ && !$skip_next_alignment );
 
         next unless ( $fields[0] =~ /^\d+$/ || $alignment_in_output >= 0 );
         $skip_next_alignment = 0;
 
-        if ($line =~ /^Sbjct: (.*)$/) {
+        if ( $line =~ /^Sbjct: (.*)$/ ) {
             $subject = $1;
         }
-        if ($line =~ /^Query: (.*)$/) {
+        if ( $line =~ /^Query: (.*)$/ ) {
             my $query = $1;
             $query =~ s/\s+(\d+)\s*$//;
             my $query_pos = $1;
             $subject =~ s/\s+(\d+)\s*$//;
             my $subject_pos = $1;
-            if (!$tmp_aln->no_sequences) {
+            if ( !$tmp_aln->no_sequences ) {
                 $tmp_aln->add_seq(
                     Bio::LocatableSeq->new(
                         -id    => 'Subject',
@@ -278,24 +287,25 @@ sub _parse_next_res {
                 my $s1 = $tmp_aln->get_seq_by_pos(1);
                 my $s2 = $tmp_aln->get_seq_by_pos(2);
                 $s1->end($subject_pos);
-                $s1->seq($s1->seq . $subject);
+                $s1->seq( $s1->seq . $subject );
                 $s2->end($query_pos);
-                $s2->seq($s2->seq . $query);
+                $s2->seq( $s2->seq . $query );
                 $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
                 $tmp_aln->add_seq($s1);
                 $tmp_aln->add_seq($s2);
-            }    
+            }
             next LINE;
         }
         next LINE if $alignment_in_output >= 0;
-        
+
         $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
 
         # make taint mode happy
         ( $fields[0] ) = $fields[0] =~ /(\d+)/;
         ( $fields[2] ) = $fields[2] =~ /(\d+)/;
 
-        if ($s->showdesc_isset) {
+        if ( $s->showdesc_isset ) {
+
             # not numerical with showdesc on
             # don't worry about this unclean untainting, we don't use that
             # description in dangerous ways
@@ -306,14 +316,14 @@ sub _parse_next_res {
             ( $fields[1] ) = $fields[1] =~ /(\d+)/;
             ( $fields[5] ) = $fields[5] =~ /(\d+)/;
         }
-        
-   #     warn Data::Dumper->Dump([ %descs ]);
 
-        my $fasta; 
-        my $upstream = $s->upstream;
+        #     warn Data::Dumper->Dump([ %descs ]);
+
+        my $fasta;
+        my $upstream        = $s->upstream;
         my $internal_seq_id = $fields[1];
-        
-        if (!$s->showdesc_isset) {        
+
+        if ( !$s->showdesc_isset ) {
             my $start = $fields[2] - $s->upstream;
 
             # maybe the defined upstream region is larger than available
@@ -322,13 +332,13 @@ sub _parse_next_res {
                 $upstream = $upstream + $start;
                 $start    = 0;
             }
-            my $length  = $upstream + $fields[0] + $s->downstream;
-            $command =
-                $self->_cat_path_filename( $s->execpath, 'vsubseqselect' )
+            my $length = $upstream + $fields[0] + $s->downstream;
+            $command
+                = $self->_cat_path_filename( $s->execpath, 'vsubseqselect' )
                 . " -seq $length $fields[1] "
                 . $start . ' '
                 . $self->_cat_path_filename( $s->datapath, $s->database );
-            $output   = `$command`;
+            $output = `$command`;
             if ( $ENV{BIOGREPDEBUG} ) {
                 warn $command . "\n";
             }
@@ -340,65 +350,59 @@ sub _parse_next_res {
             $fasta = $in->next_seq();
         }
         else {
-            my ($seq_id, $seq_desc) = $fields[1] =~ m{\A (.+?) _ (.*) \z}xms;
-            $seq_id = $fields[1] if !defined $seq_id;
-            $seq_desc = '' if !defined $seq_desc;
+            my ( $seq_id, $seq_desc )
+                = $fields[1] =~ m{\A (.+?) _ (.*) \z}xms;
+            $seq_id   = $fields[1] if !defined $seq_id;
+            $seq_desc = ''         if !defined $seq_desc;
             $seq_desc =~ s{_}{ }g;
-            $fasta = Bio::Seq->new(-id => $seq_id, -desc => $seq_desc);
+            $fasta = Bio::Seq->new( -id => $seq_id, -desc => $seq_desc );
             $internal_seq_id = $seq_id;
         }
-#        warn Data::Dumper->Dump([@lines]) if !defined $fasta->seq;
-        
-        my $alignment =
-            Bio::SimpleAlign->new()
-            ;    #$self->_get_alignment($seq_query, $seq_subject);
-        my $result =
-            Bio::Grep::SearchResult->new( $fasta, $upstream,
+
+        my $alignment = Bio::SimpleAlign->new();
+        my $result = Bio::Grep::SearchResult->new( $fasta, $upstream,
             $upstream + $fields[0],
             $alignment, $internal_seq_id, '' );
         $result->evalue( $fields[8] );
         $result->percent_identity( $fields[10] );
-        if ($s->showdesc_isset) {
-            $result->query( $self->_mapping->{$fields[5]} );
-        } 
-        else {    
-            $result->query( $query_seqs[$fields[5]] );
+        if ( $s->showdesc_isset ) {
+            $result->query( $self->_mapping->{ $fields[5] } );
         }
-        push ( @results, $result );
+        else {
+            $result->query( $query_seqs[ $fields[5] ] );
+        }
+        push( @results, $result );
     }
     $self->_delete_output();
     return 0;
 }
 
-
 sub get_sequences {
-    my ( $self, $seqid)  = @_;
-    my $s     = $self->settings;
-    $self->is_arrayref_of_size($seqid,1);
+    my ( $self, $seqid ) = @_;
+    my $s = $self->settings;
+    $self->is_arrayref_of_size( $seqid, 1 );
     $self->_check_search_settings();
     my ( $tmp_fh, $tmpfile );
-    
+
     my $seq_query = '';
-    
-    if (@{$seqid}[0] =~ m{\A \d+ \z}xms) {
-        ( $tmp_fh, $tmpfile ) =
-            tempfile( 'vseqselect_XXXXXXXXXXXXX', DIR => $s->tmppath );
+
+    if ( @{$seqid}[0] =~ m{\A \d+ \z}xms ) {
+        ( $tmp_fh, $tmpfile )
+            = tempfile( 'vseqselect_XXXXXXXXXXXXX', DIR => $s->tmppath );
 
         foreach ( @{$seqid} ) {
             print $tmp_fh $_ . " \n ";
         }
         close $tmp_fh;
-        $seq_query = ' -seqnum ' . $tmpfile;    
+        $seq_query = ' -seqnum ' . $tmpfile;
     }
     else {
-        my $seq_desc = $self->is_sentence(@{$seqid}[0]);
-#        ( $seq_desc) = $seq_desc =~ m{ \A (.*?) _? (.*) \z }xms;        
+        my $seq_desc = $self->is_sentence( @{$seqid}[0] );
         $seq_query = ' -matchdesc "' . $seq_desc . '"';
     }
 
-    my $command =
-        $self->_cat_path_filename( $s->execpath, 'vseqselect' )
-        . $seq_query . ' ' 
+    my $command = $self->_cat_path_filename( $s->execpath, 'vseqselect' )
+        . $seq_query . ' '
         . $self->_cat_path_filename( $s->datapath, $s->database );
 
     if ( $ENV{BIOGREPDEBUG} ) {
@@ -406,13 +410,13 @@ sub get_sequences {
     }
 
     my $output = `$command`;
-    if ($? && $output !~ m{\A \> }xms) {
-    $self->throw(
-        -class => 'Bio::Root::SystemException',
-        -text  =>
-            "vseqselect call failed. Cannot fetch sequences. Command was:\n\t$command\n$output"
-        )
-    }    
+    if ( $? && $output !~ m{\A \> }xms ) {
+        $self->throw(
+            -class => 'Bio::Root::SystemException',
+            -text =>
+                "vseqselect call failed. Cannot fetch sequences. Command was:\n\t$command\n$output"
+        );
+    }
     unlink($tmpfile) if $tmpfile;
     my $stringio = IO::String->new($output);
     my $out      = Bio::SeqIO->new(
@@ -453,10 +457,12 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
   
   my $sbe = Bio::Grep->new('Vmatch');
   
-  $sbe->settings->datapath('data');
-  
   # generate a Vmatch suffix array. you have to do this only once.
-  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts');
+  $sbe->generate_database({ 
+    file        => 'ATH1.cdna', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
  
   # search for the reverse complement and allow 4 mismatches
   # parse the description (max. 100 chars) directly out of the
@@ -490,9 +496,9 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
   # (no showdesc possible)
 
   $sbe->search({
-    query   => 'UGAACAGAAAGCUCAUGAGCC',
+    query   => 'AGAGCCCT',
     reverse_complement => 1,
-    mismatches         => 4,
+    mismatches         => 1,
     upstream           => 30,
     downstream         => 30,
   });
@@ -509,7 +515,7 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
   
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backend::Vmatch> searches for a query in a Vmatch suffix array. 
+B<Bio::Grep::Backend::Vmatch> searches for a query in a C<Vmatch> suffix array. 
 
 =head1 METHODS
 
@@ -519,8 +525,9 @@ See L<Bio::Grep::Backend::BackendI> for inherited methods.
 
 =item C<Bio::Grep::Backend::Vmatch-E<gt>new()>
 
-This method constructs a Vmatch back-end object and should not used directly.  
-Rather, a back-end should be constructed by the main class L<Bio::Grep>:
+This method constructs a C<Vmatch> back-end object and should not used 
+directly. Rather, a back-end should be constructed by the main class 
+L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('Vmatch');
 
@@ -531,7 +538,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in Vmatch:
+Available sortmodes in C<Vmatch>:
 
 =over
 
@@ -554,14 +561,14 @@ Available sortmodes in Vmatch:
 =back
 
 Note that 'ga' and 'gd' require that search results have dG set. 
-L<Bio::Grep::RNA> ships with filters for free energy calculation.  Also note that
-these two sort options require that we load all results in memory.
+L<Bio::Grep::RNA> ships with filters for free energy calculation.  Also note 
+that these two sort options require that we load all results in memory.
 
 =item C<$sbe-E<gt>get_sequences()>
 
-Takes as argument an array reference. If first array element is an integer, then
-this method assumes that the specified sequence ids are Vmatch internal ids.
-Otherwise it will take the first array element as query.
+Takes as argument an array reference. If first array element is an integer, 
+then this method assumes that the specified sequence ids are C<Vmatch> internal 
+ids. Otherwise it will take the first array element as query.
 
     # get sequences 0,2 and 4 out of suffix array
     $sbe->get_sequences([0,2,4]);
@@ -571,7 +578,7 @@ Otherwise it will take the first array element as query.
 
 The internal ids are stored in C<$res-E<gt>sequence_id>. If you have specified
 C<showdesc>, then C<sequence_id> will contain the gene id (e.g. At1g1234),
-NOT the Vmatch internal id.
+NOT the C<Vmatch> internal id.
 
 =back
 
@@ -594,7 +601,7 @@ alphabet (DNA or Protein) of the specified Fasta file. C<Bio::Root::BadParameter
 
 =item C<Vmatch call failed. Command was: ... > 
 
-It was not possible to run Vmatch in function search(). Check the search
+It was not possible to run C<Vmatch> in function search(). Check the search
 settings. If the number of mismatches is to high, try C<online>. 
 C<Bio::Root::SystemException>.
 
@@ -605,20 +612,20 @@ get_sequences(). Check sequence ids. C<Bio::Root::SystemException>.
 
 =item C<You can't combine qspeedup and complete.>
 
-The Vmatch parameters C<-complete> and C<-qspeedup> cannot combined. See the Vmatch 
-documentation. C<Bio::Root::BadParameter>.
+The C<Vmatch> parameters C<-complete> and C<-qspeedup> cannot combined. See 
+the C<Vmatch> documentation. C<Bio::Root::BadParameter>.
 
 =item C<You can't use showdesc() with upstream or downstream.>
 
-We need the tool C<vsubseqselect> of the Vmatch package for the upstream and 
-downstream regions. This tool requires as parameter an internal Vmatch
-sequence id, which is not shown in the Vmatch output when showdesc is on. 
+We need the tool C<vsubseqselect> of the C<Vmatch> package for the upstream and 
+downstream regions. This tool requires as parameter an internal C<Vmatch>
+sequence id, which is not shown in the C<Vmatch> output when C<showdesc> is on. 
 C<Bio::Root::BadParameter>.
 
 =item C<You have to specify complete or querylength. ...'>
 
-The Vmatch parameters -complete and -l cannot combined. See the Vmatch 
-documentation. C<Bio::Root::BadParameter>.
+The C<Vmatch> parameters C<-complete> and C<-l> cannot combined. See the
+C<Vmatch> documentation. C<Bio::Root::BadParameter>.
 
 =back
 

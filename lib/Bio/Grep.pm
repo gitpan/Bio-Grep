@@ -7,7 +7,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 
 sub new {
@@ -18,7 +18,6 @@ sub new {
    my %known_backends = (
        Agrep  => 1,
        Vmatch => 1,
-       Hypa   => 1,
        GUUGle => 1,
        RE     => 1,
    ); 
@@ -45,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.8.5
+This document describes Bio::Grep version 0.9.0
 
 =head1 SYNOPSIS
 
@@ -59,10 +58,13 @@ This document describes Bio::Grep version 0.8.5
   mkdir($sbe->settings->datapath);	
   
   # now generate a suffix array. you have to do this only once.
-  $sbe->generate_database('t/Test.fasta', 'Description for the test Fastafile');
+  $sbe->generate_database({
+     file => 'ATH1.cdna',
+     description => 'AGI Transcripts',
+  });
   
   # search in this suffix array
-  $sbe->settings->database('Test.fasta');
+  $sbe->settings->database('ATH1.cdna');
   
   # search for the reverse complement and allow 2 mismatches
   $sbe->settings->query('UGAACAGAAAG');
@@ -79,9 +81,9 @@ This document describes Bio::Grep version 0.8.5
   # (because it is likely that they don't change when search is called
   # multiple times)
 
-  $sbe->search( { query  =>  'GAGCCCTTGCT',
+  $sbe->search( { query  =>  'AGAGCCCT',
                   reverse_complement => 1,
-                  mismatches         => 2,
+                  mismatches         => 1,
                  });  
   
   my @ids;
@@ -102,7 +104,7 @@ This document describes Bio::Grep version 0.8.5
 B<Bio-Grep> is a collection of Perl modules for searching in 
 Fasta files. It supports different back-ends, most importantly some (enhanced) suffix
 array implementations. Currently, there is no suffix array tool that works in
-all scenarios (for example whole genome, protein and RNA data). Bio::Grep
+all scenarios (for example whole genome, protein and RNA data). C<Bio::Grep>
 provides a common API to the most popular tools. This way, you can easily switch or combine
 tools.
 
@@ -112,8 +114,8 @@ tools.
 
 =item C<new($backend)>
 
-This function constructs a C<Bio::Grep> object. Available external back-ends
-are C<Vmatch>, C<Agrep>, C<GUUGle> and C<Hypa>. Perl regular
+This method constructs a C<Bio::Grep> back-end object. Available external back-ends
+are C<Vmatch>, C<Agrep>, and C<GUUGle>. Perl regular
 expressions are available in the C<RE> back-end. C<Vmatch> is default.
 
 Sets temporary path to C<File::Spec-E<gt>tmpdir();>
@@ -123,8 +125,8 @@ Sets temporary path to C<File::Spec-E<gt>tmpdir();>
 
 Returns an object that uses L<Bio::Grep::Backend::BackendI> 
 as base class. See L<Bio::Grep::Backend::BackendI>, L<Bio::Grep::Backend::Vmatch>,
-L<Bio::Grep::Backend::Agrep>, L<Bio::Grep::Backend::GUUGle>,
-L<Bio::Grep::Backend::RE> and L<Bio::Grep::Backend::Hypa>
+L<Bio::Grep::Backend::Agrep>, L<Bio::Grep::Backend::GUUGle> and
+L<Bio::Grep::Backend::RE>.
 
 =back
 
@@ -134,7 +136,7 @@ L<Bio::Grep::Backend::RE> and L<Bio::Grep::Backend::Hypa>
 
 =item 
 
-Bio::Grep supports most of the features of the back-ends. If you need a 
+C<Bio::Grep> supports most of the features of the back-ends. If you need a 
 particular feature that is not supported, write a feature request. In general it 
 should be easy to integrate. For a complete list of supported features, see
 L<Bio::Grep::SearchSettings>, for an overview see 
@@ -147,14 +149,14 @@ to a temporary file and the parser only stores the current hit in memory.
 
 =item
 
-Bio::Grep has a nice interface for search result filters. See L<"FILTERS">.
+C<Bio::Grep> includes an interface for search result filters. See L<"FILTERS">.
 This module also allows you to retrieve up- and downstream regions. Together
-with filters, this makes Bio::Grep an ideal framework for seed and extend
+with filters, this makes C<Bio::Grep> an ideal framework for seed and extend
 algorithms. 
 
 =item 
 
-Bio::Grep was in particular designed for web services and therefore
+C<Bio::Grep> was in particular designed for web services and therefore
 checks the settings carefully before calling back-ends. See L<"SECURITY">.
 
 =back
@@ -170,8 +172,8 @@ common problems.
 
 =head2 GENERATE DATABASES 
 
-As a first step, you have to generate a Bio::Grep database out of your Fasta
-file in which you want to search. A Bio::Grep database consists of a couple of
+As a first step, you have to generate a C<Bio::Grep> database out of your Fasta
+file in which you want to search. A C<Bio::Grep> database consists of a couple of
 files and allows you to retrieve informations about the database as well
 as to perform queries as fast and memory efficient as possible. You have to do
 this only once for every Fasta file.
@@ -179,8 +181,12 @@ this only once for every Fasta file.
 For example:
 
   my $sbe = Bio::Grep->new('Vmatch');	
-  $sbe->settings->datapath('data');
-  $sbe->generate_database('../t/Test.fasta', 'Description for the test Fastafile');
+
+  $sbe->generate_database({
+     file => 'ATH1.cdna',
+     datapath    => 'data', 
+     description => 'AGI Transcripts',
+  });
 
 Now, in a second script:
 
@@ -212,6 +218,7 @@ For example
   $sbe->settings->datapath('data');
   # take first available database 
   $sbe->settings->database($local_dbs[0]);
+  $sbe->settings->query('AGAGCCCT');
 
 See the documentation of your back-end for available options. 
 
@@ -227,11 +234,11 @@ default values.
 
   $sbe->search({ mismatches => 2, 
                  reverse_complement => 0, 
-                 query => $query });
+                 query => 'AGAGCCCT' });
 
 =head2 ANALYZE SEARCH RESULTS
 
-Use such a Bioperl like while loop to analyze the search results.
+Use such a L<Bio::Perl> like while loop to analyze the search results.
 
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
@@ -243,8 +250,7 @@ See L<Bio::Grep::SearchResult> for all available informations.
 
 =head1 BGREP
 
-This distribution comes with a sample script called B<bgrep>. See L<bgrep> for
-details.
+This distribution comes with a sample script called L<bgrep>. 
 
 =head1 WHICH BACKEND?
 
@@ -253,21 +259,17 @@ We support these external back-ends:
 
 =over
 
-=item 
+=item C<Vmatch> 
 
-Vmatch (L<http://vmatch.de/>) 
+L<http://vmatch.de/>
 	
-=item 
+=item C<Agrep> 
 
-Agrep (L<http://www.tgries.de/agrep/>)
+L<http://www.tgries.de/agrep/>
 
-=item 
+=item C<GUUGle> 
 
-GUUGle (L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>)
-
-=item 
-
-Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>) 
+L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>
 
 =back
 
@@ -275,9 +277,8 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 
 =begin html
 
-<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>HyPa</th><th>RE</th><th>Vmatch</th></tr><tr><td>Suffix Arrays/Trees</td>
+<table><tr><th>Feature</th><th>Agrep</th><th>GUUGle</th><th>RE</th><th>Vmatch</th></tr><tr><td>Suffix Arrays/Trees</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -285,21 +286,18 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <tr><td>Sliding Window</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
 <tr><td>Persistent Index<sup>1</sup></td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Mismatches</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
@@ -307,20 +305,17 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Insertions</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
 <tr><td>Deletions</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
@@ -328,18 +323,15 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
-<tr><td>GU<sup>3</sup></td>
+<tr><td>GU</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
 <tr><td>DNA/RNA</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -350,17 +342,14 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Direct and Revcom</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
-<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Reverse Complement</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
@@ -371,87 +360,83 @@ Hypa (L<http://bibiserv.techfak.uni-bielefeld.de/HyPa/>)
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
 <tr><td>Filters</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
-<td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
-<tr><td>Query Length<sup>4</sup></td>
+<tr><td>Query Length<sup>3</sup></td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
-<td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 </tr>
-<tr><td>Regular Expressions<sup>5</sup></td>
-<td style="text-align:center;background-color: #ffe0e0;">no</td>
+<tr><td>Regular Expressions<sup>4</sup></td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
-</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>HyPa also allows that GU counts only as 0.5 mismatches<br/><sup>4</sup>Matches if a substring of the query of size n or larger matches<br/><sup>5</sup>Agrep soon</div>
+</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>Matches if a substring of the query of size n or larger matches<br/><sup>4</sup>Agrep soon</div>
 
 =end html
 
 =begin man
 
-   Features               || Agrep  | GUUGle |  HyPa  |   RE   | Vmatch 
-   Suffix Arrays/Trees    ||   no   |  yes   |  yes   |   no   |  yes   
-   Sliding Window         ||  yes   |   no   |   no   |  yes   |   no   
-   Persistent Index 1     ||   no   |   no   |  yes   |   no   |  yes   
-   Mismatches             ||  yes   |   no   |  yes   |   no   |  yes   
-   Edit Distance          ||  yes   |   no   |   no   |   no   |  yes   
-   Insertions             ||   no   |   no   |  yes   |   no   |   no   
-   Deletions              ||   no   |   no   |  yes   |   no   |   no   
-   Multiple Queries 2     ||   no   |  yes   |   no   |   no   |  yes   
-   GU 3                   ||   no   |  yes   |  yes   |   no   |   no   
-   DNA/RNA                ||  yes   |  yes   |  yes   |  yes   |  yes   
-   Protein                ||  yes   |   no   |  yes   |  yes   |  yes   
-   Direct and Revcom      ||   no   |  yes   |   no   |  yes   |  yes   
-   Reverse Complement     ||  yes   |  yes   |  yes   |  yes   |  yes   
-   Upstream/Downstream    ||   no   |  yes   |  yes   |  yes   |  yes   
-   Filters                ||   no   |  yes   |  yes   |  yes   |  yes   
-   Query Length 4         ||   no   |  yes   |   no   |   no   |  yes   
-   Regular Expressions 5  ||   no   |   no   |   no   |  yes   |   no   
+   Features               || Agrep  | GUUGle |   RE   | Vmatch 
+   Suffix Arrays/Trees    ||   no   |  yes   |   no   |  yes   
+   Sliding Window         ||  yes   |   no   |  yes   |   no   
+   Persistent Index 1     ||   no   |   no   |   no   |  yes   
+   Mismatches             ||  yes   |   no   |   no   |  yes   
+   Edit Distance          ||  yes   |   no   |   no   |  yes   
+   Insertions             ||   no   |   no   |   no   |   no   
+   Deletions              ||   no   |   no   |   no   |   no   
+   Multiple Queries 2     ||   no   |  yes   |   no   |  yes   
+   GU                     ||   no   |  yes   |   no   |   no   
+   DNA/RNA                ||  yes   |  yes   |  yes   |  yes   
+   Protein                ||  yes   |   no   |  yes   |  yes   
+   Direct and Revcom      ||   no   |  yes   |  yes   |  yes   
+   Reverse Complement     ||  yes   |  yes   |  yes   |  yes   
+   Upstream/Downstream    ||   no   |  yes   |  yes   |  yes   
+   Filters                ||   no   |  yes   |  yes   |  yes   
+   Query Length 3         ||   no   |  yes   |   no   |  yes   
+   Regular Expressions 4  ||   no   |   no   |  yes   |   no   
 
 --
  1 Needs precalculation and (much) more memory but queries are in general faster
  2 With query_file
- 3 HyPa also allows that GU counts only as 0.5 mismatches
- 4 Matches if a substring of the query of size n or larger matches
- 5 Agrep soon
+ 3 Matches if a substring of the query of size n or larger matches
+ 4 Agrep soon
 
 =end man
 
 
-Vmatch is fast but needs a lot of memory. Agrep is the best choice if you allow many 
+C<Vmatch> is fast but needs a lot of memory. C<Agrep> is the best choice if you allow many 
 mismatches in short sequences, if you want to search in Fasta files 
 with relatively short sequences (e.g transcript databases) and if you are 
 only interested in which sequences the approximate match was found. 
 Its performance is in this case 
-amazing. If you want the exact positions of a match in the sequence, choose vmatch. If you want 
-nice alignments, choose vmatch too (EMBOSS can automatically align the 
-sequence and the query in the agrep back-end, but then vmatch is faster). 
-Filters require exact positions, so you can't use them with agrep. 
+amazing. If you want the exact positions of a match in the sequence, choose
+C<Vmatch>. If you want 
+nice alignments, choose C<Vmatch> too (C<EMBOSS> can automatically align the 
+sequence and the query in the C<Agrep> back-end, but then C<Vmatch> is faster). 
+Filters require exact positions, so you can't use them with C<Agrep>. 
 This may change in future version or not.
 
-GUUGle may be the best choice if you have RNA queries (counts GU as no mismatch)
+C<GUUGle> may be the best choice if you have RNA queries (counts GU as no mismatch)
 and if you are interested in only exact matches. Another
-solution here would be to use Vmatch and write a filter (see next section) that
+solution here would be to use C<Vmatch> and write a filter (see next section) that
 only allows GU mismatches. Of course, this is only an alternative if you
 can limit (C<$sbe-E<gt>settings-E<gt>mismatches()>) the maximal number of GU
-mismatches. Vmatch with its precalculated suffix arrays is really fast, so you
+mismatches. C<Vmatch> with its precalculated suffix arrays is really fast, so you
 should consider this option.
 
 
 =head1 FILTERS
 
-Filtering search results is a common task. For that, Bio::Grep provides an
+Filtering search results is a common task. For that, C<Bio::Grep> provides an
 filter interface, L<Bio::Grep::Filter::FilterI>. Writing filters is
 straightforward: 
 
@@ -508,7 +493,7 @@ See L<Bio::Grep::Filter::FilterI>.
 
 =head1 ERROR HANDLING
 
-Bio::Grep throws Bioperl exceptions when errors occur. You can use the 
+C<Bio::Grep> throws L<Bio::Perl> exceptions when errors occur. You can use the 
 module L<Error> to catch these exceptions:
 
    use Error qw(:try);
@@ -533,10 +518,10 @@ module L<Error> to catch these exceptions:
        exit(1);  
    };
 
-Bio::Grep throws a C<SystemException> when a system() call failed,
-C<BadParameter> whenever Bio::Grep recognizes some problems in the settings.
-Be aware that Bio::Grep does not find all of these problems. In such a case,
-the back-end call will fail and Bio::Grep will throw a C<SystemException>.
+C<Bio::Grep> throws a C<SystemException> when a system() call failed,
+C<BadParameter> whenever C<Bio::Grep> recognizes some problems in the settings.
+Be aware that C<Bio::Grep> does not find all of these problems. In such a case,
+the back-end call will fail and this module will throw a C<SystemException>.
 
 Whenever it is not possible to open, copy, close, delete or
 write a file, croak() (L<Carp>) is called.
@@ -545,9 +530,9 @@ See L<Bio::Root::Exception>, L<Carp>.
 
 =head1 SECURITY
 
-The use of Bio::Grep (in Web Services for example) should be quite secure. All
-test run in taint mode. Bio::Grep checks the settings before it generates the string
-for the system() call. Bio::Grep uses L<File::Temp> for all temporary files.
+The use of this module (in Web Services for example) should be quite secure. All
+test run in taint mode. C<Bio::Grep> checks the settings before it generates the string
+for the system() call and uses L<File::Temp> for all temporary files.
 
 =head1 INCOMPATIBILITIES
 
@@ -558,7 +543,7 @@ None reported.
 No bugs have been reported. 
 
 There is not yet a nice interface for searching for multiple queries. However,
-Vmatch and GUUGle support this feature. So you can generate a Fasta query file
+C<Vmatch> and C<GUUGle> support this feature. So you can generate a Fasta query file
 with L<Bio::SeqIO> and then set C<$sbe-E<gt>settings-E<gt>query_file()>. To
 find out, to which query a match belongs, you have to check C<$res-E<gt>query>.
 
@@ -577,14 +562,10 @@ L<Bio::Grep::Backend::Vmatch>
 L<Bio::Grep::Backend::GUUGle>
 L<Bio::Grep::Backend::RE>
 L<Bio::Grep::Backend::Agrep>
-L<Bio::Grep::Backend::Hypa>
 
 =head2 PUBLICATIONS
 
-GUUGle: L<http://bioinformatics.oxfordjournals.org/cgi/content/full/22/6/762>
-
-HyPa:   L<http://nar.oxfordjournals.org/cgi/content/full/29/1/196>
-
+C<GUUGle>: L<http://bioinformatics.oxfordjournals.org/cgi/content/full/22/6/762>
 
 =head1 AUTHOR
 

@@ -6,7 +6,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 use Class::MethodMaker [
    new    => 'new2',
@@ -196,6 +196,14 @@ Get/Set allowed edit distance.
 
 Only available in the Vmatch and Agrep back-end.
 
+=item C<deletions()>
+
+Get/Set allowed number of deletions. Not supported by any back-end.
+
+=item C<insertions()>
+
+Get/Set allowed number of insertions. Not supported by any back-end.
+
 =item C<upstream()>
 
 Get/set upstream. This is the number of bases upstream the match.
@@ -260,7 +268,7 @@ Not available (meaning not necessary) in the Vmatch and GUUGle back-end.
 Get/set online. Vmatch back-end allows searching without using the index. When
 you allow many mismatches, this could be faster. 
 
-Only available in the Vmatch and HyPa back-end.
+Only available in the Vmatch back-end.
 
 =item C<sort()>
 
@@ -273,14 +281,14 @@ a description from the back-end:
 
 Get/set maxhits. Tells the back-end that it should output only the best n hits.
 
-Only available in the Vmatch and GUUGle back-end.
+Only available in the C<Vmatch> and C<GUUGle> back-end.
 
 =item C<gumismatches()>
 
 Get/set gumismatches. Tells the back-end how it should count GU mismatches.
- Valid values in HyPa are 0, 0.5 and 1, in GUUGle only 0.
+Valid values in C<GUUGle> are 0, in all other back-ends 1 (default).
 
-Only available in the HyPa and GUUGle back-end.
+Only available in the C<GUUGle> back-end.
 
 =item C<query_length()>
 
@@ -334,21 +342,6 @@ Get/Set qspeedup. Specify speedup level when matching queries
 (0: fast, 2: faster; default is 2). Beware of time/space tradeoff.
              
 =back
-
-=head2 HyPa only
-
-=over
-
-=item C<insertions()>
-
-Get/Set allowed insertions. 
-
-=item C<deletions()>
-
-Get/Set allowed deletions. 
-
-=back
-
 
 NOTE: You can use the hash C<features> from the back-end to check if some
 feature is available or not. See L<Bio::Grep::Backend::BackendI>

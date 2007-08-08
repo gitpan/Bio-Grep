@@ -1,4 +1,4 @@
-Bio-Grep version 0.8.5
+Bio-Grep version 0.9.0
 ======================
 
 Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
@@ -65,15 +65,6 @@ This module requires these other modules, libraries and programs:
     for exact matches. It is very memory efficent and needs no precalculated
     suffix arrays. Open Source.
 
-  Hypa (http://bibiserv.techfak.uni-bielefeld.de/HyPa/) Another
-    powerful enhanced suffix array tool. We use only a small set of 
-    features. Hypa is not yet offically released. It supports wobble pairs, 
-    meaning that GU mismatches can count only 0 or 0.5 mismatches. 
-    Another difference is that you can define how many insertions and 
-    deletions should be allowed.
-    The other back-ends only allow edit or hamming distances.
-    The tests require that hypa is in your path.
-   
   ...and other Perl modules. You will get a warning about missing
   modules when you run the make command. A lot of dependencies, we know,
   but most of them are standard software in bioinformatics. So please
@@ -137,6 +128,9 @@ Please contribute recipes if you can!
 
   see perldoc Bio::SimpleAlign
 
+- I want to make a donation.
+  I lied. This isn't a FAQ. But if Bio::Grep saved you some time, consider 
+  motivating a poor PhD student...
 
 BUGS
 

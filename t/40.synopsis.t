@@ -42,15 +42,18 @@ my $code =<<'EOT'
   my $sbe = Bio::Grep->new('Vmatch');	
   
   # define the location of the suffix arrays
-  $sbe->settings->datapath('t/data');
+  $sbe->settings->datapath('data');
   
   mkdir($sbe->settings->datapath);	
   
   # now generate a suffix array. you have to do this only once.
-  $sbe->generate_database('t/Test.fasta', 'Description for the test Fastafile');
+  $sbe->generate_database({
+     file => 't/ATH1.cdna',
+     description => 'AGI Transcripts',
+  });
   
   # search in this suffix array
-  $sbe->settings->database('Test.fasta');
+  $sbe->settings->database('ATH1.cdna');
   
   # search for the reverse complement and allow 2 mismatches
   $sbe->settings->query('UGAACAGAAAG');
@@ -67,9 +70,9 @@ my $code =<<'EOT'
   # (because it is likely that they don't change when search is called
   # multiple times)
 
-  $sbe->search( { query  =>  'GAGCCCTTGCT',
+  $sbe->search( { query  =>  'AGAGCCCT',
                   reverse_complement => 1,
-                  mismatches         => 2,
+                  mismatches         => 1,
                  });  
   
   my @ids;
@@ -88,17 +91,21 @@ my $code =<<'EOT'
 EOT
 ;
 
-    eval $code;
-    ok(!$@,"SYNOPSIS compiles") || diag $@;
+    ok(!code_eval($code),"SYNOPSIS compiles") || diag $@;
 
+    BioGrepTest::delete_files;
 $code =<<'EOT'
   use Bio::Grep;
   
-  # configure our search back-end, in this case Vmatch
   my $sbe = Bio::Grep->new('Vmatch');
   
-  $sbe->settings->datapath('t/data');
-  
+  # generate a Vmatch suffix array. you have to do this only once.
+  $sbe->generate_database({ 
+    file        => 't/TestRevCom.fasta', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
+ 
   # search for the reverse complement and allow 4 mismatches
   # parse the description (max. 100 chars) directly out of the
   # Vmatch output instead of calling vsubseqselect for every
@@ -107,9 +114,9 @@ $code =<<'EOT'
   $sbe->search({
     query   => 'UGAACAGAAAGCUCAUGAGCC',
     reverse_complement => 1,
-    mismatches         => 0,
+    mismatches         => 4,
     showdesc           => 100,
-    database           => 'Test.fasta',
+    database           => 'ATH1.cdna',
   });
 
   # output the searchresults with nice alignments
@@ -119,20 +126,21 @@ $code =<<'EOT'
      print $res->alignment_string() . "\n\n";
 
      # sequence_id now contains the gene id (e.g. At1g1234),
-     # not the Vmatch internal id.
-     # To retrieve the complete sequence, you have to
-     # call get_sequences now
+     # not the Vmatch internal id 
+     # To retrieve the complete sequences, one has to
+     # call get_sequences for every gene id
      my $seq_io = $sbe->get_sequences([$res->sequence_id]);
      my $sequence = $seq_io->next_seq;
   }
   
   # for retrieving up- and downstream regions,
-  # we need the Vmatch internal sequence ids so we can't
-  # use showdesc
+  # Vmatch internal sequence ids are required
+  # (no showdesc possible)
 
   $sbe->search({
-    query   => 'TTCTGTGGTCAACCAATCACGTCAAC',
-    mismatches         => 2,
+    query   => 'AGAGCCCT',
+    reverse_complement => 1,
+    mismatches         => 1,
     upstream           => 30,
     downstream         => 30,
   });
@@ -143,14 +151,14 @@ $code =<<'EOT'
     push @internal_ids, $res->sequence_id;
   }
 
-  # ... but you can retrieve all complete sequences with
+  # ... but one can retrieve all complete sequences with
   # just one call of vseqselect
   my $seq_io = $sbe->get_sequences(\@internal_ids);
 
 EOT
 ;
     eval $code;
-    ok(!$@,"Vmatch SYNOPSIS compiles") || diag $@;
+    ok(!code_eval($code),"Vmatch SYNOPSIS compiles") || diag $@;
 
 
 $code =<<'EOT'
@@ -176,15 +184,14 @@ $code =<<'EOT'
  
   $sbe->search({
      datapath   => 't/data',
-     database   => 'Test.fasta',
+     database   => 'ATH1.cdna',
      query_file => 'motifs.fasta',
      complete   => 1,
   });
 
 EOT
 ;
-    eval $code;
-    ok(!$@,"Cookbook recipe motifs solution a compiles") || diag $@;
+    ok(!code_eval($code),"Cookbook recipe motifs solution a compiles") || diag $@;
 
     unlink 'motifs.fasta';
 }
@@ -201,15 +208,16 @@ SKIP:{
     mkdir 't/data';
 
 my $code =<<'EOT'
-
   use Bio::Grep;
   
   my $sbe = Bio::Grep->new('Agrep');
   
-  $sbe->settings->datapath('data');
-  
   # generate a database. you have to do this only once. 
-  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database({ 
+    file        => 't/TestRevCom.fasta', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
   
   # search for the reverse complement and allow 2 mismatches 
   # Don't calculate Alignments with EMBOSS
@@ -227,12 +235,13 @@ my $code =<<'EOT'
   while ( my $res = $sbe->next_res) {
      print $res->sequence->id . "\n";
      print $res->mark_subject_uppercase() . "\n";
-    # print $res->alignment_string() . "\n\n";
+     # print $res->alignment_string() . "\n\n";
      push @internal_ids, $res->sequence_id;
   }
   
   # get the complete sequences as Bio::SeqIO object
   my $seq_io = $sbe->get_sequences(\@internal_ids);
+
 
 EOT
 ;
@@ -252,29 +261,32 @@ SKIP:{
     mkdir 't/data';
 
 my $code =<<'EOT'
+
   use Bio::Grep;
   
   my $sbe = Bio::Grep->new('GUUGle');
-  
-  $sbe->settings->datapath('t/data');
   
   # generate a GUUGle Bio::Grep database. you have to do this only once.
   # GUUGle does not create a persistent index right now.
   # This function generates an fast index for $sbe->get_sequences
   # and files with a description and the alphabet (only DNA/RNA allowed)
-  $sbe->generate_database('t/TestRevCom.fasta');
+  $sbe->generate_database({ 
+    file        => 't/TestRevCom.fasta', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
  
-  # search on both strands
+  # search on both strands (GU allowed) 
   # retrieve up- and downstream regions of size 30
   $sbe->search({
-    query   => 'GAGCCCTT',
-    direct_and_rev_com => 1,
+    query   => 'AGAGCCCT',
+    direct_and_rev_com => 1, 
     upstream           => 30,
     downstream         => 30,
     gumismatches       => 0,
-    database           => 'TestRevCom.fasta',
+    database           => 'ATH1.cdna',
   });
-  
+
   my @internal_ids;
 
   # output all informations we have!
@@ -287,18 +299,17 @@ my $code =<<'EOT'
   
   # get the complete sequences as Bio::SeqIO object
   my $seq_io = $sbe->get_sequences(\@internal_ids);
-
+  
   # search for targets (GU allowed)
   $sbe->search({
-    query   => 'GAGCCCTT',
+    query   => 'GAGCCCTTGGGGGGG',
     reverse_complement => 1, 
     gumismatches       => 0,
   });
 
 EOT
 ;
-    eval $code;
-    ok(!$@,"GUUGle SYNOPSIS compiles") || diag $@;
+    ok(!code_eval($code),"GUUGle SYNOPSIS compiles") || diag $@;
 }
     
 # RE
@@ -306,6 +317,7 @@ BioGrepTest::delete_files;
 mkdir 't/data';
 
 my $code =<<'EOT'
+
   use Bio::Grep;
   
   my $sbe = Bio::Grep->new('RE');
@@ -313,7 +325,11 @@ my $code =<<'EOT'
   $sbe->settings->datapath('data');
   
   # generate a database. you have to do this only once. 
-  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database({ 
+    file        => 't/TestRevCom.fasta', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
   
   # search on both strands  
   # retrieve up- and downstream regions of size 30
@@ -371,12 +387,16 @@ eval $code;
 ok(code_eval($code),"bllll not compiles");
 
 BioGrepTest::delete_files;
+rmdir('t/tmp');
+rmdir('t/data');
+rmdir('t/data2');
 
 sub code_eval {
     my ( $code ) = @_;
     $code =~ s/ATH1.cdna/TestRevCom.fasta/g;
-    $code =~ s{datapath\('data'\)}{datapath('t/data')}g;
+    $code =~ s{'data'}{'t/data'}g;
     $code =~ s{generate_database\('T}{generate_database('t/T}g;
+#    diag $code;
     eval $code;
     return $@;
 }    

@@ -10,10 +10,9 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
 
-use File::Basename;
 use IO::String;
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 sub new {
     my $self = shift;
@@ -98,19 +97,17 @@ sub get_databases {
 }
 
 sub generate_database {
-    my ( $self, $file, $description ) = @_;
-    my ( $filename ) = fileparse($file);
+    my ( $self, @args ) = @_;
 
-    $self->_copy_fasta_file_and_create_nfo( $file, $filename, $description );
+    my %args = $self->_prepare_generate_database(@args);
 
-    $filename = $self->_cat_path_filename($self->settings->datapath,
-        $filename);
+    my $filename = $args{filename};
 
     open my $DATFILE, '>',  "$filename.dat"; 
     
     open my $MAPFILE, '>', "$filename.map";
 
-    my $in = Bio::SeqIO->new( -file => $filename, -format => 'Fasta' );
+    my $in = Bio::SeqIO->new( -file => $filename, -format => $args{format} );
     my $i = 0;
     
     while ( my $seq = $in->next_seq() ) {
@@ -212,10 +209,12 @@ Bio::Grep::Backend::Agrep - Agrep back-end
   
   my $sbe = Bio::Grep->new('Agrep');
   
-  $sbe->settings->datapath('data');
-  
   # generate a database. you have to do this only once. 
-  $sbe->generate_database('ATH1.cdna', 'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database({ 
+    file        => 'ATH1.cdna', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
   
   # search for the reverse complement and allow 2 mismatches 
   # Don't calculate Alignments with EMBOSS

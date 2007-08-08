@@ -14,7 +14,7 @@ elsif (!$prereq{bioperl_run}) {
     plan skip_all => 'Bioperl-run not found';
 }
 else {
-    plan tests => 12;
+    plan tests => 11;
 }
 
 use_ok( 'Bio::Grep' );
@@ -22,7 +22,6 @@ use_ok( 'Bio::Grep::Root' );
 use_ok( 'Bio::Grep::Backend::Agrep' );
 use_ok( 'Bio::Grep::Backend::BackendI' );
 use_ok( 'Bio::Grep::Backend::GUUGle' );
-use_ok( 'Bio::Grep::Backend::Hypa' );
 use_ok( 'Bio::Grep::Backend::RE' );
 use_ok( 'Bio::Grep::Backend::Vmatch' );
 use_ok( 'Bio::Grep::SearchResult' );

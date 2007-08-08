@@ -71,10 +71,11 @@ BioGrepTest::delete_files;
 
 $sbe->settings->reverse_complement(0);
 $sbe->settings->datapath('t/data');
-$sbe->generate_database( 't/Test.fasta',
- 'Description for Test.fasta' );
-$sbe->generate_database( 't/TestGUUGleExtend.fasta',
- 'Description for Test.fasta' );
+$sbe->generate_database( { file => 't/Test.fasta',
+description => 'Description for Test.fasta'} );
+$sbe->generate_database( { file => 't/TestGUUGleExtend.fasta',
+ description => 'Description for Test.fasta',
+ copy => 0 } );
 $sbe->settings->query('ATGGAGGATCAAGTTGG');
 $sbe->settings->database('TestGUUGleExtend.fasta');
 $sbe->search();
@@ -154,7 +155,7 @@ SKIP: {
 
 eval { $sbe->search( { query => 'GAA[AT]G', reverse_complement => 1 } ) };
 
-cmp_ok($EVAL_ERROR, '=~', qr{Query does not look like a DNA/RNA sequence.}, 
+cmp_ok($EVAL_ERROR, '=~', qr{While doing a reverse-complement}, 
     'Exception occured with revcom and regex') || diag $EVAL_ERROR;
 
 

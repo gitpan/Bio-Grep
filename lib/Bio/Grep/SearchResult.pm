@@ -8,7 +8,7 @@ use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 use Class::MethodMaker [
    new    => 'new2',

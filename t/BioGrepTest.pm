@@ -6,7 +6,7 @@ use File::Spec;
 sub check_prereq {
     # check if some backend is found
     my %res = ( backend => 0, bioperl => 0, bioperl_run => 0, emboss => 0 );
-    my @backends = qw(vmatch guugle agrep hypa);
+    my @backends = qw(vmatch guugle agrep );
     BACKEND:
     for my $backend (@backends) {
         if (find_binary_in_path($backend) ne '') {
@@ -64,4 +64,13 @@ sub delete_files {
     return 1;
 }        
 
+sub get_sorted_result_ids {
+    my ( $sbe ) = @_;
+    my @results;
+    while (my $res = $sbe->next_res) {
+        push @results, $res->sequence->id;
+    }   
+    @results = sort @results;
+    return @results;
+}    
 1;

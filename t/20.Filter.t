@@ -24,7 +24,7 @@ BEGIN{
 
 use TestFilter;
 
-my %tests = ( Agrep => 2, Vmatch => 14, Hypa => 14, GUUGle => 14, RE => 14 );
+my %tests = ( Agrep => 2, Vmatch => 14, GUUGle => 14, RE => 14 );
 my $number_tests = 1;
 
 foreach (keys %tests) {
@@ -41,7 +41,7 @@ use Bio::Perl;
 
 # the number of files we assume in the data directory after
 # database generation. NOT TESTED HERE
-my %backend_filecnt = ( Agrep => 4, Vmatch => 15, Hypa => 30, GUUGle => 2  );
+my %backend_filecnt = ( Agrep => 4, Vmatch => 15, GUUGle => 2  );
 
 my $tests = 0;
 mkdir("t/tmp");
@@ -58,14 +58,16 @@ SKIP: {
         # diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
             'RNAcofold' );
+        my $gum = 1;
+        $gum = 0 if $backendname eq 'GUUGle';
         my $sbe = Bio::Grep->new($backendname);
 
  # define own tmppath, so that we can check if all temporary files are deleted
         $sbe->settings->tmppath('t/tmp');
         $sbe->settings->datapath('t/data');
         BioGrepTest::delete_files;
-        $sbe->generate_database( 't/Test2.fasta',
-            'Description for Test2.fasta' );
+        $sbe->generate_database( { file => 't/Test2.fasta',
+            description => 'Description for Test2.fasta' });
         $sbe->settings->database('Test2.fasta');
         my $sequence = 'tgacagaagagagtgagcac';
         my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
@@ -74,6 +76,7 @@ SKIP: {
                     query   => 'ACCTAAAGTCACTG',
                     filters => [ $filter ],
                     reverse_complement => 0,
+                    gumismatches => $gum,
                 });
             my @ids;
             while (my $res = $sbe->next_res()) {
@@ -114,18 +117,17 @@ SKIP: {
                 }    
             }    
             $sbe->search();
-            my @ids = ();
-            foreach my $res ( @{ $sbe->results } ) {
-
-                #   print STDERR "IS: " . $res->sequence->id . "\n";
-                push ( @ids, $res->sequence->id );
-            }
-            @ids = sort @ids;
+            my @ids = BioGrepTest::get_sorted_result_ids($sbe);
+#            diag join ',', @ids; 
             if ($backendname eq 'GUUGle') {
-                is( @ids, 6, "6 results" );
+                is_deeply( \@ids, 
+           [qw(At2g42200.1 At2g42200.1 At2g42200.2 At2g42200.2 At5g43270.1 At5g43270.2)],
+                    "6 results" );
             }
             else {
-                is( @ids, 4, "4 results" );
+                is_deeply( \@ids, 
+                    [qw(At2g42200.1 At2g42200.2 At5g43270.1 At5g43270.2)],
+                    "4 results" );
             }    
         }
         next unless defined( $sbe->features->{FILTERS} );
@@ -184,7 +186,6 @@ foreach my $file (<t/data/*>) {
 }
 
 #ok( $tests > 0, " at least one backend found in path" );
-
 #ok( rmdir("t/tmp"), "Can remove tmp directory (all temp files deleted)" );
 ok( rmdir("t/data"),
     "Can remove data directory (all data files deleted-just a test for the test)"

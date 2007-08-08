@@ -8,47 +8,47 @@
 use strict;
 use warnings;
 
-BEGIN{
+BEGIN {
     use lib 't';
     use BioGrepTest;
-    use Test::More; 
+    use Test::More;
 
     my %prereq = BioGrepTest::check_prereq();
-    if (!$prereq{bioperl}) {
+    if ( !$prereq{bioperl} ) {
         plan skip_all => 'Bioperl not found';
     }
-    elsif (!$prereq{bioperl_run}) {
+    elsif ( !$prereq{bioperl_run} ) {
         plan skip_all => 'Bioperl-run not found';
     }
 }
 
-our %tests = ( Agrep => 71, Vmatch => 146, Hypa => 80, GUUGle => 43, RE => 34 );
+our %tests = ( Agrep => 72, Vmatch => 148, GUUGle => 43, RE => 34 );
 my $number_tests = 1;
 
-foreach (keys %tests) {
+foreach ( keys %tests ) {
     $number_tests += $tests{$_};
 }
 plan tests => $number_tests;
 
-
-# backends 
+# backends
 ################################################################################
-
 
 use English qw( -no_match_vars );
 use Cwd;
 use Scalar::Util qw/tainted/;
 use Data::Dumper;
 
-
-
 use Bio::Grep;
 use Bio::Perl;
 
 # the number of files we assume in the data directory after
 # database generation.
-my %backend_filecnt = ( Agrep => 6, Vmatch => 16, Hypa => 31, GUUGle => 4, 
-    RE => 6);
+my %backend_filecnt = (
+    Agrep  => 6,
+    Vmatch => 16,
+    GUUGle => 4,
+    RE     => 6
+);
 
 # the hits in Test.fasta we assume with n mismatches
 my %hits = (
@@ -63,7 +63,7 @@ my %hits = (
 my %test_seq = (
     id   => 'At2g42200',
     desc => '68409.m05466 squamosa-promoter binding protein -related',
-    seq  =>
+    seq =>
         'accactctcgtctctttcttttttccttctgttctgtttctctctctaaacccaaaacagtcaaaatcagggaagccgaaattttctttgctttcttctcctttggtcctttctttaaacccgagacagttaggtttgtgtgagagagagaatgatgagtaaaaccctttctgtctgagtaagaggaaaccaacATGGAGATGGGTTCCAACTCGGGTCCGGGTCATGGTCCGGGTCAGGCAGAGTCGGGTGGTTCCTCCACTGAGTCATCCTCTTTCAGTGGAGGGCTCATGTTTGGCCAGAAGATCTACTTCGAGGACGGTGGTGGTGGATCCGGGTCTTCTTCCTCAGGTGGTCGTTCAAACAGACGTGTCCGTGGAGGCGGGTCGGGTCAGTCGGGTCAGATACCAAGGTGCCAAGTGGAAGGTTGTGGGATGGATCTAACCAATGCAAAAGGTTATTACTCGAGACACCGAGTTTGTGGAGTGCACTCTAAAACACCTAAAGTCACTGTGGCTGGTATCGAACAGAGGTTTTGTCAACAGTGCAGCAGGTTTCATCAGCTTCCGGAATTTGACCTAGAGAAAAGGAGTTGCCGCAGGAGACTCGCTGGTCATAATGAGCGACGAAGGAAGCCACAGCCTGCGTCTCTCTCTGTGTTAGCTTCTCGTTACGGGAGGATCGCACCTTCGCTTTACGAAAATGGTGATGCTGGAATGAATGGAAGCTTTCTTGGGAACCAAGAGATAGGATGGCCAAGTTCAAGAACATTGGATACAAGAGTGATGAGGCGGCCAGTGTCGTCACCGTCATGGCAGATCAATCCAATGAATGTATTTAGTCAAGGTTCAGTTGGTGGAGGAGGGACAAGCTTCTCATCTCCAGAGATTATGGACACTAAACTAGAGAGCTACAAGGGAATTGGCGACTCAAACTGTGCTCTCTCTCTTCTGTCAAATC'
 );
 
@@ -80,32 +80,35 @@ my %hits_sequences = (
 my $tests = 0;
 
 my %sort_modes = (
-    GUUGle  => [ 'ga', 'gd' ],
-    Hypa    => [ 'ga', 'gd' ],
-    RE      => [ 'ga', 'gd' ],
-    Agrep   => [ ],
-    Vmatch  => [ sort(              
-               qw(la ld ia id ja jd ea ed sa sd ida idd ga gd) ) ],
+    GUUGle => [ 'ga', 'gd' ],
+    RE     => [ 'ga', 'gd' ],
+    Agrep  => [],
+    Vmatch => [ sort(qw(la ld ia id ja jd ea ed sa sd ida idd ga gd)) ],
 );
-
 
 BACKEND:
 foreach my $backendname ( sort keys %tests ) {
 SKIP: {
-        #if ( $backendname eq 'RE' || BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
-        if ( $backendname ne 'RE' && BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
+
+#if ( $backendname eq 'RE' || BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
+        if ( $backendname ne 'RE'
+            && BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' )
+        {
             skip "$backendname not found in path", $tests{$backendname};
         }
         else {
             $tests++;
         }
         diag("\n*** Testing $backendname ***");
-        BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt),
+        BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
             'RNAcofold' );
-        my $sbe        = Bio::Grep->new($backendname);
-        my %asm        = $sbe->available_sort_modes();
-        is_deeply([ sort keys %asm ], 
-                  $sort_modes{$backendname}, 'sortmodes as expected');
+        my $sbe = Bio::Grep->new($backendname);
+        my %asm = $sbe->available_sort_modes();
+        is_deeply(
+            [ sort keys %asm ],
+            $sort_modes{$backendname},
+            'sortmodes as expected'
+        );
 
  # define own tmppath, so that we can check if all temporary files are deleted
         $sbe->settings->tmppath('t/tmp');
@@ -113,38 +116,58 @@ SKIP: {
         mkdir("t/data");
         mkdir("t/data2");
         BioGrepTest::delete_files;
-        
 
         $sbe->settings->datapath('t/data');
         eval {
-        $sbe->generate_database( 't/wrong\ named.fasta',
-             'Description for wrong\ named.fasta' );
+            $sbe->generate_database(
+                {   file        => 't/wrong\ named.fasta',
+                    description => 'Description for wrong\ named.fasta'
+                }
+            );
         };
         ok( $EVAL_ERROR, "exception occured with invalid filename" );
-        
+
         eval {
-            $sbe->generate_database( 't/wrong.fasta',
-                'Description for wrong.fasta' );
+            $sbe->generate_database(
+                {   file        => 't/wrong.fasta',
+                    description => 'Description for wrong.fasta'
+                }
+            );
         };
-        ok( $EVAL_ERROR, "exception occured with not existing file" );
+        cmp_ok(
+            $EVAL_ERROR, '=~',
+            'No such file.',
+            "exception occured with not existing file"
+        );
 
         $sbe->settings->datapath('t/wrongdata');
         eval {
-            $sbe->generate_database( 't/Test.fasta',
-                'Description for Test.fasta' );
+            $sbe->generate_database(
+                {   file        => 't/Test.fasta',
+                    description => 'Description for Test.fasta'
+                }
+            );
         };
         ok( $EVAL_ERROR, "exception occured with not existing datapath" );
 
         $sbe->settings->datapath('t/data');
 
         eval {
-            $sbe->generate_database( 't/Test.fasta',
-                'Description for Test.fasta' );
+            $sbe->generate_database(
+                {   file        => 't/Test.fasta',
+                    description => 'Description for Test.fasta',
+                    verbose     => 1,
+                    copy        => 1,
+                }
+            );
         };
-        ok( !$EVAL_ERROR, "no exception occured with dna fasta ($backendname)" );
+        ok( !$EVAL_ERROR,
+            "no exception occured with dna fasta ($backendname)" );
 
-        is($sbe->get_alphabet_of_database('Test.fasta'), 'dna', "Test.fasta dna
-        ($backendname)");
+        is( $sbe->get_alphabet_of_database('Test.fasta'), 'dna',
+            "Test.fasta dna
+        ($backendname)"
+        );
 
         # test if all files are there after database generation
 ################################################################################
@@ -171,24 +194,29 @@ SKIP: {
         );
 
         eval {
-            $sbe->generate_database( 't/Test_pep.fasta',
-                'Description for Test_pep.fasta' );
+            $sbe->generate_database(
+                {   file        => 't/Test_pep.fasta',
+                    description => 'Description for Test_pep.fasta'
+                }
+            );
         };
-        
-        if ($backendname eq 'GUUGle') {
+
+        if ( $backendname eq 'GUUGle' ) {
             ok( $EVAL_ERROR, "exception occured with peptide fasta
-                ($backendname)" );
+                ($backendname)"
+            );
         }
         else {
             ok( !$EVAL_ERROR, "no exception occured with peptide fasta
-                ($backendname)" );
+                ($backendname)"
+            );
         }
-        
+
         opendir( DIR, "t/data" ) || die "can't opendir t/data: $!";
         my @files2 = grep { /Test_pep/ && -f "t/data/$_" } readdir(DIR);
         closedir DIR;
 
-        if ($backendname ne 'GUUGle') {
+        if ( $backendname ne 'GUUGle' ) {
             foreach my $file (@files2) {
                 if ( $file =~ /nfo$/ ) {
                     open( FILE, "t/data/$file" );
@@ -208,102 +236,114 @@ SKIP: {
             );
         }
         push @files, @files2;
-        
-        if (defined $sbe->features->{PROTEINS}) {
 
-            is($sbe->get_alphabet_of_database('Test_pep.fasta'), 'protein', "Test.fasta
+        if ( defined $sbe->features->{PROTEINS} ) {
+
+            is( $sbe->get_alphabet_of_database('Test_pep.fasta'), 'protein',
+                "Test.fasta
             protein
-            ($backendname)");
-            
-            is_deeply( { $sbe->get_databases },
-                { 'Test.fasta' => 'Description for Test.fasta', 'Test_pep.fasta'
-                => 'Description for Test_pep.fasta' } );
+            ($backendname)"
+            );
+
+            is_deeply(
+                { $sbe->get_databases },
+                {   'Test.fasta'     => 'Description for Test.fasta',
+                    'Test_pep.fasta' => 'Description for Test_pep.fasta'
+                }
+            );
         }
 
-       
         $sbe->settings->database('Test.fasta');
 
-        my $sequence ='ttattagatataccaaaccagagaaaacaaatacat';
-        
-        if (defined $sbe->features->{NATIVE_ALIGNMENTS}) {
-            my $msu =
-            'aaaTTATTAGATATACCAAACCAGAGAAAACAAATACATaatcggagaaatacagattacagagagcga';
+        my $sequence = 'ttattagatataccaaaccagagaaaacaaatacat';
 
-            if (defined $sbe->features->{GUMISMATCHES}) {
+        if ( defined $sbe->features->{NATIVE_ALIGNMENTS} ) {
+            my $msu
+                = 'aaaTTATTAGATATACCAAACCAGAGAAAACAAATACATaatcggagaaatacagattacagagagcga';
+
+            if ( defined $sbe->features->{GUMISMATCHES} ) {
                 $sbe->settings->gumismatches(0);
-            }    
+            }
 
             $sbe->settings->query($sequence);
             $sbe->settings->upstream(30);
             $sbe->settings->downstream(30);
             $sbe->search();
-            while (my $res = $sbe->next_res) {
+            while ( my $res = $sbe->next_res ) {
                 my $t_msu = $res->mark_subject_uppercase();
                 $t_msu =~ tr/Uu/Tt/;
-                is($t_msu, $msu, 'mark subject uppercase works');
-                my $t_el = 3 + length($sequence)+30;
-                is(length($t_msu),$t_el,
-                    'length of sequence correct');
-                is($res->begin, 3,'begin is 3');
+                is( $t_msu, $msu, 'mark subject uppercase works' );
+                my $t_el = 3 + length($sequence) + 30;
+                is( length($t_msu), $t_el, 'length of sequence correct' );
+                is( $res->begin, 3, 'begin is 3' );
                 my $t_ss = $res->sequence->seq;
                 $t_ss =~ tr/Uu/tt/;
-                is(lc($t_ss), lc($msu), 'subject ok');
-                my $seqio = $sbe->get_sequences([$res->sequence_id ]);
+                is( lc($t_ss), lc($msu), 'subject ok' );
+                my $seqio = $sbe->get_sequences( [ $res->sequence_id ] );
                 my $db_seq = $seqio->next_seq;
-                is(lc($db_seq->subseq(4,3+length($sequence))),
-                   lc($sequence),'subject found in db');
-                is(lc($db_seq->subseq(1,$t_el)),
-                   lc($t_ss),'sequence found in db');
-            }   
-        $sbe->settings->set({});    
-        }     
-        if (defined $sbe->features->{MAXHITS}) {
-            $sequence ='ttatt';
+                is( lc( $db_seq->subseq( 4, 3 + length($sequence) ) ),
+                    lc($sequence), 'subject found in db' );
+                is( lc( $db_seq->subseq( 1, $t_el ) ),
+                    lc($t_ss), 'sequence found in db' );
+            }
+            $sbe->settings->set( {} );
+        }
+        if ( defined $sbe->features->{MAXHITS} ) {
+            $sequence = 'ttatt';
 
             $sbe->settings->query($sequence);
-            if (defined $sbe->features->{GUMISMATCHES}) {
+            if ( defined $sbe->features->{GUMISMATCHES} ) {
                 $sbe->settings->gumismatches(0);
-            }    
+            }
             $sbe->settings->query($sequence);
             $sbe->settings->maxhits(5);
             $sbe->search();
             my $cnt = 0;
-            while (my $res = $sbe->next_res) {
+            while ( my $res = $sbe->next_res ) {
                 $cnt++;
-            }    
-            is ($cnt, 5, 'maxhits(5) returned 5 hits');
+            }
+            is( $cnt, 5, 'maxhits(5) returned 5 hits' );
 
-            $sbe->settings->set({});   
+            $sbe->settings->set( {} );
         }
 
-        if ($sbe->features->{DIRECT_AND_REV_COM}) {
-            my $sbe2        = Bio::Grep->new($backendname);
+        if ( $sbe->features->{DIRECT_AND_REV_COM} ) {
+            my $sbe2 = Bio::Grep->new($backendname);
             $sbe2->settings->datapath('t/data2');
-            $sbe2->generate_database( 't/TestRevCom.fasta' );
-            $sbe2->search({
-                query => 'GAGCCCTT',
-                direct_and_rev_com => 1,
-                database => 'TestRevCom.fasta',
-            });
+            $sbe2->generate_database( { file => 't/TestRevCom.fasta' } );
+            $sbe2->search(
+                {   query              => 'GAGCCCTT',
+                    direct_and_rev_com => 1,
+                    database           => 'TestRevCom.fasta',
+                }
+            );
             my @drc_results;
-            while (my $res = $sbe2->next_res ) {
-                #   warn Dumper $res;    
-                push @drc_results, $res->sequence->id . ':' .
-                $res->alignment->get_seq_by_pos(1)->start;
-            }    
+            while ( my $res = $sbe2->next_res ) {
+
+                #   warn Dumper $res;
+                push @drc_results, $res->sequence->id . ':'
+                    . $res->alignment->get_seq_by_pos(1)->start;
+            }
             @drc_results = sort @drc_results;
-            is_deeply(\@drc_results, [sort('both:29' ,'both:3', 'first:6',
-                    'second:21' )  ], 
-                "Direct and Rev_Com works") || diag join ',', @drc_results;
+            is_deeply(
+                \@drc_results,
+                [ sort( 'both:29', 'both:3', 'first:6', 'second:21' ) ],
+                "Direct and Rev_Com works"
+            ) || diag join ',', @drc_results;
+
             #warn Dumper $sbe2->get_databases;
-            is_deeply({ $sbe2->get_databases} , {'TestRevCom.fasta' =>
-                    'TestRevCom.fasta' }, 'filename as description when no desc');
+            is_deeply(
+                { $sbe2->get_databases },
+                { 'TestRevCom.fasta' => 'TestRevCom.fasta' },
+                'filename as description when no desc'
+            );
 
         }
-        goto ENDLONGSEQS if ($backendname eq 'GUUGle' || $backendname eq 'RE');
+        goto ENDLONGSEQS
+            if ( $backendname eq 'GUUGle' || $backendname eq 'RE' );
 
         my $test_seq_internal_id = '';
-        $sequence             = 'tgacagaagagagtgagcac';
+        $sequence = 'tgacagaagagagtgagcac';
 
         # now search for 1 to 5 mismatches, test if reverse complement works
 ################################################################################
@@ -317,36 +357,43 @@ SKIP: {
                 $sbe->settings->reverse_complement(0);
             }
             for my $i ( 1 .. 5 ) {
+
                 # test some vmatch flags
                 # they should not change anything in the results
-                if ($j && $i == 5 && defined( $sbe->features->{ONLINE} )) {
+                if ( $j && $i == 5 && defined( $sbe->features->{ONLINE} ) ) {
                     $sbe->settings->online(1);
-                }    
-                if (!$j && $i == 5 && defined( $sbe->features->{ONLINE} )) {
+                }
+                if ( !$j && $i == 5 && defined( $sbe->features->{ONLINE} ) ) {
                     $sbe->settings->online(0);
-                }    
-                if ($j && $i == 4 && defined( $sbe->features->{QSPEEDUP} )) {
+                }
+                if ( $j && $i == 4 && defined( $sbe->features->{QSPEEDUP} ) )
+                {
                     $sbe->settings->qspeedup(2);
-                }    
-                if ($j == 0 && $i == 4 && defined( $sbe->features->{QSPEEDUP} )) {
+                }
+                if (   $j == 0
+                    && $i == 4
+                    && defined( $sbe->features->{QSPEEDUP} ) )
+                {
                     $sbe->settings->qspeedup(2);
-                }    
+                }
                 $sbe->settings->mismatches($i);
 
                 $sbe->search();
                 $sbe->settings->online_reset;
                 $sbe->settings->qspeedup_reset;
                 my @ids = ();
-                while (my $res = $sbe->next_res ) {
+                while ( my $res = $sbe->next_res ) {
 
                     #   print STDERR "IS: " . $res->sequence->id . "\n";
-                    push ( @ids, $res->sequence->id );
+                    push( @ids, $res->sequence->id );
                     $test_seq_internal_id = $res->sequence_id
                         if $res->sequence->id eq $test_seq{id};
-                    if ($i == 1 && $j == 1) {
-                        is(uc($res->query->seq), uc($sbe->settings->query), 
-                            'query sequence in results');
-                    }    
+                    if ( $i == 1 && $j == 1 ) {
+                        is( uc( $res->query->seq ),
+                            uc( $sbe->settings->query ),
+                            'query sequence in results'
+                        );
+                    }
                 }
                 my @shouldbe = _get_ids_where_mm_smaller($i);
                 foreach (@shouldbe) {
@@ -354,7 +401,8 @@ SKIP: {
                     #    print "SHOULDBE: $_\n";
                 }
                 @ids = sort @ids;
-                is_deeply( \@shouldbe, \@ids , "Results ok" );
+                is_deeply( \@shouldbe, \@ids, "Results ok" );
+
                 #warn Dumper(\@shouldbe, \@ids);
             }
         }
@@ -362,7 +410,7 @@ SKIP: {
         # test if backend returns correct sequence
 
         isnt( $test_seq_internal_id, '', 'Found internal id' );
-        my $seqio        = $sbe->get_sequences( [$test_seq_internal_id] );
+        my $seqio = $sbe->get_sequences( [$test_seq_internal_id] );
         my $test_seq_obj = $seqio->next_seq();
 
     SKIP: {
@@ -374,7 +422,8 @@ SKIP: {
             is( $test_seq_obj->seq,  $test_seq{seq} );
         }
 
-        ENDLONGSEQS:
+    ENDLONGSEQS:
+
         # testing, if backends find matches at the end of long sequences
 ################################################################################
         $sbe->settings->query('CGAGCTGATGCAAAGCTCGCGGGACTGA');
@@ -382,100 +431,115 @@ SKIP: {
         $sbe->settings->mismatches(0);
         $sbe->settings->no_alignments(1);
         $sbe->settings->gumismatches(0) if $backendname eq "GUUGle";
-        #$sbe->verbose(-1);
+
+        #$sbe->verbose(2);
         $sbe->search();
-        #$sbe->verbose(0);
-        
-        my @ids = ();
+
+        my @ids              = ();
         my $alignment_string = '';
-        while (my $res = $sbe->next_res  ) {
-            push ( @ids, $res->sequence->id );
+        while ( my $res = $sbe->next_res ) {
+            push( @ids, $res->sequence->id );
             $alignment_string .= $res->alignment_string;
         }
-        is($alignment_string,'','alignmentstring empty') if $backendname
-                eq 'Agrep';
+        is( $alignment_string, '', 'alignmentstring empty' )
+            if $backendname eq 'Agrep';
         $sbe->settings->no_alignments_reset;
+
+        #$sbe->verbose(0);
         my @shouldbe = qw( At1g67120 );
-        is_deeply( \@ids, \@shouldbe , "Results ok" );
-        
-        if (defined $sbe->features->{COMPLETE}) {
+        is_deeply( \@ids, \@shouldbe, "Results ok" );
+
+        if ( defined $sbe->features->{COMPLETE} ) {
             $sbe->settings->complete(1);
-        }    
-        $sbe->search();
-        
-        @ids = ();
-         while (my $res = $sbe->next_res  ) {
-            push ( @ids, $res->sequence->id );
         }
-        is_deeply( \@ids, \@shouldbe,   "Results ok" );
+        $sbe->search();
+
+        @ids = ();
+        while ( my $res = $sbe->next_res ) {
+            push( @ids, $res->sequence->id );
+        }
+        is_deeply( \@ids, \@shouldbe, "Results ok" );
 
         $sbe->settings->query_reset;
-        if ($backendname eq 'Vmatch') {
-            for my $i ( 0 .. 2) {
+        if ( $backendname eq 'Vmatch' ) {
+            for my $i ( 0 .. 2 ) {
                 $sbe->settings->query_file('t/Test_query.fasta');
-                if ($i == 2) {
+                if ( $i == 2 ) {
                     $sbe->settings->showdesc(20);
                 }
-                if ($i == 1) {
+                if ( $i == 1 ) {
                     $sbe->settings->query_file('t/Test_query_revcom.fasta');
                     $sbe->settings->reverse_complement(1);
                 }
                 $sbe->search();
-                
+
                 @ids = ();
                 my %multi_query_result = (
-                    'At1g01020.1' => {id => 'b', desc => 'descb', seq =>
-                        'CGAGTGTGAACGCATGATTATTTTCATCGATTTAA'}, 
-                    'At1g01030.1' => {id => 'c', desc => '',
-                    seq => 'gttttcttccgattctagggttttcatatttc'},
-                    'At1g01010.1' => {id => 'a', desc => 'desca', seq =>
-                    'TGTAGTGAGGGCTTTCGTGGTAAGATT' }
-                ); 
-                while (my $res = $sbe->next_res ) {
-                    
-                    is($res->query->id,
-                        $multi_query_result{$res->sequence->id}->{id});
-                    is($res->query->desc,
-                        $multi_query_result{$res->sequence->id}->{desc});
-                    if ($sbe->settings->reverse_complement) {
-                        is($res->query->revcom->seq,
-                            $multi_query_result{$res->sequence->id}->{seq});
+                    'At1g01020.1' => {
+                        id   => 'b',
+                        desc => 'descb',
+                        seq  => 'CGAGTGTGAACGCATGATTATTTTCATCGATTTAA'
+                    },
+                    'At1g01030.1' => {
+                        id   => 'c',
+                        desc => '',
+                        seq  => 'gttttcttccgattctagggttttcatatttc'
+                    },
+                    'At1g01010.1' => {
+                        id   => 'a',
+                        desc => 'desca',
+                        seq  => 'TGTAGTGAGGGCTTTCGTGGTAAGATT'
+                    }
+                );
+                while ( my $res = $sbe->next_res ) {
+
+                    is( $res->query->id,
+                        $multi_query_result{ $res->sequence->id }->{id} );
+                    is( $res->query->desc,
+                        $multi_query_result{ $res->sequence->id }->{desc} );
+                    if ( $sbe->settings->reverse_complement ) {
+                        is( $res->query->revcom->seq,
+                            $multi_query_result{ $res->sequence->id }
+                                ->{seq} );
                     }
                     else {
-                        is($res->query->seq,
-                            $multi_query_result{$res->sequence->id}->{seq});
-                    }    
+                        is( $res->query->seq,
+                            $multi_query_result{ $res->sequence->id }
+                                ->{seq} );
+                    }
                 }
                 $sbe->settings->showdesc_reset;
                 $sbe->settings->reverse_complement_reset;
             }
-            my $seqio = $sbe->get_sequences(['At2g42200']);
+            my $seqio = $sbe->get_sequences( ['At2g42200'] );
             my $db_seq = $seqio->next_seq;
-            is($db_seq->seq,$test_seq{seq},
-                "vmatch get_sequences with description works");
+            is( $db_seq->seq, $test_seq{seq},
+                "vmatch get_sequences with description works" );
         }
 
         $sbe->settings->complete_reset();
         $sbe->settings->query_file_reset();
-my $long_query =
-'AAATTATTAGATATACCAAACCAGAGAAAACAAATACATAATCGGAGAAATACAGATTACAGAGAGCGAGAGAGATCGACGGCGAAGCTCTTTACCCGGAAACCATTGAAATCGGACGGTTTAGTGAAAATGGAGGATCAAGTTGGGTTTGGGTTCCGTCCGAACGACGAGGAGCTCGTTGGTCACTATCTCCGTAACAAAATCGAAGGAAACACTAGCCGCGACGTTGAAGTAGCCATCAGCGAGGTCAACATCTGTAGCTACGATCCTTGGAACTTGCGCTTCCAGTCAAAGTACAAATCGAGAGATGCTATGTGGTACTTCTTCTCTCGTAGAGAAAACAACAAAGGGAATCGACAGAGCAGGACAACGGTTTCTGGTAAATGGAAGCTTACCGGAGAATCTGTTGAGGTCAAGGACCAGTGGGGATTTTGTAGTGAGGGCTTTCGTGGTAAGATTGGTCATAAAAGGGTTTTGGTGTTCCTCGATGGAAGATACCCTGACAAAACCAAATCTGATTGGGTTATCCACGAGTTCCACTACGACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCAGACTTGAGTACAAGGGTGATGATGCGGACATTCTATCTGCTTATGCAATAGATCCCACTCCCGCTTTTGTCCCCAATATGACTAGTAGTGCAGGTTCTGTGGTCAACCAATCACGTCAACGAAATTCAGGATCTTACAACACTTACTCTGAGTATGATTCAGCAAATCATGGCCAGCAGTTTAATGAAAACTCTAACATTATGCAGCAGCAACCACTTCAAGGATCATTCAACCCTCTCCTTGAGTATGATTTTGCAAATCACGGCGGTCAGTGGCTGAGTGACTATATCGACCTGCAACAGCAAGTTCCTTACTTGGCACCTTATGAAAATGAGTCGGAGATGATTTGGAAGCATGTGATTGAAGAAAATTTTGAGTTTTTGGTAGATGAAAGGACATCTATGCAACAGCATTACAGTGATCACCGGCCCAAAAAACCTGTGTCTGGGGTTTTGCCTGATGATAGCAGTGATACTGAAACTGGATCAATGATTTTCGAAGACACTTCGAGCTCCACTGATAGTGTTGGTAGTTCAGATGAACCGGGCCATACTCGTATAGATGATATTCCATCATTGAACATTATTGAGCCTTTGCACAATTATAAGGCACAAGAGCAACCAAAGCAGCAGAGCAAAGAAAAGGTGATAAGTTCGCAGAAAAGCGAATGCGAGTGGAAAATGGCTGAAGACTCGATCAAGATACCTCCATCCACCAACACGGTGAAGCAGAGCTGGATTGTTTTGGAGAATGCACAGTGGAACTATCTCAAGAACATGATCATTGGTGTCTTGTTGTTCATCTCCGTCATTAGTTGGATCATTCTTGTTGGTTAAGAGGTCAAATCGGATTCTTGCTCAAAATTTGTATTTCTTAGAATGTGTGTTTTTTTTTGTTTTTTTTTCTTTGCTCTGTTTTCTCGCTCCGGAAAAGTTTGAAGTTATATTTTATTAGTATGTAAAGAAGAGAAAAAGGGGGAAAGAAGAGAGAAGAAAAATGCAGAAAATCATATATATGAATTGGAAAAAAGTATATGTAATAATAATTAGTGCATCGTTTTGTGGTGTAGTTTATATAAATAAAGTGATATATAGTCTTGTATAAG';
+        my $long_query
+            = 'AAATTATTAGATATACCAAACCAGAGAAAACAAATACATAATCGGAGAAATACAGATTACAGAGAGCGAGAGAGATCGACGGCGAAGCTCTTTACCCGGAAACCATTGAAATCGGACGGTTTAGTGAAAATGGAGGATCAAGTTGGGTTTGGGTTCCGTCCGAACGACGAGGAGCTCGTTGGTCACTATCTCCGTAACAAAATCGAAGGAAACACTAGCCGCGACGTTGAAGTAGCCATCAGCGAGGTCAACATCTGTAGCTACGATCCTTGGAACTTGCGCTTCCAGTCAAAGTACAAATCGAGAGATGCTATGTGGTACTTCTTCTCTCGTAGAGAAAACAACAAAGGGAATCGACAGAGCAGGACAACGGTTTCTGGTAAATGGAAGCTTACCGGAGAATCTGTTGAGGTCAAGGACCAGTGGGGATTTTGTAGTGAGGGCTTTCGTGGTAAGATTGGTCATAAAAGGGTTTTGGTGTTCCTCGATGGAAGATACCCTGACAAAACCAAATCTGATTGGGTTATCCACGAGTTCCACTACGACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCAGACTTGAGTACAAGGGTGATGATGCGGACATTCTATCTGCTTATGCAATAGATCCCACTCCCGCTTTTGTCCCCAATATGACTAGTAGTGCAGGTTCTGTGGTCAACCAATCACGTCAACGAAATTCAGGATCTTACAACACTTACTCTGAGTATGATTCAGCAAATCATGGCCAGCAGTTTAATGAAAACTCTAACATTATGCAGCAGCAACCACTTCAAGGATCATTCAACCCTCTCCTTGAGTATGATTTTGCAAATCACGGCGGTCAGTGGCTGAGTGACTATATCGACCTGCAACAGCAAGTTCCTTACTTGGCACCTTATGAAAATGAGTCGGAGATGATTTGGAAGCATGTGATTGAAGAAAATTTTGAGTTTTTGGTAGATGAAAGGACATCTATGCAACAGCATTACAGTGATCACCGGCCCAAAAAACCTGTGTCTGGGGTTTTGCCTGATGATAGCAGTGATACTGAAACTGGATCAATGATTTTCGAAGACACTTCGAGCTCCACTGATAGTGTTGGTAGTTCAGATGAACCGGGCCATACTCGTATAGATGATATTCCATCATTGAACATTATTGAGCCTTTGCACAATTATAAGGCACAAGAGCAACCAAAGCAGCAGAGCAAAGAAAAGGTGATAAGTTCGCAGAAAAGCGAATGCGAGTGGAAAATGGCTGAAGACTCGATCAAGATACCTCCATCCACCAACACGGTGAAGCAGAGCTGGATTGTTTTGGAGAATGCACAGTGGAACTATCTCAAGAACATGATCATTGGTGTCTTGTTGTTCATCTCCGTCATTAGTTGGATCATTCTTGTTGGTTAAGAGGTCAAATCGGATTCTTGCTCAAAATTTGTATTTCTTAGAATGTGTGTTTTTTTTTGTTTTTTTTTCTTTGCTCTGTTTTCTCGCTCCGGAAAAGTTTGAAGTTATATTTTATTAGTATGTAAAGAAGAGAAAAAGGGGGAAAGAAGAGAGAAGAAAAATGCAGAAAATCATATATATGAATTGGAAAAAAGTATATGTAATAATAATTAGTGCATCGTTTTGTGGTGTAGTTTATATAAATAAAGTGATATATAGTCTTGTATAAG';
 
-    my $gum = 1;
-    $gum = 0 if $backendname eq 'GUUGle';
-    SKIP: {    
-        skip 'Agrep wants shorter queries', 2 if $backendname eq 'Agrep';
-    $sbe->search( { database => 'Test.fasta',
-                    query    => $long_query,
+        my $gum = 1;
+        $gum = 0 if $backendname eq 'GUUGle';
+    SKIP: {
+            skip 'Agrep wants shorter queries', 2 if $backendname eq 'Agrep';
+            $sbe->search(
+                {   database     => 'Test.fasta',
+                    query        => $long_query,
                     gumismatches => $gum,
-                  } );
-    while (my $res = $sbe->next_res) {
-        is($res->sequence->id, 'At1g01010.1', 'id correct');
-        my $seq = lc($res->sequence->seq);
-        $seq =~ tr{u}{t};
+                }
+            );
+            while ( my $res = $sbe->next_res ) {
+                is( $res->sequence->id, 'At1g01010.1', 'id correct' );
+                my $seq = lc( $res->sequence->seq );
+                $seq =~ tr{u}{t};
 
-        is($seq, lc($long_query), 'id correct');
-    }    
-    }
+                is( $seq, lc($long_query), 'id correct' );
+            }
+        }
 ################################################################################
         # test upstream/downstream
 ################################################################################
@@ -494,12 +558,12 @@ my $long_query =
             ok( defined( $sbe->features->{DOWNSTREAM} ),
                 "$backendname does support downstream"
             );
-            goto EXCEPTIONS if ($backendname eq 'GUUGle' || $backendname eq
-            'RE');
+            goto EXCEPTIONS
+                if ( $backendname eq 'GUUGle' || $backendname eq 'RE' );
             my $sequence = 'tgacagaagagagtgagcac';
-            if( defined( $sbe->features->{COMPLETE} )) {
+            if ( defined( $sbe->features->{COMPLETE} ) ) {
                 $sbe->settings->complete(0);
-            }    
+            }
             $sbe->settings->query($sequence);
             $sbe->settings->reverse_complement(1);
             $sbe->settings->mismatches(5);
@@ -511,7 +575,7 @@ my $long_query =
             $sbe->search();
             $sbe->settings->complete_reset;
             my @ids = ();
-            while (my $res = $sbe->next_res  ) {
+            while ( my $res = $sbe->next_res ) {
 
                 #         print STDERR "IS: " . $res->sequence->id . "\n";
                 #       print STDERR $res->mark_subject_uppercase() . "\n";
@@ -524,33 +588,27 @@ my $long_query =
                     $hits_sequences{ $res->sequence->id },
                     "sequence und marking subject correct."
                 );
-                push ( @ids, $res->sequence->id );
+                push( @ids, $res->sequence->id );
 
             }
             my @shouldbe = _get_ids_where_mm_smaller(5);
-            foreach (@shouldbe) {
-
-                #    print "SHOULDBE: $_\n";
-            }
             @ids = sort @ids;
-        SKIP: {
-                skip "Bug in downstream/upstream in hypa", 1
-                    if $backendname eq "Hypa";
-                is_deeply(  \@shouldbe, \@ids , "Results ok" );
-            }
-
+            is_deeply( \@shouldbe, \@ids, "Results ok" );
         }
-        
-        EXCEPTIONS:
+
+    EXCEPTIONS:
         $sbe->settings->database('BLA');
         eval { $sbe->search() };
 
-        cmp_ok($EVAL_ERROR, '=~', qr{Database not found}, 
-            'Database not found') || diag $EVAL_ERROR;
+        cmp_ok(
+            $EVAL_ERROR, '=~',
+            qr{Database not found},
+            'Database not found'
+        ) || diag $EVAL_ERROR;
 
         # check exceptions with insecure sortmode
         $sbe->settings->database('Test.fasta');
-        $sbe->settings->query(substr($long_query,0,25));
+        $sbe->settings->query( substr( $long_query, 0, 25 ) );
         $sbe->settings->sort('&& ls *;');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong sort mode" );
@@ -571,45 +629,49 @@ my $long_query =
         }
 
         $sbe->settings->sort_reset;
-        
-        if (defined $sbe->features->{MISMATCHES} &&
-            defined $sbe->features->{EDITDISTANCE} ) {
+
+        if (   defined $sbe->features->{MISMATCHES}
+            && defined $sbe->features->{EDITDISTANCE} )
+        {
             $sbe->settings->mismatches(1);
             $sbe->settings->editdistance(1);
             eval { $sbe->search() };
-            cmp_ok( $EVAL_ERROR, '=~', 
+            cmp_ok(
+                $EVAL_ERROR, '=~',
                 "Can't combine editdistance and mismatches",
-                'Exception with editdistance and mismatches' );
+                'Exception with editdistance and mismatches'
+            );
 
             $sbe->settings->mismatches(0);
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, 
-             'No Exception with editdistance and 0 mismatches' ) || diag
-             $EVAL_ERROR;
+            ok( !$EVAL_ERROR,
+                'No Exception with editdistance and 0 mismatches' )
+                || diag $EVAL_ERROR;
 
             $sbe->settings->mismatches_reset;
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, 
-             'No Exception with editdistance and undef mismatches' ) || diag
-             $EVAL_ERROR;
+            ok( !$EVAL_ERROR,
+                'No Exception with editdistance and undef mismatches' )
+                || diag $EVAL_ERROR;
 
             $sbe->settings->mismatches(0);
             $sbe->settings->editdistance(0);
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, 
-             'No Exception with 0 editdistance and 0 mismatches' ) || diag
-             $EVAL_ERROR;
+            ok( !$EVAL_ERROR,
+                'No Exception with 0 editdistance and 0 mismatches' )
+                || diag $EVAL_ERROR;
 
             $sbe->settings->editdistance_reset;
-        }    
+        }
+
         #check exceptions with insecure database
         $sbe->settings->database('&& ls *;');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong database" );
         $sbe->settings->database('Test.fasta');
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct database" ) ||
-            diag $EVAL_ERROR;
+        ok( !$EVAL_ERROR, "No Exception occured with correct database" )
+            || diag $EVAL_ERROR;
         $sbe->settings->database_reset;
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with no database" );
@@ -621,8 +683,8 @@ my $long_query =
         ok( $EVAL_ERROR, "Exception occured with wrong mismatches" );
         $sbe->settings->mismatches(0);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct mismatches" )  ||
-            diag $EVAL_ERROR;
+        ok( !$EVAL_ERROR, "No Exception occured with correct mismatches" )
+            || diag $EVAL_ERROR;
 
         # check exceptions with insecure insertions
         $sbe->settings->insertions('&& ls *;');
@@ -630,8 +692,8 @@ my $long_query =
         ok( $EVAL_ERROR, "Exception occured with wrong insertions" );
         $sbe->settings->insertions(0);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" ) ||
-            diag $EVAL_ERROR;
+        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" )
+            || diag $EVAL_ERROR;
 
         # check exceptions with insecure insertions
         $sbe->settings->no_alignments('&& ls *;');
@@ -639,28 +701,30 @@ my $long_query =
         ok( $EVAL_ERROR, "Exception occured with wrong no_alignments" );
         $sbe->settings->no_alignments(1);
         eval { $sbe->_check_search_settings };
-        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" ) ||
-            diag $EVAL_ERROR;
+        ok( !$EVAL_ERROR, "No Exception occured with correct insertions" )
+            || diag $EVAL_ERROR;
         $sbe->settings->no_alignments_reset;
 
-        
-        if (defined $sbe->features->{QUERY_LENGTH}) {
+        if ( defined $sbe->features->{QUERY_LENGTH} ) {
+
             # check exceptions with insecure query_length
             $sbe->settings->query_length('&& ls *;');
             eval { $sbe->search() };
             ok( $EVAL_ERROR, "Exception occured with wrong query_length" );
             $sbe->settings->query_length(10);
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
-            || diag $EVAL_ERROR;
+            ok( !$EVAL_ERROR,
+                "No Exception occured with correct query_length" )
+                || diag $EVAL_ERROR;
             $sbe->settings->query_length_reset;
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, "No Exception occured with correct query_length" )
-            || diag $EVAL_ERROR;
+            ok( !$EVAL_ERROR,
+                "No Exception occured with correct query_length" )
+                || diag $EVAL_ERROR;
         }
-        
+
         my $tmp_query = $sbe->settings->query;
-        if (defined $sbe->features->{QUERY_FILE}) {
+        if ( defined $sbe->features->{QUERY_FILE} ) {
             $sbe->settings->query_file('t/Test_query.fasta');
             $sbe->settings->query_length(50);
             $sbe->settings->reverse_complement(1);
@@ -669,40 +733,42 @@ my $long_query =
             $sbe->settings->query_reset;
             eval { $sbe->search() };
             ok( !$EVAL_ERROR, "No Exception occured with correct query_file" )
-                    || diag $EVAL_ERROR;
+                || diag $EVAL_ERROR;
 
             $sbe->settings->query_file('&& ls *;');
             eval { $sbe->search };
             ok( $EVAL_ERROR, "No Exception occured with unsafe query_file" );
             $sbe->settings->query_file_reset;
             $sbe->settings->query_length_reset;
-        }    
+        }
         $sbe->settings->query_file_reset;
         $sbe->settings->query_reset;
         eval { $sbe->search() };
-        ok( $EVAL_ERROR =~ 'Query not defined.', "Exception occured when query and query_file undef" );
+        ok( $EVAL_ERROR =~ 'Query not defined.',
+            "Exception occured when query and query_file undef" );
 
         $sbe->settings->query($tmp_query);
-        goto CLEANUP if ($backendname eq 'GUUGle' || $backendname eq 'RE');
-        
-        if ($backendname eq 'Vmatch') {
+        goto CLEANUP if ( $backendname eq 'GUUGle' || $backendname eq 'RE' );
+
+        if ( $backendname eq 'Vmatch' ) {
             $sbe->settings->hxdrop('&& ls *;');
             eval { $sbe->search() };
             ok( $EVAL_ERROR, "Exception occured with wrong hxdrop" );
             $sbe->settings->hxdrop(1);
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, "No Exception occured with correct hxdrop" ) ||
-                diag $EVAL_ERROR;
-           $sbe->settings->hxdrop_reset;     
+            ok( !$EVAL_ERROR, "No Exception occured with correct hxdrop" )
+                || diag $EVAL_ERROR;
+            $sbe->settings->hxdrop_reset;
             $sbe->settings->exdrop('&& ls *;');
             eval { $sbe->search() };
             ok( $EVAL_ERROR, "Exception occured with wrong exdrop" );
             $sbe->settings->exdrop(1);
             eval { $sbe->search() };
-            ok( !$EVAL_ERROR, "No Exception occured with correct exdrop" ) ||
-                diag $EVAL_ERROR;
-           $sbe->settings->exdrop_reset;     
-        }    
+            ok( !$EVAL_ERROR, "No Exception occured with correct exdrop" )
+                || diag $EVAL_ERROR;
+            $sbe->settings->exdrop_reset;
+        }
+
         # check exceptions with insecure upstream
         $sbe->settings->upstream('&& ls *;');
         eval { $sbe->search() };
@@ -736,14 +802,24 @@ my $long_query =
         $sbe->settings->reverse_complement(1);
         eval { $sbe->search() };
         ok( !$EVAL_ERROR, "No Exception occured with correct maxhits" );
+        my @results = ();
         if ( defined $sbe->features->{MAXHITS} ) {
-            is( scalar( @{$sbe->results}  ),
-                3, "only 3 results ($backendname)" );
+            @results = BioGrepTest::get_sorted_result_ids($sbe);
+            is_deeply(
+                \@results, [qw(At1g27360 At1g53160 At2g42200)],
+                , "only 3 results ($backendname)"
+            );
         }
         $sbe->settings->maxhits_reset;
         eval { $sbe->search() };
         ok( !$EVAL_ERROR, "No Exception occured with correct maxhits" );
-        is( scalar(  @{$sbe->results}  ), 6, "all results ($backendname)" );
+        @results = BioGrepTest::get_sorted_result_ids($sbe);
+        is_deeply(
+            \@results,
+            [   qw(At1g09950 At1g22000 At1g27360 At1g53160 At2g42200  At3g47170)
+            ],
+            "all results ($backendname)"
+        );
         $sbe->settings->mismatches(0);
 
         # check exceptions with insecure edit distance
@@ -757,142 +833,193 @@ my $long_query =
         $sbe->settings->mismatches(1);
         eval { $sbe->search() };
         ok( !$EVAL_ERROR, "No Exception occured with correct editdistance" );
-        
+
         $sbe->settings->database('Test_pep.fasta');
         eval { $sbe->search() };
-        ok( $EVAL_ERROR, "Exception occured when searching dna seq in pep db" );
-        
+        ok( $EVAL_ERROR,
+            "Exception occured when searching dna seq in pep db" );
+
         $sbe->settings->query('IDSPALKELHLSEV');
         $sbe->settings->reverse_complement(0);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured when searching pep seq in pep db" );
-        is(scalar @{$sbe->results},1);
+        ok( !$EVAL_ERROR,
+            "No Exception occured when searching pep seq in pep db" );
+        @results = BioGrepTest::get_sorted_result_ids($sbe);
+        is_deeply( \@results, ['AT1G22000.1'], 'Correct results' );
+
+        $sbe->settings->reverse_complement(1);
+        eval { $sbe->search() };
+        cmp_ok( $EVAL_ERROR,'=~',qr{Reverse complement only available for},
+            "No Exception occured when searching pep seq in pep db" );
+        $sbe->settings->reverse_complement(0);
+        
+        if (defined $sbe->features->{DIRECT_AND_REV_COM}) {
+            $sbe->settings->direct_and_rev_com(1);
+            eval { $sbe->search() };
+            cmp_ok( $EVAL_ERROR,'=~',qr{Reverse complement only available for},
+                "No Exception occured when searching pep seq in pep db" );
+            $sbe->settings->reverse_complement(0);
+        }
 
         $sbe->settings->database('Test.fasta');
         eval { $sbe->search() };
-        ok( $EVAL_ERROR, "Exception occured when searching pep seq in dna db" );
+        ok( $EVAL_ERROR,
+            "Exception occured when searching pep seq in dna db" );
 
-        if ($backendname eq 'Vmatch' ) {
-            eval { $sbe->search({
-                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+        if ( $backendname eq 'Vmatch' ) {
+            eval {
+                $sbe->search(
+                    {   query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
                         reverse_complement => 0,
-                        upstream => 5,
-                        showdesc => 100,
-                  });  
+                        upstream           => 5,
+                        showdesc           => 100,
+                    }
+                );
             };
             ok( $EVAL_ERROR, 'Exception occured when upstream and showdesc' );
-            eval { $sbe->search({
-                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+            eval {
+                $sbe->search(
+                    {   query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
                         reverse_complement => 0,
-                        downstream => 5,
-                        showdesc => 100,
-                  });  
+                        downstream         => 5,
+                        showdesc           => 100,
+                    }
+                );
             };
-            ok( $EVAL_ERROR, 'Exception occured when downstream and showdesc' );
-            eval { $sbe->search({
-                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+            ok( $EVAL_ERROR,
+                'Exception occured when downstream and showdesc' );
+            eval {
+                $sbe->search(
+                    {   query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
                         reverse_complement => 0,
-                        upstream => 5,
-                        downstream => 5,
-                        showdesc => 100,
-                  });  
+                        upstream           => 5,
+                        downstream         => 5,
+                        showdesc           => 100,
+                    }
+                );
             };
-            ok( $EVAL_ERROR, 'Exception occured when up-&downstream and showdesc' );
-            eval { $sbe->search({
-                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+            ok( $EVAL_ERROR,
+                'Exception occured when up-&downstream and showdesc' );
+            eval {
+                $sbe->search(
+                    {   query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
                         reverse_complement => 0,
-                        showdesc => 100,
-                  });  
+                        showdesc           => 100,
+                    }
+                );
             };
-            ok( !$EVAL_ERROR, 'No exception occured without up/down' ) || diag $EVAL_ERROR;
-            eval { $sbe->search({
-                        query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
+            ok( !$EVAL_ERROR, 'No exception occured without up/down' )
+                || diag $EVAL_ERROR;
+            eval {
+                $sbe->search(
+                    {   query => 'GACCTCTTACCAGAACATCAGAGGACATATGTCATCTGCA',
                         reverse_complement => 0,
-                        complete => 1,
-                        qspeedup => 2,
-                  });  
+                        complete           => 1,
+                        qspeedup           => 2,
+                    }
+                );
             };
-            ok( $EVAL_ERROR, 'Exception occured without qspeedup and complete' );
-            
-            eval { $sbe->search({
-                        query_file => 't/Test_query.fasta',
-                  });  
-            };
-            ok( $EVAL_ERROR =~ /You have to specify complete/, 
-                 'Exception occured missing complete or query_file' );
-            eval { $sbe->search({
-                        query_file => 't/Test_query.fasta',
-                        complete   => 1,
-                  });  
-            };
-            ok( !$EVAL_ERROR, 'No exception occured with complete' ) || diag $EVAL_ERROR;
-            
-            eval { $sbe->search({
-                        query_file => 't/Test_query.fasta',
-                        query_length   => 30,
-                  });  
-            };
-            ok( !$EVAL_ERROR, 'No exception occured with query_length' ) || diag $EVAL_ERROR;
-            
-            diag("\n** Now you should see a Vmatch error **\n");
-            eval { $sbe->search({
-                        query => 'AACCCTCAAAGCC',
-                        mismatches => 10,
-                        maxhits => 100,
-                  }); };
-            ok( $EVAL_ERROR =~ /Vmatch call failed/, 
-                 'Exception occured with too many mismatches' );
+            ok( $EVAL_ERROR,
+                'Exception occured without qspeedup and complete' );
 
-            $sbe->search({
-                        query => 'AACCCTCAAAGCC',
-                        reverse_complement => 0,
-                        mismatches => 3,
-                        maxhits => 100,
-                        sort  => 'sa',
-                  }); 
-            my @ids;  
-            while (my $res = $sbe->next_res()) {
+            eval { $sbe->search( { query_file => 't/Test_query.fasta', } ); };
+            ok( $EVAL_ERROR =~ /You have to specify complete/,
+                'Exception occured missing complete or query_file'
+            );
+            eval {
+                $sbe->search(
+                    {   query_file => 't/Test_query.fasta',
+                        complete   => 1,
+                    }
+                );
+            };
+            ok( !$EVAL_ERROR, 'No exception occured with complete' )
+                || diag $EVAL_ERROR;
+
+            eval {
+                $sbe->search(
+                    {   query_file   => 't/Test_query.fasta',
+                        query_length => 30,
+                    }
+                );
+            };
+            ok( !$EVAL_ERROR, 'No exception occured with query_length' )
+                || diag $EVAL_ERROR;
+
+            diag("\n** Now you should see a Vmatch error **\n");
+            eval {
+                $sbe->search(
+                    {   query      => 'AACCCTCAAAGCC',
+                        mismatches => 10,
+                        maxhits    => 100,
+                    }
+                );
+            };
+            ok( $EVAL_ERROR =~ /Vmatch call failed/,
+                'Exception occured with too many mismatches'
+            );
+
+            $sbe->search(
+                {   query              => 'AACCCTCAAAGCC',
+                    reverse_complement => 0,
+                    mismatches         => 3,
+                    maxhits            => 100,
+                    sort               => 'sa',
+                }
+            );
+            my @ids;
+
+            while ( my $res = $sbe->next_res() ) {
                 push @ids, $res->sequence->id;
-            }    
-            is_deeply( \@ids, ['At1g01040.1', 'At1g01040.1', 'At1g67120',
-                'At3g47170'],'sorting works' );
+            }
+            is_deeply(
+                \@ids,
+                [ 'At1g01040.1', 'At1g01040.1', 'At1g67120', 'At3g47170' ],
+                'sorting works'
+            );
 
         }
         elsif ( $backendname eq 'Agrep' ) {
-            eval { $sbe->search({
-                        query => 'CCCCCCCACCCCCCCCCCCCCCCCCC',
+            eval {
+                $sbe->search(
+                    {   query      => 'CCCCCCCACCCCCCCCCCCCCCCCCC',
                         mismatches => 0,
-                  }); };
-            cmp_ok( $EVAL_ERROR, '=~', qr{Agrep call failed. Command was}, 
-                 'Exception occured when agrep call failed' );
-        }            
-        
+                    }
+                );
+            };
+            cmp_ok(
+                $EVAL_ERROR, '=~',
+                qr{Agrep call failed. Command was},
+                'Exception occured when agrep call failed'
+            );
+        }
+
 ################################################################################
-        #  exit if $backendname eq "Hypa";
         # clean up
-        CLEANUP:
+    CLEANUP:
         foreach my $file (@files) {
             $file = $sbe->is_word($file);
             unlink("t/data/$file") || diag "Can't delete $file: $!";
         }
+
         #diag (`ls -lah t/data/`);
         #diag (`cat t/data/*`);
         #diag join("\n", 'XXX', readdir(DIR), 'ZZZ');
-         rmdir("t/tmp"),
-         rmdir("t/data"),
+        rmdir("t/tmp"), rmdir("t/data"),
+
 #        ok( rmdir("t/tmp"),
-        #           "Can remove tmp directory (all temp files deleted)" );
-        # caused problems on NFS drives
-        #ok( rmdir("t/data"),
-        #    "Can remove data directory (all data files deleted-just a test for the test)"
-        #) or diag $!;
-        #exit if $backendname eq 'RE'
+#           "Can remove tmp directory (all temp files deleted)" );
+# caused problems on NFS drives
+#ok( rmdir("t/data"),
+#    "Can remove data directory (all data files deleted-just a test for the test)"
+#) or diag $!;
+#exit if $backendname eq 'RE'
     }    #SKIP
 
 }
 
 eval { Bio::Grep->new('UnknownBackend'); };
-ok($EVAL_ERROR, 'Exception occured with unknown backend');
+ok( $EVAL_ERROR, 'Exception occured with unknown backend' );
 
 #ok( $tests > 0, " at least one backend found in path" );
 
@@ -903,7 +1030,7 @@ sub _get_ids_where_mm_smaller {
     my $mm = shift;
     my @results;
     foreach my $key ( keys %hits ) {
-        push ( @results, $key ) if $hits{$key} <= $mm;
+        push( @results, $key ) if $hits{$key} <= $mm;
     }
     return sort @results;
 }

@@ -1,6 +1,5 @@
  - Benchmarks for Bio::Grep POD to help ppl choosing the right backend.
  - filter priority (fast filters like FilterRemoveDuplicates should run first automatically)
- - queryfile for Hypa [ maybe we dump Hypa ]
  - interface for multiple queries
  - support other file formats (Genbank,...) and input sources (maybe even
    databases?)

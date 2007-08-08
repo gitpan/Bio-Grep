@@ -8,12 +8,10 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
 
-use File::Basename;
-
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 sub new {
     my $self = shift;
@@ -130,16 +128,12 @@ sub get_databases {
 }
 
 sub generate_database {
-    my ( $self, $file, $description ) = @_;
-    my ( $filename ) = fileparse($file);
+    my ( $self, @args ) = @_;
 
-    $self->_copy_fasta_file_and_create_nfo( $file, $filename, $description );
+    my %args = $self->_prepare_generate_database(@args);
 
-    my $newfilename = $self->_cat_path_filename($self->settings->datapath,
-        $filename);
-
-    $self->_create_index_and_alphabet_file( $newfilename );
-    return $filename;     
+    $self->_create_index_and_alphabet_file( $args{filename} );
+    return $args{filename};
 }
 
 sub _skip_header {
@@ -354,19 +348,20 @@ Bio::Grep::Backend::GUUGle - GUUGle back-end
   
   my $sbe = Bio::Grep->new('GUUGle');
   
-  $sbe->settings->datapath('data');
-  
   # generate a GUUGle Bio::Grep database. you have to do this only once.
   # GUUGle does not create a persistent index right now.
   # This function generates an fast index for $sbe->get_sequences
   # and files with a description and the alphabet (only DNA/RNA allowed)
-  $sbe->generate_database('ATH1.cdna', 
-     'AGI Transcripts (- introns, + UTRs)');
+  $sbe->generate_database({ 
+    file        => 'ATH1.cdna', 
+    description => 'AGI Transcripts',
+    datapath    => 'data',
+  });
  
   # search on both strands (GU allowed) 
   # retrieve up- and downstream regions of size 30
   $sbe->search({
-    query   => 'GAGCCCTTGGGGGGG',
+    query   => 'AGAGCCCT',
     direct_and_rev_com => 1, 
     upstream           => 30,
     downstream         => 30,
@@ -396,12 +391,14 @@ Bio::Grep::Backend::GUUGle - GUUGle back-end
 
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backend::GUUGle> searches for a query in a GUUGle suffix array. 
+B<Bio::Grep::Backend::GUUGle> searches for a query in a C<GUUGle> suffix 
+array. 
 
-NOTE 1: GUUGle always searches for the reverse complement. If you specify a
-query file, Bio::Grep throws an exception if C<reverse_complement> is not set.
+NOTE 1: C<GUUGle> always searches for the reverse complement. If you specify
+a query file, C<Bio::Grep> throws an exception if C<reverse_complement> is 
+not set.
 
-NOTE 2: GUUGle only allows search for exact matches. It counts GU as no
+NOTE 2: C<GUUGle> only allows search for exact matches. It counts GU as no
 mismatch.
 
 
@@ -413,8 +410,9 @@ See L<Bio::Grep::Backend::BackendI> for inherited methods.
 
 =item C<Bio::Grep::Backend::GUUGle-E<gt>new()>
 
-This method constructs a GUUGle back-end object and should not used directly.  
-Rather, a back-end should be constructed by the main class L<Bio::Grep>:
+This method constructs a C<GUUGle> back-end object and should not used 
+directly. Rather, a back-end should be constructed by the main class 
+L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('GUUGle');
 
@@ -425,7 +423,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in GUUGle:
+Available sortmodes in C<GUUGle>:
 
 =over
 
@@ -448,7 +446,7 @@ See L<Bio::Grep::Backend::BackendI> for other diagnostics.
 
 =item C<GUUGle call failed. Command was: ...> 
 
-It was not possible to run GUUGle in function search(). Check the search
+It was not possible to run C<GUUGle> in function search(). Check the search
 settings. If you want to reproduce the system() call, you can set the 
 environment variable C<BIOGREPDEBUG>. If this variable is set, then the temporary
 files won't get deleted. C<Bio::Root::SystemException>.

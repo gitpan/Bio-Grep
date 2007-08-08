@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -46,7 +46,7 @@ Bio::Grep::Filter::FilterRemoveDuplicates - Example Filter
 
 =head1 SYNOPSIS
 
- my $rd_filter =  Bio::Grep::Filter::FilterRemoveDuplicates->new() 
+ my $rd_filter =  Bio::Grep::Filter::FilterRemoveDuplicates->new(); 
 
  $sbe->search({
     query   => $query,
@@ -61,18 +61,17 @@ interested in which genes the query was found. Deletes the result if
 the id already occured. Ignores suffixes of the form ".xx", where xx are digit
 characters (this normally represents alternative splice forms).
 
-=over
-
-=item C<$filter = Bio::Grep::Filter::FilterRemoveDuplicates-E<gt>new()>
-
-This function constructs a FilterRemoveDuplicates object. 
-
-
-=back
-
 =head1 METHODS
 
 See L<Bio::Grep::FilterI> for inherited methods.
+
+=over
+
+=item C<Bio::Grep::Filter::FilterRemoveDuplicates-E<gt>new()>
+
+This function constructs a FilterRemoveDuplicates object. 
+
+=back
 
 =head1 SEE ALSO
 

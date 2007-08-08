@@ -11,7 +11,7 @@ use File::Spec;
 use File::Copy;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.8.5');
+use version; our $VERSION = qv('0.9.0');
 
 sub is_integer {
     my ( $self, $variable, $desc) = @_;
@@ -84,7 +84,7 @@ sub _check_variable {
        ( $value ) = $args{variable} =~ m{ ( \A [\w.\-]+ \z ) }xms;
    }    
    elsif ($args{regex} eq 'path') {
-       ( $value ) = $args{variable} =~ m{ ( \A [\w.\-/]+ \z ) }xms;
+       ( $value ) = $args{variable} =~ m{ ( \A [\w.\-/\\:]+ \z ) }xms;
    }    
    elsif ($args{regex} eq 'sentence') {
        ( $value ) = $args{variable} =~ m{  \A ([\w.\-/|:(),;]+)  }xms;
@@ -116,6 +116,8 @@ Bio::Grep::Root - Superclass for all Bio::Grep* packages
 This superclass adds some useful methods to all Bio::Grep packages.
 
 =head1 METHODS
+
+See L<Bio::Root::Root> for inherited methods.
 
 =over
 
@@ -153,21 +155,6 @@ larger.
 
 =back
 
-=head1 INTERNAL METHODS
-
-=over 
-
-=item C<_check_variable( variable =E<gt> $var_to_check, regex =E<gt> $regex,
-desc =E<gt> 'Description')>
-
-Checks C<$var_to_check> if it matches $regex, which is one of the four 
-predefined regular expressions:  C<int>, C<word>, C<path> or C<sentence>.
-Throws an exception if not, otherwise it returns the untainted value of
-C<$var_to_check>. Don't use this method, instead use the public methods
-is_integer(), is_word() ... .
-
-=back
-
 =head1 DIAGNOSTICS
 
 =over
@@ -184,8 +171,8 @@ a method with wrong arguments.
 
 =item C<Missing arguments: require hash with keys "regex" ... >
 
-You called _check_variable() without a valid hashref. See 
-L<"INTERNAL METHODS">. C<Bio::Root::BadParameter>.
+You called the internal method _check_variable() without a valid hashref.
+Don't use this method. C<Bio::Root::BadParameter>.
 
 =item C<Size of argument is too small.>
 
@@ -194,8 +181,8 @@ a method with missing arguments.
 
 =item C<Unknown regex.>
 
-You called _check_variable() with an invalid regex.  See 
-L<"INTERNAL METHODS">. C<Bio::Root::BadParameter>.
+You called the internal method _check_variable() with an invalid regex.  Don't
+use this method. C<Bio::Root::BadParameter>.
 
 =back
 
@@ -206,7 +193,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Seach v0.13
+Based on Weigel::Search v0.13
 
 Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
 Tuebingen.

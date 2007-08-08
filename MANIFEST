@@ -5,7 +5,6 @@ lib/Bio/Grep/Root.pm
 lib/Bio/Grep/Backend/Agrep.pm
 lib/Bio/Grep/Backend/BackendI.pm
 lib/Bio/Grep/Backend/GUUGle.pm
-lib/Bio/Grep/Backend/Hypa.pm
 lib/Bio/Grep/Backend/Vmatch.pm
 lib/Bio/Grep/Backend/RE.pm
 lib/Bio/Grep/SearchResult.pm
