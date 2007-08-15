@@ -7,7 +7,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 
 sub new {
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.9.0
+This document describes Bio::Grep version 0.9.1
 
 =head1 SYNOPSIS
 
@@ -533,6 +533,12 @@ See L<Bio::Root::Exception>, L<Carp>.
 The use of this module (in Web Services for example) should be quite secure. All
 test run in taint mode. C<Bio::Grep> checks the settings before it generates the string
 for the system() call and uses L<File::Temp> for all temporary files.
+
+However, keep in mind that it is quite B<easy to start a query that will run
+forever> without any further settings check, especially with the C<RE>
+back-end. So you should limit C<mismatches>, C<query_length> and all
+other settings that have an significant impact on the calculation time.
+You should also set C<maxhits>. 
 
 =head1 INCOMPATIBILITIES
 

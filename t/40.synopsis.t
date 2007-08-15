@@ -101,9 +101,10 @@ $code =<<'EOT'
   
   # generate a Vmatch suffix array. you have to do this only once.
   $sbe->generate_database({ 
-    file        => 't/TestRevCom.fasta', 
-    description => 'AGI Transcripts',
-    datapath    => 'data',
+    file          => 't/TestRevCom.fasta', 
+    description   => 'AGI Transcripts',
+    datapath      => 'data',
+    prefix_length => 3,
   });
  
   # search for the reverse complement and allow 4 mismatches

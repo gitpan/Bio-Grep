@@ -132,9 +132,12 @@ SKIP: {
         }
         next unless defined( $sbe->features->{FILTERS} );
         $filter->delete(1);
-        ok($filter->supports_alphabet_exists('dna'));
-        ok($filter->supports_alphabet_exists('protein'));
-        ok(!$filter->supports_alphabet_exists('rna'));
+        ok($filter->supports_alphabet_exists('dna'), 
+           'Filter supports DNA');
+        ok($filter->supports_alphabet_exists('protein'),
+           'Filter supports Protein');
+        ok(!$filter->supports_alphabet_exists('rna'),
+           'Filter does not support RNA');
         my @filters = ( $filter );        
         for my $j ( 0 .. 1 ) {
             if ($j == 1 && defined $sbe->features->{FILTERS}) {

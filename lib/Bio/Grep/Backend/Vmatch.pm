@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 sub new {
     my $self = shift;
@@ -134,8 +134,6 @@ sub search {
         -text  => "Vmatch call failed. Command was:\n\t$command"
     ) if !$cmd_ok;
 
-    $self->_prepare_results;
-
     if ( $s->showdesc_isset ) {
         my %query_desc_lookup;
         foreach my $query_seq ( @{ $self->_query_seqs } ) {
@@ -150,10 +148,9 @@ sub search {
             $query_desc_lookup{$query_desc} = $query_seq;
         }
         $self->_mapping(%query_desc_lookup);
-
-        #warn Data::Dumper->Dump([%query_desc_lookup]);
     }
     $self->settings->query_length_reset if $auto_query_length;
+    $self->_prepare_results;
     return 1;
 }
 
@@ -166,6 +163,10 @@ sub generate_database {
     my ( $self, @args ) = @_;
     my %args = $self->_prepare_generate_database(@args);
 
+    if (defined $args{skip}) {
+        return 0;
+    }   
+
     my $alphabet = $self->_guess_alphabet_of_file( $args{filename} );
     my $alphabet_specific_arguments = '';
 
@@ -174,11 +175,14 @@ sub generate_database {
     my $verbose = '';
     $verbose = ' -v ' if defined $args{verbose};
 
+    my $pl = ' -pl ';
+    $pl .= $args{prefix_length} . ' ' if defined $args{prefix_length};
+
     if ( $alphabet eq 'protein' ) {
-        $alphabet_specific_arguments = ' -protein -pl -allout ';
+        $alphabet_specific_arguments = ' -protein ';
     }
     elsif ( $alphabet eq 'dna' ) {
-        $alphabet_specific_arguments = ' -dna -pl 3 -allout ';
+        $alphabet_specific_arguments = ' -dna ';
     }
     else {
         $self->throw(
@@ -192,6 +196,8 @@ sub generate_database {
         . ' -db '
         . $args{basefilename}
         . $alphabet_specific_arguments
+        . $pl
+        . ' -allout '
         . $verbose;
 
     if ( $ENV{BIOGREPDEBUG} ) {
@@ -204,7 +210,7 @@ sub generate_database {
         -text =>
             "mkvtree call failed. Cannot generate suffix array. Command was:\n\t$command"
     ) if ($?);
-    return $args{filename};
+    return 1;
 }
 
 sub _parse_next_res {
@@ -359,18 +365,26 @@ LINE:
             $internal_seq_id = $seq_id;
         }
 
-        my $alignment = Bio::SimpleAlign->new();
-        my $result = Bio::Grep::SearchResult->new( $fasta, $upstream,
-            $upstream + $fields[0],
-            $alignment, $internal_seq_id, '' );
-        $result->evalue( $fields[8] );
-        $result->percent_identity( $fields[10] );
+        my $query;
         if ( $s->showdesc_isset ) {
-            $result->query( $self->_mapping->{ $fields[5] } );
+            $query = $self->_mapping->{ $fields[5] };
         }
         else {
-            $result->query( $query_seqs[ $fields[5] ] );
+            $query = $query_seqs[ $fields[5] ];
         }
+
+        my $result = Bio::Grep::SearchResult->new(
+            {   sequence         => $fasta,
+                begin            => $upstream,
+                end              => $upstream + $fields[0],
+                alignment        => Bio::SimpleAlign->new(),
+                sequence_id      => $internal_seq_id,
+                remark           => '',
+                evalue           => $fields[8],
+                percent_identity => $fields[10],
+                query            => $query,
+            }
+        );
         push( @results, $result );
     }
     $self->_delete_output();
@@ -459,9 +473,10 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
   
   # generate a Vmatch suffix array. you have to do this only once.
   $sbe->generate_database({ 
-    file        => 'ATH1.cdna', 
-    description => 'AGI Transcripts',
-    datapath    => 'data',
+    file          => 'ATH1.cdna', 
+    description   => 'AGI Transcripts',
+    datapath      => 'data',
+    prefix_length => 3,
   });
  
   # search for the reverse complement and allow 4 mismatches

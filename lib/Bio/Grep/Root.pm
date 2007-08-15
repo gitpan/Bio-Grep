@@ -11,44 +11,60 @@ use File::Spec;
 use File::Copy;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 sub is_integer {
-    my ( $self, $variable, $desc) = @_;
-    return $self->_check_variable( variable => $variable, desc => $desc, regex
-    => 'int');
+    my ( $self, $variable, $desc ) = @_;
+    return $self->_check_variable(
+        variable => $variable,
+        desc     => $desc,
+        regex    => 'int'
+    );
 }
 
 sub is_word {
-    my ( $self, $variable, $desc) = @_;
-    return $self->_check_variable( variable => $variable, desc => $desc, regex
-    => 'word');
+    my ( $self, $variable, $desc ) = @_;
+    return $self->_check_variable(
+        variable => $variable,
+        desc     => $desc,
+        regex    => 'word'
+    );
 }
 
 sub is_path {
-    my ( $self, $variable, $desc) = @_;
-    return $self->_check_variable( variable => $variable, desc => $desc, regex
-    => 'path');
+    my ( $self, $variable, $desc ) = @_;
+    return $self->_check_variable(
+        variable => $variable,
+        desc     => $desc,
+        regex    => 'path'
+    );
 }
 
 sub is_sentence {
-    my ( $self, $variable, $desc) = @_;
-    return $self->_check_variable( variable => $variable, desc => $desc, regex
-    => 'sentence' );
+    my ( $self, $variable, $desc ) = @_;
+    return $self->_check_variable(
+        variable => $variable,
+        desc     => $desc,
+        regex    => 'sentence'
+    );
 }
 
 sub is_arrayref_of_size {
     my ( $self, $a_ref, $size ) = @_;
     my $reftype = reftype $a_ref;
-    if (!defined $reftype || $reftype ne 'ARRAY') {
-        $self->throw( -class => 'Bio::Root::BadParameter',
-                    -text  => 'Argument is not an array reference',
-                    -value =>  $reftype);
-    }   
-    if (scalar @{$a_ref} < $size) {
-        $self->throw( -class => 'Bio::Root::BadParameter',
-                    -text  => 'Size of argument is too small.',
-                    -value => scalar @{$a_ref} . " vs. $size" );
+    if ( !defined $reftype || $reftype ne 'ARRAY' ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Argument is not an array reference',
+            -value => $reftype
+        );
+    }
+    if ( scalar @{$a_ref} < $size ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Size of argument is too small.',
+            -value => scalar @{$a_ref} . " vs. $size"
+        );
     }
     return 1;
 }
@@ -63,47 +79,53 @@ sub is_arrayref_of_size {
 # See also   : http://gunther.web66.com/FAQS/taintmode.html
 
 sub _check_variable {
-   my ( $self, %args ) = @_;
-   
-   if ( !%args  || !defined $args{regex} ) {
-      $self->throw( -class => 'Bio::Root::BadParameter',
-                 -text  => 'Missing arguments: require hash with keys "regex",
-                 "variable" and optional "desc"',);
-   } 
-   return if !defined $args{variable};
+    my ( $self, %args ) = @_;
 
-   if (!defined $args{desc}) {
-      $args{desc} = 'Variable';
-   }
-   my $value;
-   
-   if ($args{regex} eq 'int') {
-       ( $value ) = $args{variable} =~ m{ ( \A \d+ \z ) }xms;
-   }    
-   elsif ($args{regex} eq 'word') {
-       ( $value ) = $args{variable} =~ m{ ( \A [\w.\-]+ \z ) }xms;
-   }    
-   elsif ($args{regex} eq 'path') {
-       ( $value ) = $args{variable} =~ m{ ( \A [\w.\-/\\:]+ \z ) }xms;
-   }    
-   elsif ($args{regex} eq 'sentence') {
-       ( $value ) = $args{variable} =~ m{  \A ([\w.\-/|:(),;]+)  }xms;
-   }    
-   else {
-      $self->throw( -class => 'Bio::Root::BadParameter',
-                  -text  => 'Unknown regex.',
-                  -value => $args{regex} );
-   }    
-   
-   if ( !defined $value ) {
-      $self->throw( -class => 'Bio::Root::BadParameter',
-                  -text  => $args{desc} . ' looks not valid.',
-                  -value => $args{variable} );
-   }              
-   return $value;
+    if ( !%args || !defined $args{regex} ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Missing arguments: require hash with keys "regex",
+                 "variable" and optional "desc"',
+        );
+    }
+    return if !defined $args{variable};
+
+    if ( !defined $args{desc} ) {
+        $args{desc} = 'Variable';
+    }
+    my $value;
+
+    if ( $args{regex} eq 'int' ) {
+        ($value) = $args{variable} =~ m{ ( \A \d+ \z ) }xms;
+    }
+    elsif ( $args{regex} eq 'word' ) {
+        ($value) = $args{variable} =~ m{ ( \A [\w.\-]+ \z ) }xms;
+    }
+    elsif ( $args{regex} eq 'path' ) {
+        ($value) = $args{variable} =~ m{ ( \A [\w.\-/\\:]+ \z ) }xms;
+    }
+    elsif ( $args{regex} eq 'sentence' ) {
+        ($value) = $args{variable} =~ m{  \A ([\w.\-/|:(),;]+)  }xms;
+    }
+    else {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Unknown regex.',
+            -value => $args{regex}
+        );
+    }
+
+    if ( !defined $value ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => $args{desc} . ' looks not valid.',
+            -value => $args{variable}
+        );
+    }
+    return $value;
 }
 
-1;# Magic true value required at end of module
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME

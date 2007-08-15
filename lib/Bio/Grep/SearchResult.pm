@@ -3,70 +3,68 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
+use version; our $VERSION = qv('0.9.1');
+
 use IO::String;
-use Carp qw(carp);
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.9.0');
-
 use Class::MethodMaker [
-   new    => 'new2',
-   scalar => [qw / sequence query begin end alignment sequence_id remark percent_identity evalue dG _real_query/],
+    new    => 'new2',
+    scalar => [
+        qw /sequence query begin end alignment sequence_id remark 
+            percent_identity evalue dG _real_query/
+    ],
 ];
 
 sub new {
-   my $self = shift->new2;
+    my $self    = shift->new2;
+    my $arg_ref = shift;
 
-   #initizialize member variables
-
-   #from params
-   $self->sequence(shift);
-   $self->begin(shift);
-   $self->end(shift);
-   $self->alignment(shift);
-   $self->sequence_id(shift);
-   $self->remark(shift);
-   $self;
+    #initizialize member variables
+    for my $key ( keys %$arg_ref ) {
+        $self->$key( $arg_ref->{$key} );
+    }
+    $self;
 }
 
 sub mark_subject_uppercase {
-   my $self   = shift;
-   my $result = $self->sequence->seq;
-   return
-     lc( substr( $result, 0, $self->begin ) )
-     . uc( substr( $result, $self->begin, $self->end - $self->begin ) )
-     . lc( substr( $result, $self->end ) );
+    my $self   = shift;
+    my $result = $self->sequence->seq;
+    return
+        lc( substr( $result, 0, $self->begin ) )
+        . uc( substr( $result, $self->begin, $self->end - $self->begin ) )
+        . lc( substr( $result, $self->end ) );
 }
 
 sub subject {
-   my $self = shift;
+    my $self = shift;
 
-   return Bio::Seq->new(
-      -id  => $self->sequence->id, 
-      -seq => $self->sequence->subseq( $self->begin + 1, $self->end ) );
+    return Bio::Seq->new(
+        -id  => $self->sequence->id,
+        -seq => $self->sequence->subseq( $self->begin + 1, $self->end )
+    );
 }
 
 sub alignment_string {
-   my $self   = shift;
-   my $result = "";
-   my $str    = IO::String->new();
-   my $out    = Bio::AlignIO->new( -format => 'clustalw', -fh => $str );
-   unless (defined ($self->alignment)) {
-      $self->warn("No alignment calculated.");
-      return "";
-   }   
-   $out->write_aln( $self->alignment );
-   $out->close();
-   $str = IO::String->new( ${ $str->string_ref } );
-   while ( my $l = <$str> ) {
-      $result .= $l unless ( $l =~ /CLUSTAL/ or $l =~ /^\s+$/ );
-   }
-   return $result;
+    my $self   = shift;
+    my $result = "";
+    my $str    = IO::String->new();
+    my $out    = Bio::AlignIO->new( -format => 'clustalw', -fh => $str );
+    unless ( defined( $self->alignment ) ) {
+        $self->warn("No alignment calculated.");
+        return "";
+    }
+    $out->write_aln( $self->alignment );
+    $out->close();
+    $str = IO::String->new( ${ $str->string_ref } );
+    while ( my $l = <$str> ) {
+        $result .= $l unless ( $l =~ /CLUSTAL/ or $l =~ /^\s+$/ );
+    }
+    return $result;
 }
 
-
-1;# Magic true value required at end of module
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME
@@ -105,10 +103,23 @@ See L<Bio::Grep::Root> for inherited methods.
 
 =over 
 
-=item C<new(sequence, begin, end, alignment, sequence_id, remark)>;
+=item C<new($arg_ref)>;
 
-This function constructs a Bio::Grep::SearchResult object. 
+This function constructs a Bio::Grep::SearchResult object. Takes as argument a
+hash reference that initializes the member variables below.
+
 Only called by the back-end parser. 
+
+    my $result = Bio::Grep::SearchResult->new(
+        {   sequence         => $seq,
+            begin            => $begin,
+            end              => $end,
+            alignment        => $alignment,
+            ...
+            percent_identity => $identity,
+        }
+    );
+
 
 =item C<sequence()>
 
@@ -116,8 +127,7 @@ Get/set the sequence found in database. L<Bio::Seq> object.
 
 =item C<subject()>
 
-Get the sequence found in database as string without upstream and downstream
-regions. Bio::Seq object.
+Get C<sequence> without upstream and downstream regions. L<Bio::Seq> object.
 
 =item C<query()>
 
@@ -131,10 +141,10 @@ L<Bio::AlignIO> for details.
 
 =item C<sequence_id()>
 
-Getter/Setter for sequence ID in database. This is an internal ID of the
-back-end, not any ID of some annotation in the sequence name. The internal ID 
-can be used in the back-end function get_sequences 
-(L<Bio::Grep::Backend::BackendI>).
+Get/set the sequence id in database. This is an internal id of the
+back-end, not any id of some annotation in the sequence name. The internal id
+can be used in the back-end function get_sequences()
+(See L<Bio::Grep::Backend::BackendI>).
 
 =item C<begin()>
 

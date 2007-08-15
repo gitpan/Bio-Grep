@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 sub new {
     my $self = shift;
@@ -19,6 +19,7 @@ sub new {
     my %all_features = $self->features;
     delete $all_features{EVALUE};
     delete $all_features{PERCENT_IDENTITY};
+    delete $all_features{MISMATCHES};
     delete $all_features{DELETIONS};
     delete $all_features{INSERTIONS};
     delete $all_features{EDITDISTANCE};
@@ -29,7 +30,6 @@ sub new {
     delete $all_features{PROTEINS};
     delete $all_features{HXDROP};
     delete $all_features{EXDROP};
-    #delete $all_features{DIRECT_AND_REV_COM};
     delete $all_features{NATIVE_D_A_REV_COM};
     $self->settings->gumismatches(0);
     $self->features(%all_features);
@@ -51,7 +51,7 @@ sub search {
     }
     
     if ($s->gumismatches > 0 && !$s->direct_and_rev_com) {
-        $self->warn('GUUGle counts GU always as no mismatch. ' .
+        $self->warn("GUUGle counts GU always as no mismatch.\n" .
             'Set gumismatches(0) to hide this warning.'
         );
     }   
@@ -132,8 +132,12 @@ sub generate_database {
 
     my %args = $self->_prepare_generate_database(@args);
 
+    if (defined $args{skip}) {
+        return 0;
+    }   
+
     $self->_create_index_and_alphabet_file( $args{filename} );
-    return $args{filename};
+    return 1;
 }
 
 sub _skip_header {
@@ -309,12 +313,17 @@ sub _parse_next_res {
             )
         );
         my $res = $self->_filter_result(
-            Bio::Grep::SearchResult->new( $fasta,
-            $upstream, $upstream +$matchlength,
-            $tmp_aln, $fasta->id, '' )
+            Bio::Grep::SearchResult->new({ 
+                sequence    => $fasta,
+                begin       => $upstream, 
+                end         => $upstream +$matchlength,
+                alignment   => $tmp_aln, 
+                sequence_id => $fasta->id, 
+                remark      => '', 
+                query       => $query,
+            })
             );
         if ($res) {    
-            $res->query($query);    
             return $res;
         }
     }

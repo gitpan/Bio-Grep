@@ -18,9 +18,9 @@ my $bp_run =<<EOT
 EOT
 ;
 my $backend = <<EOT
-* Backend    : No backend found in path. You should install the backends    *
+* Backend    : No backend found in path. You should install the back-ends   *
 *              before running these tests. This way you make sure that the  *
-*              parsers work with your installed version of the backend.     *
+*              parsers work with your installed version of the back-end.    *
 EOT
 ;
 my $emboss =<<EOT

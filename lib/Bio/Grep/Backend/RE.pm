@@ -3,25 +3,33 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use Fatal qw(open close);
+use Fatal qw(open close seek);
 
 use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 sub new {
     my $self = shift;
     $self = $self->SUPER::new;
-    my %all_features = $self->features;
+    my %all_features =  %{ $self->_get_all_possible_features() };
 
-    $all_features{DIRECT_AND_REV_COM} = 1;
-    $all_features{UPSTREAM} = 1;
-    $all_features{DOWNSTREAM} = 1;
-    $all_features{FILTERS} = 1;
-    $all_features{SORT} = 1;
+    delete $all_features{GUMISMATCHES};
+    delete $all_features{EVALUE};
+    delete $all_features{PERCENT_IDENTITY};
+    delete $all_features{ONLINE};
+    delete $all_features{COMPLETE};
+    delete $all_features{QUERY_FILE};
+    delete $all_features{QUERY_LENGTH};
+    delete $all_features{SHOWDESC};
+    delete $all_features{QSPEEDUP};
+    delete $all_features{HXDROP};
+    delete $all_features{EXDROP};
+    delete $all_features{REVCOM_DEFAULT};
+    delete $all_features{NATIVE_D_A_REV_COM};
     delete $all_features{MISMATCHES};
     delete $all_features{DELETIONS};
     delete $all_features{INSERTIONS};
@@ -31,40 +39,40 @@ sub new {
 }
 
 sub search {
-    my ($self, $arg_ref) = @_;
-    my $s    = $self->settings;
+    my ( $self, $arg_ref ) = @_;
+    my $s = $self->settings;
     $self->_check_search_settings($arg_ref);
-    my $regex = $s->query; 
-    if (!defined $regex) {
-        $self->throw( -class => 'Bio::Root::BadParameter',
-                      -text  => 'Query not defined.',
-                    );
-    }    
+    my $regex = $s->query;
+    if ( !defined $regex ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Query not defined.',
+        );
+    }
 
-    if ($s->direct_and_rev_com || $s->reverse_complement) {
-        $self->throw( 
-             -class => 'Bio::Root::BadParameter',
-             -text => 
- "While doing a reverse-complement the query does not look like a DNA/RNA\n" .
-             'sequence.', 
-             -value => $regex,
-         ) if $regex !~ m{\A [gactu]+ \z}xmsi;
-        my $tmp = Bio::Seq->new(-seq => $regex); 
-        if ($s->direct_and_rev_com) {
-            $regex = $regex .'|'.  $tmp->revcom->seq;
+    if ( $s->direct_and_rev_com || $s->reverse_complement ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text =>
+                "While doing a reverse-complement the query does not look like a DNA/RNA\n"
+                . 'sequence.',
+            -value => $regex,
+        ) if $regex !~ m{\A [gactu]+ \z}xmsi;
+        my $tmp = Bio::Seq->new( -seq => $regex );
+        if ( $s->direct_and_rev_com ) {
+            $regex = $regex . '|' . $tmp->revcom->seq;
         }
         else {
-            $regex =  $tmp->revcom->seq;
-        }    
+            $regex = $tmp->revcom->seq;
+        }
     }
-    
-    # I need the prefix to calculate the position of
-    # the regex match
-    $self->{_regex} = qr{$regex}imsx;
-    $self->{_puffer} = [];
-    
 
-    open my $FH, '<', $self->_cat_path_filename( $s->datapath, $s->database . '.dat' );
+    # compile the regex 
+    $self->{_regex}  = qr{$regex}imsx;
+    $self->{_puffer} = [];
+
+    open my $FH, '<',
+        $self->_cat_path_filename( $s->datapath, $s->database . '.dat' );
     $self->_output_fh($FH);
 
     $self->_load_mapping();
@@ -72,75 +80,94 @@ sub search {
     return 1;
 }
 
-
 sub _parse_next_res {
-    my $self    = shift;
-    my $s       = $self->settings;
-    my @puffer = @{ $self->{_puffer} };
-    if (scalar @puffer > 0) {
+    my $self   = shift;
+    my $s      = $self->settings;
+    if ( scalar  @{ $self->{_puffer} } > 0 ) {
         return shift @{ $self->{_puffer} };
-    }    
-
-    my %mapping = $self->_mapping;
-
+    }
+    
     my $FH = $self->_output_fh;
-    while (my $line = <$FH>) {
+    while ( my $line = <$FH> ) {
         chomp $line;
         my ( $pos, $complete_seq ) = $line =~ m{\A (\d+) : (.*) \z}xms;
 
-        # store sequence for upstream/downstream
+        # store sequence for multiple queries (TODO)
         my $seq = $complete_seq;
-
-        my $lastpos;
+        my $found_hits = 0;
+        HIT:
         while ( $seq =~ /$self->{_regex}/g ) {
-            my $subject_pos = length $`;
-            my $subject_seq = $&;
-            $lastpos = $subject_pos + length($subject_seq); 
-            my $up_seq = '';
-            my $down_seq = '';
+            if ($s->maxhits_isset && 
+                $self->_current_res_id + $found_hits > $s->maxhits) {
+                seek $FH, 0, 2;
+                last HIT;
+            }
+            $found_hits++;
+            # get coordinates of hit
+            my $subject_begin  = length $`;
+            my $subject_seq    = $&;
+            my $subject_end    = $subject_begin + length($subject_seq);
 
-            #warn "$subject_seq";
-            if ($s->upstream > 0 || $s->downstream > 0) {
-                my $upstream_pos = $subject_pos - $s->upstream;
-                $upstream_pos = 0 if $upstream_pos < 0;
-                $up_seq = substr $complete_seq, $upstream_pos, $subject_pos -
-                    $upstream_pos;
-                    #warn "$upstream_pos   $subject_pos  $up_seq";
+            my $upstream_seq   = '';
+            my $downstream_seq = '';
 
-                my $downstream_pos = $lastpos+$s->downstream;
-                $downstream_pos = length $complete_seq if $downstream_pos >
-                length $complete_seq;
-                $down_seq = substr $complete_seq, $lastpos, $downstream_pos -
-                    $lastpos;
-                    # warn "$downstream_pos   $lastpos  $down_seq";
-            }    
-            my $upstream = length $up_seq;    
-            my $fasta = Bio::Seq->new(
-                -id  => $mapping{$pos},
-                -seq => $up_seq .  $subject_seq . $down_seq,
+            if ( $s->upstream > 0 || $s->downstream > 0 ) {
+
+                # coordinates of upstream region, check if available region is
+                # as large as requested
+                my $upstream_begin = $subject_begin - $s->upstream;
+                $upstream_begin = 0 if $upstream_begin < 0;
+
+                $upstream_seq = substr $complete_seq, $upstream_begin,
+                    $subject_begin - $upstream_begin;
+                
+                # and same for the downstream region
+                my $downstream_end = $subject_end + $s->downstream;
+                $downstream_end = length $complete_seq
+                    if $downstream_end > length $complete_seq;
+
+                $downstream_seq = substr $complete_seq, $subject_end,
+                    $downstream_end - $subject_end;
+
+            }
+
+            my $sequence = Bio::Seq->new(
+                -id  => $self->_mapping->{$pos},
+                -seq => $upstream_seq . $subject_seq . $downstream_seq,
             );
+
             my $tmp_aln = new Bio::SimpleAlign( -source => "Bio::Grep" );
             $tmp_aln->add_seq(
                 Bio::LocatableSeq->new(
                     -id    => 'Subject',
                     -seq   => $subject_seq,
-                    -start => $subject_pos+1,
-                    -end   => $subject_pos+ length($subject_seq),
+                    -start => $subject_begin + 1, # starts at 1, not 0
+                    -end   => $subject_end,
                 )
             );
+
             my $res = $self->_filter_result(
-                Bio::Grep::SearchResult->new( $fasta,
-                $upstream, $upstream +length($subject_seq),
-                $tmp_aln, $fasta->id, '' )
-                );
-            if ($res) {    
-                $res->query(Bio::Seq->new(-id => 'Query'));    
-                push @puffer, $res;
+                Bio::Grep::SearchResult->new(
+                    {   sequence    => $sequence,
+                        begin       => length($upstream_seq),
+                        end         => length($upstream_seq . $subject_seq),
+                        alignment   => $tmp_aln,
+                        sequence_id => $sequence->id,
+                        remark      => '',
+                        query       => Bio::Seq->new( 
+                                           -id  => 'Query', 
+                                           -seq => $subject_seq 
+                                       ),  
+                    }
+                )
+            );
+             
+            if ($res) {
+                push @{ $self->{_puffer} }, $res;
             }
 
-        }    
-        if (scalar @puffer > 0) {
-            $self->{_puffer} = \@puffer;
+        }
+        if ( scalar @{ $self->{_puffer} } > 0 ) {
             return shift @{ $self->{_puffer} };
         }
     }

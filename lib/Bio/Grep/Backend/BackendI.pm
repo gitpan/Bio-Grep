@@ -3,7 +3,7 @@ package Bio::Grep::Backend::BackendI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 use Fatal qw (open close opendir closedir);
 
@@ -135,7 +135,7 @@ sub _filter_result {
 
 sub results {
     my ($self) = @_;
-    $self->deprecated("Use 'while (my \$res = \$sbe->next_res instead'");
+    $self->deprecated("Use 'while (my \$res = \$sbe->next_res)' instead");
     my @results;
     while ( my $res = $self->next_res ) {
         push @results, $res;
@@ -159,18 +159,26 @@ sub _prepare_results {
         }
         @results = $self->_sort_by_dg(@results);
         $self->_results(@results);
+        # reset for next_res iterator
+        $self->_current_res_id(0);
     }
     else {
         $self->_results_reset;
     }
+    return;
 }
 
 sub next_res {
     my ($self) = @_;
+    my $id = $self->_current_res_id;
+    $self->_current_res_id( $id + 1 );
     if ( $self->_results_isset ) {
-        my $id = $self->_current_res_id;
-        $self->_current_res_id( $id + 1 );
-        return $self->_results->[$id];
+        if ($id >= scalar @{$self->_results}) {
+            return 0;
+        }
+        else {
+            return $self->_results->[$id];
+        }    
     }
     else {
         return $self->_parse_next_res();
@@ -188,12 +196,11 @@ sub _sort_by_dg {
             return @results;
         }
     }
-    @results = sort { $a->dG <=> $b->dG } @results;
     if ( $self->settings->sort eq 'gd' ) {
-        return reverse @results;
+        return sort { $b->dG <=> $a->dG } @results;
     }
     else {
-        return @results;
+        return sort { $a->dG <=> $b->dG } @results;
     }
 }
 
@@ -295,6 +302,10 @@ INT_FEATURE:
         }
     }
 
+    if (!$self->settings->datapath_isset) {
+        $self->settings->datapath('./');
+    }    
+
     # check if database is set and valid
     my $found_database = 0;
     if ( defined $self->settings->database ) {
@@ -379,11 +390,21 @@ sub _copy_fasta_file_and_create_nfo {
 
     # throw exception if filename looks wrong
     $self->is_word( $args->{basefilename}, 'Fasta filename' );
-
+    
+    
     my $newfile = $self->_cat_path_filename( $self->settings->datapath,
         $args->{basefilename} );
 
     $args->{filename} = $newfile;
+    
+    my %dbs = $self->get_databases;
+
+    if (defined $dbs{$args->{basefilename}}) {
+        $self->warn("Database with that name already exists.\n" .
+            "Skipping database generation.");
+        $args->{skip} = 1;
+        return;
+    }    
 
     if ( defined $args->{copy} && $args->{copy} ) {
         copy( $args->{file}, $newfile )
@@ -678,15 +699,21 @@ sub _prepare_generate_database {
         );
     }
     my ($filename) = fileparse( $args{file} );
-
     $args{basefilename} = $filename;
 
     if ( !defined $args{format} ) {
         $args{format} = 'Fasta';
     }
+    if ( defined $args{prefix_length} ) {
+        # untaint pl
+        $args{prefix_length} = $self->is_integer( $args{prefix_length} );
+    }
     if ( defined $args{datapath} ) {
         $self->settings->datapath( $args{datapath} );
     }
+    if (!defined $self->settings->datapath) {
+        $self->settings->datapath('./');
+    }    
     $self->_copy_fasta_file_and_create_nfo( \%args );
 
     return %args;
@@ -823,7 +850,7 @@ Returns a hash with all available databases. The keys are the filenames,
 the values are descriptions (or the filename if no description is available).
 
 Descriptions can be set in info files. For example, if you indexed file
-ATH1.cdna, Vmatch constructs a lot of ATH1.cdna.* files. Now simply
+ATH1.cdna, C<Vmatch> constructs a lot of ATH1.cdna.* files. Now simply
 create a file ATH1.cdna.nfo and write a description in that file. The method
 generate_database() will create this file if C<description> is specified (see
 generate_database()).
@@ -837,18 +864,9 @@ generate_database()).
 =item C<$sbe-E<gt>generate_database({ file =E<gt> $file })>
 
 Creates a symlink to the specified file in the datapath directory 
-(C<$sbe-E<gt>settings-E<gt>datapath>) and generates a database. 
-
-  $sbe->generate_database({
-            file        => 'ATH1.cdna',
-            format      => 'Fasta',
-            description => 'AGI Transcripts',
-            copy        => 1, 
-            datapath    => 'data',
-            verbose     => 1,
-    });
-
-You have to do this only once for every file. 
+(C<$sbe-E<gt>settings-E<gt>datapath>) and generates a database. You have to
+do this only once for every file. Returns 1 if database generation was
+successful. 
 
 Optional arguments in the hash reference are:
 
@@ -857,7 +875,7 @@ Optional arguments in the hash reference are:
 =item C<format> 
 
 The format of C<file>. Default is C<Fasta>. See the documentation of your
-back-end and C<Bio::SeqIO> for supported formats. Only C<Fasta> is thoroughly
+back-end and L<Bio::SeqIO> for supported formats. Only C<Fasta> is thoroughly
 tested. 
 
 =item C<description> 
@@ -875,11 +893,27 @@ file. Useful for platforms that don't support symbolic links. Default 0
 
 C<$sbe-E<gt>settings-E<gt>datapath> is called with this value.
 
+=item C<prefix_length>
+
+C<Vmatch> option: prefix length for bucket sort. If not defined, then
+C<mkvtree> automatically determines a reasonable prefix length.
+
 =item C<verbose>
 
 Generate the database more verbosely. Default is 0.
 
 =back
+
+Example:
+
+  $sbe->generate_database({
+            file        => 'ATH1.cdna',
+            format      => 'Fasta',
+            description => 'AGI Transcripts',
+            copy        => 1, 
+            datapath    => 'data',
+            verbose     => 1,
+    });
 
 =item C<$sbe-E<gt>generate_database_out_of_fastafile($fastafile)>
 
@@ -922,12 +956,20 @@ It checks if the first argument is a valid hash reference (see
 generate_database()), sets default values for undefined keys and returns this
 modifed argument hash. Creates a symlink of the specified file (or copies this
 file) in the I<data> directory. Generates a C<.nfo> file with the description
-of the database.
+of the database. 
+
+An implementation of generate_database should look like this:
 
     sub generate_database {
         my ( $self, @args ) = @_;
         my %args = $self->_prepare_generate_database(@args);
 
+        if (defined $args{skip}) {
+            return 0;
+        }   
+        # create the back-end specific indices
+        ... 
+        
         $self->_create_index_and_alphabet_file( $args{filename} );
         return $args{filename};
     }

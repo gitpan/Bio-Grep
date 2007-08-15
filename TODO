@@ -6,7 +6,8 @@
  - support agreps regular expressions
  - support PoSSuM back-end
  - create a simple backend that does not require additional software [DONE]
- - make EMBOSS and bioperl-run optional
+ - remove EMBOSS and bioperl-run, add own alignment calculation
  - cleanup testcases
  - configfile for bgrep
  - Bio::Grep::Cookbook
+ - support for Seqan library

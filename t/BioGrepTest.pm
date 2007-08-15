@@ -22,6 +22,18 @@ sub check_prereq {
     return %res;
 }    
 
+sub skip_all {
+    my %prereq = check_prereq();
+    if ( !$prereq{bioperl} ) {
+        return (1, 'Bioperl not found');
+    }
+    elsif ( !$prereq{bioperl_run} ) {
+        return (1, 'Bioperl-run not found');
+    }
+    else {
+        return (0, '');
+    }
+}    
 sub find_binary_in_path {
    my ( $name ) = @_;
    my @PATH = File::Spec->path();

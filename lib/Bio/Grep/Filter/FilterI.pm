@@ -3,19 +3,18 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 use base 'Bio::Root::Root';
 
-use Class::MethodMaker
- [ new => 'new2',
-   scalar => [qw / search_result message delete / ],
-   hash => [qw / supports_alphabet/ ],
-   abstract => [qw / filter new reset / ],
- ];
+use Class::MethodMaker [
+    new      => 'new2',
+    scalar   => [qw /search_result message delete/],
+    hash     => [qw /supports_alphabet/],
+    abstract => [qw /filter new reset /],
+];
 
-
-1;# Magic true value required at end of module
+1;    # Magic true value required at end of module
 __END__
 
 

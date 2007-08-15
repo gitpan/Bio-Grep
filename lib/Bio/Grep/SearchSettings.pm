@@ -6,73 +6,74 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 use Class::MethodMaker [
-   new    => 'new2',
-   scalar => [
-      qw / mismatches insertions deletions editdistance query query_length
-      _real_query gumismatches upstream downstream maxhits no_alignments
-      datapath database online tmppath execpath reverse_complement direct_and_rev_com
-      sort complete query_file showdesc qspeedup hxdrop exdrop/
-   ],
-   array => [ qw / filters / ],
+    new    => 'new2',
+    scalar => [
+        qw /mismatches insertions deletions editdistance query query_length
+            _real_query gumismatches upstream downstream maxhits no_alignments
+            datapath database online tmppath execpath reverse_complement direct_and_rev_com
+            sort complete query_file showdesc qspeedup hxdrop exdrop/
+    ],
+    array => [qw /filters/],
 ];
 
 sub new {
-   my $self = shift->new2;
+    my $self = shift->new2;
+    # initialize standard settings
     $self->_init();
-   # initialize standard settings
-   $self;
+    $self;
 }
 
 sub _init {
-    my ( $self ) = @_;
-   $self->mismatches(0);
-   $self->insertions(0);
-   $self->deletions(0);
-   $self->editdistance_reset;
-   $self->gumismatches(1);
-   $self->no_alignments(0);
-   $self->upstream(0);
-   $self->downstream(0);
-   $self->reverse_complement(0);
-   $self->direct_and_rev_com(0);
-   $self->query_reset;
-   $self->query_file_reset;
-   $self->online_reset;
-   $self->sort_reset;
-   $self->complete_reset;
-   $self->query_length_reset;
-   $self->maxhits_reset;
-   $self->showdesc_reset;
-   $self->qspeedup_reset;
-   return;
-}    
+    my ($self) = @_;
+    $self->mismatches(0);
+    $self->insertions(0);
+    $self->deletions(0);
+    $self->editdistance_reset;
+    $self->gumismatches(1);
+    $self->no_alignments(0);
+    $self->upstream(0);
+    $self->downstream(0);
+    $self->reverse_complement(0);
+    $self->direct_and_rev_com(0);
+    $self->query_reset;
+    $self->query_file_reset;
+    $self->online_reset;
+    $self->sort_reset;
+    $self->complete_reset;
+    $self->query_length_reset;
+    $self->maxhits_reset;
+    $self->showdesc_reset;
+    $self->qspeedup_reset;
+    return;
+}
 
 sub set {
     my ( $self, $arg_ref ) = @_;
+
     # set default values first
     $self->_init();
-    for my $key (keys %$arg_ref) {
+    for my $key ( keys %$arg_ref ) {
         my $rt = reftype $arg_ref->{$key};
-        if (defined $rt) {
-            if ($rt eq 'ARRAY') {
-                $self->$key(@{ $arg_ref->{$key} });
-            } 
+        if ( defined $rt ) {
+            if ( $rt eq 'ARRAY' ) {
+                $self->$key( @{ $arg_ref->{$key} } );
+            }
         }
         else {
-            $self->$key($arg_ref->{$key});
-        }    
-    } 
+            $self->$key( $arg_ref->{$key} );
+        }
+    }
     return;
-}    
+}
 
 sub to_string {
     my $self = shift;
-    return Data::Dumper->Dump( [ $self ] ); 
+    return Data::Dumper->Dump( [$self] );
 }
-1;# Magic true value required at end of module
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME
@@ -237,6 +238,7 @@ Not available in the Agrep backend.
 =item C<datapath()>
 
 Get/set the datapath. This is the path to the databases for the back-end.
+Default is current directory ('./').
 
 =item C<database()>
 

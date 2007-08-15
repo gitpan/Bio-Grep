@@ -12,7 +12,7 @@ use base 'Bio::Grep::Backend::BackendI';
 
 use IO::String;
 
-use version; our $VERSION = qv('0.9.0');
+use version; our $VERSION = qv('0.9.1');
 
 sub new {
     my $self = shift;
@@ -100,19 +100,21 @@ sub generate_database {
     my ( $self, @args ) = @_;
 
     my %args = $self->_prepare_generate_database(@args);
+    
+    if (defined $args{skip}) {
+        return 0;
+    }   
 
     my $filename = $args{filename};
 
     open my $DATFILE, '>',  "$filename.dat"; 
-    
     open my $MAPFILE, '>', "$filename.map";
 
     my $in = Bio::SeqIO->new( -file => $filename, -format => $args{format} );
     my $i = 0;
     
     while ( my $seq = $in->next_seq() ) {
-        print $MAPFILE $i . "\t" . $seq->id
-            . "\n";
+        print $MAPFILE $seq->id . "\n";
         print $DATFILE $i . ':' . $seq->seq
             . "\n";
         $i++;
@@ -120,7 +122,7 @@ sub generate_database {
     close $DATFILE;
     close $MAPFILE;
     $self->_create_index_and_alphabet_file( $filename );
-    return $filename;    
+    return 1;    
 }
 
 sub _load_mapping {
@@ -132,11 +134,11 @@ sub _load_mapping {
     my %mapping = ();
 
     open my $MAPFILE, '<', $mapfile; 
-
+    
+    my $i = 0;
     while ( my $line = <$MAPFILE> ) {
         chomp $line;
-        my ( $pos, $id ) = split "\t", $line;
-        $mapping{$pos} = $id;
+        $mapping{$i++} = $line;
     }
     close $MAPFILE;
 
@@ -175,11 +177,18 @@ sub _parse_next_res {
         $alignment = $self->_get_alignment( $seq_query, $seq_subject )
             unless $s->no_alignments;
 
-        my $res = Bio::Grep::SearchResult->new( $seq_subject,
-            $s->upstream, $s->upstream + length($query),
-            $alignment, $seq_subject->id, "" );
+        my $res = Bio::Grep::SearchResult->new({
+                sequence    => $seq_subject,
+                begin       => $s->upstream, 
+                end         => $s->upstream + length($query),
+                alignment   => $alignment, 
+                sequence_id => $seq_subject->id, 
+                remark      => '',
+                query       => Bio::Seq->new( -display_id => "Query", 
+                                              -seq => $s->query),
+                                      });
         # agrep does not support multiple queries yet    
-        $res->query(Bio::Seq->new( -display_id => "Query", -seq => $s->query));
+        $res->query();
         return $res;
     }
     $self->_delete_output();

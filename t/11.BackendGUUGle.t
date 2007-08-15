@@ -12,23 +12,15 @@ BEGIN{
     use lib 't';
     use Test::More; 
     use BioGrepTest;
-
-
     # make taint happy    
     BioGrepTest::set_path( ( 'guugle' ) );
-
-    my %prereq = BioGrepTest::check_prereq();
-    if (!$prereq{bioperl}) {
-        plan skip_all => 'Bioperl not found';
-    }
-    elsif (!$prereq{bioperl_run}) {
-        plan skip_all => 'Bioperl-run not found';
-    }
+    my ($skip,$msg) = BioGrepTest::skip_all();
+    plan skip_all => $msg if $skip;
 }
 my $backendname  = 'GUUGle';
 plan skip_all => 'GUUGle binary not in path' if
 BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
-plan tests => 54;
+plan tests => 55;
 
 use English qw( -no_match_vars );
 use Cwd;
@@ -256,11 +248,22 @@ ok(!$EVAL_ERROR, 'No exception occured when revcom set') || diag $EVAL_ERROR;
 
 ###
 
-diag "\nNow you should see a warning\n";
-
+$sbe->verbose(2);
 eval { $sbe->search( { query_file => 't/Test.fasta', 
                  query_length => 20, 
                  gumismatches => 1,
+                 reverse_complement => 1  } 
+             ); 
+     }; 
+$sbe->verbose(0);
+
+cmp_ok($EVAL_ERROR, '=~',
+    qr{GUUGle counts GU always as no mismatch},
+    'Warning occurs.');
+
+eval { $sbe->search( { query_file => 't/Test.fasta', 
+                 query_length => 20, 
+                 gumismatches => 0,
                  reverse_complement => 1  } 
              ); 
      }; 

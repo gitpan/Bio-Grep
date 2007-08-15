@@ -1,5 +1,23 @@
 Revision history for Perl extension Bio::Grep.
 
+0.9.1  Tue Aug  15 16:10:00 2007
+    - POD improvements
+    - current directory default datapath (thanks Rick)
+    - removed index from *.map files
+      (you need to rebuild Agrep/RE dbs!)
+    - add -pl option in generate_database (prefix_length)
+    - skipping databases generation when database with that
+      name already exists 
+    - code cleanup: 
+         - SearchResult->new wants a hashref as argument
+         - RE.pm
+         - perltidy
+    - tests check warnings
+    - more tests (especially GUUGle and RE)
+    - maxhits for RE
+    - Bugfixes
+        - RE pretended to have mismatches feature
+    
 0.9.0  Mon Aug  08 18:05:00 2007
     - POD improvements
     - generate_database now wants a hashref as argument,

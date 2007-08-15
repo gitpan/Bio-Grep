@@ -1,4 +1,4 @@
-#!perl -T 
+#!perl #-T 
 ################################################################################
 # some backend tests
 #
@@ -12,17 +12,13 @@ BEGIN {
     use lib 't';
     use BioGrepTest;
     use Test::More;
-
-    my %prereq = BioGrepTest::check_prereq();
-    if ( !$prereq{bioperl} ) {
-        plan skip_all => 'Bioperl not found';
-    }
-    elsif ( !$prereq{bioperl_run} ) {
-        plan skip_all => 'Bioperl-run not found';
-    }
+    my ( $skip, $msg ) = BioGrepTest::skip_all();
+    plan skip_all => $msg if $skip;
 }
 
-our %tests = ( Agrep => 72, Vmatch => 148, GUUGle => 43, RE => 34 );
+use TestFilter;
+
+our %tests = ( Agrep => 74, Vmatch => 153, GUUGle => 57, RE => 55 );
 my $number_tests = 1;
 
 foreach ( keys %tests ) {
@@ -99,7 +95,8 @@ SKIP: {
         else {
             $tests++;
         }
-        diag("\n*** Testing $backendname ***");
+
+        #diag("\n*** Testing $backendname ***");
         BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
             'RNAcofold' );
         my $sbe = Bio::Grep->new($backendname);
@@ -152,17 +149,38 @@ SKIP: {
 
         $sbe->settings->datapath('t/data');
 
+        my $ret = 0;
         eval {
-            $sbe->generate_database(
-                {   file        => 't/Test.fasta',
-                    description => 'Description for Test.fasta',
-                    verbose     => 1,
-                    copy        => 1,
+            $ret = $sbe->generate_database(
+                {   file          => 't/Test.fasta',
+                    description   => 'Description for Test.fasta',
+                    verbose       => 1,
+                    copy          => 1,
+                    prefix_length => 3,
                 }
             );
         };
         ok( !$EVAL_ERROR,
-            "no exception occured with dna fasta ($backendname)" );
+            "no exception occured with dna fasta ($backendname)" )
+            || diag $EVAL_ERROR;
+        ok( $ret, "returned 1 with non-existing db" );
+
+        $ret = 0;
+        eval {
+            $sbe->verbose(2);
+            $ret = $sbe->generate_database(
+                {   file        => 't/Test.fasta',
+                    description => 'Description for Test.fasta',
+                }
+            );
+        };
+        $sbe->verbose(0);
+        ok( !$ret, "returned 0 with existing db" ) || diag $ret;
+        cmp_ok(
+            $EVAL_ERROR, '=~',
+            qr{Database with that name already exists},
+            "Warning occured."
+        ) || diag $EVAL_ERROR;
 
         is( $sbe->get_alphabet_of_database('Test.fasta'), 'dna',
             "Test.fasta dna
@@ -432,15 +450,25 @@ SKIP: {
         $sbe->settings->no_alignments(1);
         $sbe->settings->gumismatches(0) if $backendname eq "GUUGle";
 
-        #$sbe->verbose(2);
         $sbe->search();
 
         my @ids              = ();
         my $alignment_string = '';
         while ( my $res = $sbe->next_res ) {
             push( @ids, $res->sequence->id );
-            $alignment_string .= $res->alignment_string;
+            eval {
+                $res->verbose(2);
+                $alignment_string .= $res->alignment_string;
+            };
+            if ( !defined $sbe->features->{NATIVE_ALIGNMENTS} ) {
+                cmp_ok(
+                    $EVAL_ERROR, '=~',
+                    qr{No alignment calculated},
+                    'Warning occured'
+                ) || diag $EVAL_ERROR;
+            }
         }
+
         is( $alignment_string, '', 'alignmentstring empty' )
             if $backendname eq 'Agrep';
         $sbe->settings->no_alignments_reset;
@@ -524,8 +552,9 @@ SKIP: {
 
         my $gum = 1;
         $gum = 0 if $backendname eq 'GUUGle';
-    SKIP: {
-            skip 'Agrep wants shorter queries', 2 if $backendname eq 'Agrep';
+        if ( $backendname ne 'Agrep' ) {
+
+            #'Agrep wants shorter queries
             $sbe->search(
                 {   database     => 'Test.fasta',
                     query        => $long_query,
@@ -608,26 +637,46 @@ SKIP: {
 
         # check exceptions with insecure sortmode
         $sbe->settings->database('Test.fasta');
-        $sbe->settings->query( substr( $long_query, 0, 25 ) );
         $sbe->settings->sort('&& ls *;');
+        $sbe->settings->query('ATTTTCG');
+        $sbe->settings->mismatches(0);
+        $sbe->settings->reverse_complement(0);
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong sort mode" );
-        $sbe->settings->sort('gd');
-        {
-            no warnings;
-            eval { $sbe->search() };
-            if ( $backendname eq "Agrep" ) {
-                ok( $EVAL_ERROR,
-                    "$backendname: No exception occured with valid sort mode (Agrep exception)"
-                );
-            }
-            else {
-                ok( !$EVAL_ERROR,
-                    "$backendname: No exception occured with valid sort mode (Agrep exception)"
-                );
-            }
-        }
 
+        $sbe->settings->sort('gd');
+        $sbe->verbose(2);
+        my @results;
+        eval { $sbe->search() };
+        if ( $backendname eq "Agrep" ) {
+            cmp_ok( $EVAL_ERROR, '=~',
+                qr{Sort mode not valid},
+                "$backendname: Exception occured with invalid sort mode."
+            ) || diag $EVAL_ERROR;
+        }
+        else {
+            cmp_ok( $EVAL_ERROR, '=~',
+                qr{Not sorting results by dG because some results have},
+                "$backendname: Not sorting warning occured."
+            ) || diag $EVAL_ERROR;
+        }
+        # add random dG values to avoid warning
+        $sbe->settings->filters( TestFilter->new() );
+        eval { $sbe->search() };
+        if ( $backendname ne "Agrep" ) {
+            ok( !$EVAL_ERROR, 
+                "$backendname: No exception occured with valid sort mode."
+            ) || diag $EVAL_ERROR;
+            @results = BioGrepTest::get_sorted_result_ids($sbe);
+            # guugle also allows GU
+            cmp_ok(scalar(@results),'>=', 5, '>5 results') ||
+                diag join ',', @results;
+        }
+        $sbe->verbose(0);
+        $sbe->settings->query( substr( $long_query, 0, 25 ) );
+
+
+        $sbe->settings->filters_reset;
         $sbe->settings->sort_reset;
 
         if (   defined $sbe->features->{MISMATCHES}
@@ -748,7 +797,6 @@ SKIP: {
             "Exception occured when query and query_file undef" );
 
         $sbe->settings->query($tmp_query);
-        goto CLEANUP if ( $backendname eq 'GUUGle' || $backendname eq 'RE' );
 
         if ( $backendname eq 'Vmatch' ) {
             $sbe->settings->hxdrop('&& ls *;');
@@ -796,39 +844,70 @@ SKIP: {
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong maxhits" );
 
-        $sbe->settings->mismatches(5);
-        $sbe->settings->maxhits(3);
-        $sbe->settings->query($sequence);
-        $sbe->settings->reverse_complement(1);
-        eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct maxhits" );
-        my @results = ();
-        if ( defined $sbe->features->{MAXHITS} ) {
+        @results = ();
+        if ( defined $sbe->features->{MISMATCHES} ) {
+            $sbe->settings->mismatches(5);
+
+            $sbe->settings->maxhits(3);
+            $sbe->settings->query($sequence);
+            $sbe->settings->reverse_complement(1);
+
+            $sbe->verbose(2);
+            eval { $sbe->search() };
+            $sbe->verbose(0);
+
+            if ( defined $sbe->features->{MAXHITS} ) {
+                ok( !$EVAL_ERROR,
+                    "No Exception occured with correct maxhits" )
+                    || diag $EVAL_ERROR;
+
+                @results = BioGrepTest::get_sorted_result_ids($sbe);
+                is( scalar @results, 3,, "only 3 results ($backendname)" );
+            }
+            else {
+                cmp_ok(
+                    $EVAL_ERROR, '=~',
+                    qr{maxhits not available in this back-end},
+                    'Warning when maxhits not available'
+                );
+            }
+            $sbe->settings->maxhits_reset;
+            eval { $sbe->search() };
+            ok( !$EVAL_ERROR, "No Exception occured with correct maxhits" );
             @results = BioGrepTest::get_sorted_result_ids($sbe);
             is_deeply(
-                \@results, [qw(At1g27360 At1g53160 At2g42200)],
-                , "only 3 results ($backendname)"
+                \@results,
+                [   qw(At1g09950 At1g22000 At1g27360 At1g53160 At2g42200  At3g47170)
+                ],
+                "all results ($backendname)"
             );
         }
-        $sbe->settings->maxhits_reset;
-        eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct maxhits" );
-        @results = BioGrepTest::get_sorted_result_ids($sbe);
-        is_deeply(
-            \@results,
-            [   qw(At1g09950 At1g22000 At1g27360 At1g53160 At2g42200  At3g47170)
-            ],
-            "all results ($backendname)"
-        );
         $sbe->settings->mismatches(0);
+        $sbe->settings->maxhits_reset;
 
         # check exceptions with insecure edit distance
         $sbe->settings->editdistance('&& ls *;');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong editdistance" );
+        $sbe->verbose(2);
         $sbe->settings->editdistance(1);
         eval { $sbe->search() };
-        ok( !$EVAL_ERROR, "No Exception occured with correct editdistance" );
+        $sbe->verbose(0);
+
+        if ( defined $sbe->features->{EDITDISTANCE} ) {
+            ok( !$EVAL_ERROR,
+                "No Exception occured with correct editdistance" )
+                || diag $EVAL_ERROR;
+        }
+        else {
+            cmp_ok(
+                $EVAL_ERROR, '=~',
+                qr{editdistance not available in this back-end},
+                'Warning when editdistance not available'
+            );
+        }
+        goto CLEANUP if ( $backendname eq 'GUUGle' || $backendname eq 'RE' );
+
         $sbe->settings->editdistance_reset;
         $sbe->settings->mismatches(1);
         eval { $sbe->search() };
@@ -849,15 +928,21 @@ SKIP: {
 
         $sbe->settings->reverse_complement(1);
         eval { $sbe->search() };
-        cmp_ok( $EVAL_ERROR,'=~',qr{Reverse complement only available for},
-            "No Exception occured when searching pep seq in pep db" );
+        cmp_ok(
+            $EVAL_ERROR, '=~',
+            qr{Reverse complement only available for},
+            "No Exception occured when searching pep seq in pep db"
+        );
         $sbe->settings->reverse_complement(0);
-        
-        if (defined $sbe->features->{DIRECT_AND_REV_COM}) {
+
+        if ( defined $sbe->features->{DIRECT_AND_REV_COM} ) {
             $sbe->settings->direct_and_rev_com(1);
             eval { $sbe->search() };
-            cmp_ok( $EVAL_ERROR,'=~',qr{Reverse complement only available for},
-                "No Exception occured when searching pep seq in pep db" );
+            cmp_ok(
+                $EVAL_ERROR, '=~',
+                qr{Reverse complement only available for},
+                "No Exception occured when searching pep seq in pep db"
+            );
             $sbe->settings->reverse_complement(0);
         }
 

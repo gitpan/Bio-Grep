@@ -14,6 +14,7 @@ my $builder = Module::Build->new(
                             'Getopt::Long'       => 2.32,   
                             'Pod::Usage'         => 0,   
                             'UNIVERSAL::require' => 0.11,   
+                            #'Carp::Assert'       => 0,
                             },
     add_to_cleanup      => [ 'Bio-Grep-*' ],
 );
