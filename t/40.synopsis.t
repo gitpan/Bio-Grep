@@ -235,7 +235,6 @@ my $code =<<'EOT'
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res) {
      print $res->sequence->id . "\n";
-     print $res->mark_subject_uppercase() . "\n";
      # print $res->alignment_string() . "\n\n";
      push @internal_ids, $res->sequence_id;
   }

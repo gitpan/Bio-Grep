@@ -3,6 +3,9 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
+use version; our $VERSION = qv('0.9.2');
+use Carp::Assert;
+
 use Fatal qw(open close seek);
 
 use Bio::Grep::SearchResult;
@@ -10,13 +13,15 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::Agrep';
 
-use version; our $VERSION = qv('0.9.1');
-
 sub new {
     my $self = shift;
     $self = $self->SUPER::new;
-    my %all_features =  %{ $self->_get_all_possible_features() };
+    $self;
+}
 
+sub _init {
+    my ( $self ) = @_;
+    my %all_features = $self->features;
     delete $all_features{GUMISMATCHES};
     delete $all_features{EVALUE};
     delete $all_features{PERCENT_IDENTITY};
@@ -35,7 +40,8 @@ sub new {
     delete $all_features{INSERTIONS};
     delete $all_features{EDITDISTANCE};
     $self->features(%all_features);
-    $self;
+    $self->{_line_regex} = qr{\A(.*):(.*)\z}xmso;
+    return;
 }
 
 sub search {
@@ -74,6 +80,9 @@ sub search {
     open my $FH, '<',
         $self->_cat_path_filename( $s->datapath, $s->database . '.dat' );
     $self->_output_fh($FH);
+    
+    my $indexfile = $s->datapath . '/' . $s->database . '.idx';
+    $self->{'_idx'} = Bio::Index::Fasta->new($indexfile);
 
     $self->_load_mapping();
     $self->_prepare_results;
@@ -90,11 +99,13 @@ sub _parse_next_res {
     my $FH = $self->_output_fh;
     while ( my $line = <$FH> ) {
         chomp $line;
-        my ( $pos, $complete_seq ) = $line =~ m{\A (\d+) : (.*) \z}xms;
+        my ( $linenumber, $complete_seq ) = $line =~ $self->{_line_regex};
+
 
         # store sequence for multiple queries (TODO)
         my $seq = $complete_seq;
         my $found_hits = 0;
+        my $seq_obj;
         HIT:
         while ( $seq =~ /$self->{_regex}/g ) {
             if ($s->maxhits_isset && 
@@ -102,37 +113,27 @@ sub _parse_next_res {
                 seek $FH, 0, 2;
                 last HIT;
             }
+            if ($found_hits == 0) {
+                $seq_obj = $self->{_idx}->fetch( $self->{_mapping}->{
+                        $linenumber } );
+            }    
             $found_hits++;
             # get coordinates of hit
             my $subject_begin  = length $`;
             my $subject_seq    = $&;
             my $subject_end    = $subject_begin + length($subject_seq);
 
-            my $upstream_seq   = '';
-            my $downstream_seq = '';
+            my ( $upstream_seq, $dummy, $downstream_seq ) =
+                $self->_parse_regions({ complete_seq => $complete_seq,
+                                        subject_begin=> $subject_begin, 
+                                        subject_end  => $subject_end, 
+                                      });  
 
-            if ( $s->upstream > 0 || $s->downstream > 0 ) {
-
-                # coordinates of upstream region, check if available region is
-                # as large as requested
-                my $upstream_begin = $subject_begin - $s->upstream;
-                $upstream_begin = 0 if $upstream_begin < 0;
-
-                $upstream_seq = substr $complete_seq, $upstream_begin,
-                    $subject_begin - $upstream_begin;
-                
-                # and same for the downstream region
-                my $downstream_end = $subject_end + $s->downstream;
-                $downstream_end = length $complete_seq
-                    if $downstream_end > length $complete_seq;
-
-                $downstream_seq = substr $complete_seq, $subject_end,
-                    $downstream_end - $subject_end;
-
-            }
+            assert($dummy eq $subject_seq) if DEBUG;
 
             my $sequence = Bio::Seq->new(
-                -id  => $self->_mapping->{$pos},
+                -id  => $seq_obj->id,
+                -desc => $seq_obj->desc,
                 -seq => $upstream_seq . $subject_seq . $downstream_seq,
             );
 
@@ -246,13 +247,15 @@ Note 1: B<BETA RELEASE!>
 Note 2: C<reverse_complement> (and C<direct_and_rev_com> ) are supported, but are
 only available for DNA/RNA queries, not for regular expressions.
 
-Note 3: The i modifier is added to the regex. This means that the search is
-case insensitive. 
+Note 3: The i,m,s and x modifiers are added to the regex. 
 
 Note 4: Be careful with RNA sequences: U is not the same as T in this back-end!
 
 Note 5: L<Bio::Grep::Backend::RE> databases are compatible with
 L<Bio::Grep::Backend::Agrep> databases.
+
+Note 6: When C<maxhits> is defined, the sliding window stops when I<maxhits>
+hits were found. 
 
 =head1 METHODS
 

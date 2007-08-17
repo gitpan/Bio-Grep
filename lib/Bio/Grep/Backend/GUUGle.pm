@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.9.1');
+use version; our $VERSION = qv('0.9.2');
 
 sub new {
     my $self = shift;
@@ -108,7 +108,6 @@ sub search {
         if !$cmd_ok;
 
     $self->_skip_header();
-    $self->_prepare_results;
     my %query_desc_lookup;
     foreach my $query_seq (@{ $self->_query_seqs }) {
         # simulate how this sequence would look in guugle output
@@ -117,7 +116,8 @@ sub search {
         length($query_desc) > 0);
         $query_desc_lookup{$query_desc} = $query_seq;
     }
-    $self->_mapping(%query_desc_lookup);
+    $self->{_mapping} = \%query_desc_lookup;
+    $self->_prepare_results;
     $self->settings->query_length_reset if $auto_query_length;
     return 1;
 }
@@ -240,8 +240,8 @@ sub _parse_next_res {
         }    
 
         # find the query that belongs to the match
-        my $query = $self->_mapping->{$query_desc};
-        use Data::Dumper; 
+        my $query = $self->{_mapping}->{$query_desc};
+        #use Data::Dumper; 
         #warn "BLA $query_desc "; 
         #warn Data::Dumper->Dump( [$self->_mapping ]); 
         # already reverse, so just the complement here:
@@ -327,7 +327,8 @@ sub _parse_next_res {
             return $res;
         }
     }
-    $self->_delete_output();
+    close $FH;
+    #$self->_delete_output();
     return 0;
 }
 
@@ -410,6 +411,8 @@ not set.
 NOTE 2: C<GUUGle> only allows search for exact matches. It counts GU as no
 mismatch.
 
+NOTE 3: When "maxhits" is defined, this back-end returns the I<maxhits> first
+hits.
 
 =head1 METHODS
 

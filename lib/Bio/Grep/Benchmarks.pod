@@ -1,0 +1,107 @@
+=head1 NAME
+
+Bio::Grep::Benchmarks - Bio::Grep Benchmarks
+
+=head1 DESCRIPTION
+
+A collection of quick and dirty benchmarks. 
+
+=head1 BENCHMARKS
+
+Intel(R) Xeon(TM) CPU 2.40GHz, 1GB RAM. Fedora Core 6.
+
+TAIR7_cdna_20070425 (Arabidopsis CDNA Fasta file, 52MB). 
+
+Bio::Grep v0.9.2. Average over 10 iterations.
+
+=head2 Database Generation
+
+  GUUGle         :  11.12 sec
+  Agrep/RE       :  22.52 sec
+  Vmatch (-pl 3) : 171.56 sec
+
+  
+=head2 Mismatches
+
+Query: C<ugacagaagagagugagcac> (revcom)
+
+=over
+
+=item B<No mismatches (exact matching):>
+
+  Agrep (Wu-Manber):  0.33 sec
+  Vmatch           :  1.63 sec
+  RE               :  1.88 sec
+  GUUGle           :  9.97 sec
+  Agrep (TRE)      : 15.96 sec
+
+Note that C<Vmatch> needs one slow run to load the suffix arrays in memory
+(Values are the average over 10 iterations). Also note that GUUGle allows GU
+mismatches.
+
+=item B<One mismatch:>
+
+  Vmatch           :  0.20 sec
+  Agrep (Wu-Manber):  1.30 sec
+  Agrep (TRE)      : 47.01 sec
+  GUUGle           :       n/a
+  RE               :       n/a
+
+=item B<Two mismatches:>
+
+  Vmatch           :  0.20 sec
+  Agrep (Wu-Manber):  1.55 sec
+  Agrep (TRE)      : 59.17 sec
+  GUUGle           :       n/a
+  RE               :       n/a
+
+=item B<Three mismatches:>
+
+  Vmatch           :  0.48 sec
+  Agrep (Wu-Manber):  1.55 sec
+  Agrep (TRE)      : 72.56 sec
+  GUUGle           :       n/a
+  RE               :       n/a
+
+=item B<Four mismatches:>
+
+  Vmatch           :  1.55 sec
+  Agrep (Wu-Manber):  2.17 sec
+  Agrep (TRE)      : 83.50 sec
+  GUUGle           :       n/a
+  RE               :       n/a
+
+=item B<Five mismatches:>
+
+  Agrep (Wu-Manber):  2.94 sec
+  Vmatch           :  6.43 sec
+  Agrep (TRE)      : 96.16 sec
+  GUUGle           :       n/a
+  RE               :       n/a
+
+=back
+
+=head1 FEEDBACK
+
+The script that generated this benchmarks is available in the I<script>
+directory of this distribution. 
+
+Please report any bugs, feature requests and benchmarks to
+C<bug-bio-grep@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org>. 
+
+=head1 AUTHOR
+
+Markus Riester, E<lt>mriester@gmx.deE<gt>
+
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (C) 2007  by M. Riester. All rights reserved. 
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=cut
+
+# vim: ft=perl sw=4 ts=4 expandtab

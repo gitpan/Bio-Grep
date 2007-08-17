@@ -3,7 +3,7 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.1');
+use version; our $VERSION = qv('0.9.2');
 
 use IO::String;
 
@@ -31,10 +31,15 @@ sub new {
 sub mark_subject_uppercase {
     my $self   = shift;
     my $result = $self->sequence->seq;
-    return
+    if (!defined $self->begin || !defined $self->end) {
+        return lc $result;
+    }
+    else {
+        return
         lc( substr( $result, 0, $self->begin ) )
-        . uc( substr( $result, $self->begin, $self->end - $self->begin ) )
-        . lc( substr( $result, $self->end ) );
+            . uc( substr( $result, $self->begin, $self->end - $self->begin ) )
+            . lc( substr( $result, $self->end ) );
+    }    
 }
 
 sub subject {

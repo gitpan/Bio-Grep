@@ -77,6 +77,7 @@ SKIP: {
                     filters => [ $filter ],
                     reverse_complement => 0,
                     gumismatches => $gum,
+                    no_alignments => 1,
                 });
             my @ids;
             while (my $res = $sbe->next_res()) {

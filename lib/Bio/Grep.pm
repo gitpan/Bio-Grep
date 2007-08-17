@@ -7,7 +7,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.9.1');
+use version; our $VERSION = qv('0.9.2');
 
 
 sub new {
@@ -44,7 +44,7 @@ Bio::Grep - Perl extension for searching in Fasta files
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.9.1
+This document describes Bio::Grep version 0.9.2
 
 =head1 SYNOPSIS
 
@@ -413,17 +413,19 @@ L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>
 =end man
 
 
-C<Vmatch> is fast but needs a lot of memory. C<Agrep> is the best choice if you allow many 
-mismatches in short sequences, if you want to search in Fasta files 
-with relatively short sequences (e.g transcript databases) and if you are 
-only interested in which sequences the approximate match was found. 
-Its performance is in this case 
-amazing. If you want the exact positions of a match in the sequence, choose
-C<Vmatch>. If you want 
-nice alignments, choose C<Vmatch> too (C<EMBOSS> can automatically align the 
-sequence and the query in the C<Agrep> back-end, but then C<Vmatch> is faster). 
-Filters require exact positions, so you can't use them with C<Agrep>. 
-This may change in future version or not.
+C<Vmatch> is fast but needs a lot of memory. C<Agrep> is the best choice if
+you allow many mismatches in short sequences, if you want to search in Fasta
+files with relatively short sequences (e.g transcript databases) and if you 
+are only interested in which sequences the approximate match was found. Its 
+performance is in this case amazing. If you want the exact positions of a match 
+in the sequence, choose C<Vmatch>. If you want nice alignments, choose 
+C<Vmatch> too (C<EMBOSS> can automatically align the sequence and the query in
+the C<Agrep> back-end, but then C<Vmatch> is faster). Filters require exact 
+positions, so you can't use them with C<Agrep>. This may change in future 
+version or not. The C<Agrep> implementation of the C<TRE> library 
+(L<http://laurikari.net/tre/>) is also supported. This implementation has less
+limitations and more features (e.g. you get the exact hit positions) but is
+much slower. See L<Bio::Grep::Benchmarks>.
 
 C<GUUGle> may be the best choice if you have RNA queries (counts GU as no mismatch)
 and if you are interested in only exact matches. Another
@@ -568,6 +570,7 @@ L<Bio::Grep::Backend::Vmatch>
 L<Bio::Grep::Backend::GUUGle>
 L<Bio::Grep::Backend::RE>
 L<Bio::Grep::Backend::Agrep>
+L<Bio::Grep::Benchmarks>
 
 =head2 PUBLICATIONS
 

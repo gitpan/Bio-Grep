@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.9.1);
+use version; our $VERSION = qv(0.9.2);
 
 use Bio::Grep ;
 use Getopt::Long qw(:config auto_version);
@@ -42,7 +42,9 @@ my $result = GetOptions(
          "datapath=s",
          "createdb",
          "complete",
+         "online",
          "no_alignments",
+         "idsonly",
          "man",
          "help|?",
                         ) or pod2usage(2);
@@ -68,7 +70,9 @@ $sbe->settings->datapath($h{datapath});
 if ($h{createdb}) {
     $h{database} = $sbe->generate_database({ 
             file =>$h{database}, 
-            description => 'Description for the test Fastafile'});
+            description => 'Description for the test Fastafile',
+            prefix_length => 4,
+        });
 }
 
 # now try to search. 
@@ -77,6 +81,8 @@ if ($h{createdb}) {
 delete $h{'help|?'};
 delete $h{man};
 delete $h{backend};
+my $idsonly = $h{idsonly};
+delete $h{idsonly};
 
 if (!defined $h{createdb}) { 
     $sbe->search(\%h);
@@ -85,21 +91,26 @@ if (!defined $h{createdb}) {
     #  finally, output the results 
     ##############################################################################
     while ( my $res = $sbe->next_res ) {
-        if (!defined $res->sequence->desc) {
+        if ($idsonly) {
             print $res->sequence->id . "\n";
+        }   
+        else { 
+            if (!defined $res->sequence->desc) {
+                print $res->sequence->id . "\n";
+            }
+            else {
+                print $res->sequence->id . " " . $res->sequence->desc . "\n";
+            }    
+            if (!defined $res->query->desc) {
+                print $res->query->id . "\n";
+            }
+            else {
+                print $res->query->id . " " . $res->query->desc . "\n";
+            }    
+            print $res->mark_subject_uppercase() . "\n";
+            #print Dumper $res->alignment;
+            print $res->alignment_string() . "\n\n";
         }
-        else {
-            print $res->sequence->id . " " . $res->sequence->desc . "\n";
-        }    
-        if (!defined $res->query->desc) {
-            print $res->query->id . "\n";
-        }
-        else {
-            print $res->query->id . " " . $res->query->desc . "\n";
-        }    
-        print $res->mark_subject_uppercase() . "\n";
-        #print Dumper $res->alignment;
-        print $res->alignment_string() . "\n\n";
         $hits++;
     }
     print "$hits search results. Search took " . (time - $start) . " seconds.\n";
@@ -114,7 +125,7 @@ bgrep - Wrapper for several suffix array tools
 
 =head1 VERSION
 
-This document describes bgrep version 0.9.1
+This document describes bgrep version 0.9.2
 
 =head1 SYNOPSIS
 
@@ -191,11 +202,19 @@ Display only the n (best) hits.
 
 Generate suffix arrays in path p. Default is 'data'
 
+=item C<idsonly>
+
+Display only sequence ids.
+
 =item C<--showdesc n>,
 
 Vmatch only (see manual). Is faster because it extracts all data
 directly out of the vmatch output. Otherwise, vsubseqselect is called
 for every hit.
+
+=item C<--online>
+
+Vmatch only (see manual). Run algorithms online without using the index.
 
 =item C<--hxdrop n>
 

@@ -1,4 +1,4 @@
-Bio-Grep version 0.9.1
+Bio-Grep version 0.9.2
 ======================
 
 Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
@@ -59,6 +59,8 @@ This module requires these other modules, libraries and programs:
     apt-get install agrep). Fink has some packages for Mac OS X.
     Ebuilds for Gentoo are available, too. As for Vmatch, Agrep 
     tests assume that agrep is in your path. 
+    The TRE-agrep (http://laurikari.net/tre/) is much slower but has
+    more features and less limitations. 
 
   GUUGle (http://bibiserv.techfak.uni-bielefeld.de/guugle/)
     A suffix array implementation for RNA sequences. Only allows search
@@ -127,10 +129,6 @@ Please contribute recipes if you can!
   Yes. $res->alignment->get_seq_by_pos(1)->...
 
   see perldoc Bio::SimpleAlign
-
-- I want to make a donation.
-  I lied. This isn't a FAQ. But if Bio::Grep saved you some time, consider 
-  motivating a poor PhD student...
 
 BUGS
 

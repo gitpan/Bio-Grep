@@ -14,7 +14,7 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 
-use version; our $VERSION = qv('0.9.1');
+use version; our $VERSION = qv('0.9.2');
 
 sub new {
     my $self = shift;
@@ -147,7 +147,7 @@ sub search {
             $query_desc =~ s{ }{_}g;
             $query_desc_lookup{$query_desc} = $query_seq;
         }
-        $self->_mapping(%query_desc_lookup);
+        $self->{_mapping} = \%query_desc_lookup;
     }
     $self->settings->query_length_reset if $auto_query_length;
     $self->_prepare_results;
@@ -367,7 +367,7 @@ LINE:
 
         my $query;
         if ( $s->showdesc_isset ) {
-            $query = $self->_mapping->{ $fields[5] };
+            $query = $self->{_mapping}->{ $fields[5] };
         }
         else {
             $query = $query_seqs[ $fields[5] ];
@@ -532,6 +532,9 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
 
 B<Bio::Grep::Backend::Vmatch> searches for a query in a C<Vmatch> suffix array. 
 
+NOTE 1: When "maxhits" is defined, this back-end returns the I<maxhits> best
+hits (those with smallest E-values).
+
 =head1 METHODS
 
 See L<Bio::Grep::Backend::BackendI> for inherited methods. 
@@ -617,7 +620,14 @@ alphabet (DNA or Protein) of the specified Fasta file. C<Bio::Root::BadParameter
 =item C<Vmatch call failed. Command was: ... > 
 
 It was not possible to run C<Vmatch> in function search(). Check the search
-settings. If the number of mismatches is to high, try C<online>. 
+settings. When you get the C<Vmatch> error 
+
+  vmatch: searchlength=x must be >= y=prefixlen
+  
+The number of mismatches is too high or the query is too short. You can
+rebuild the index with generate_database() and a smaller C<prefix_length>
+or you can try C<online>.
+
 C<Bio::Root::SystemException>.
 
 =item C<vseqselect call failed. Cannot fetch sequences. Command was: ...> 

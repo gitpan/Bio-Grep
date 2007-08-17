@@ -6,7 +6,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.9.1');
+use version; our $VERSION = qv('0.9.2');
 
 use Class::MethodMaker [
     new    => 'new2',
@@ -126,7 +126,7 @@ Not all back-ends will support every option.
 
 =item C<new()>
 
-This function constructs an Bio::Grep::SearchSettings object. The
+This function constructs an C<Bio::Grep::SearchSettings> object. The
 back-end adds an object of this module into C<$sbe-E<gt>settings>, so you
 should never have to call this constructor directly. If you want to reset all
 settings to their default values, call
@@ -281,9 +281,10 @@ a description from the back-end:
 
 =item C<maxhits()>
 
-Get/set maxhits. Tells the back-end that it should output only the best n hits.
+Get/set maxhits. Tells the back-end that it should output only the best or
+first (see back-end documentation) I<n> hits.
 
-Only available in the C<Vmatch> and C<GUUGle> back-end.
+Not available in the C<Agrep> back-end.
 
 =item C<gumismatches()>
 
@@ -298,7 +299,7 @@ Get/Set the query length. Initialized with length of the query string. If
 this member variable is smaller then the query string, then the back-end will
 search for all substrings of that size. 
 
-Only available in the Vmatch and GUUGle back-end.
+Only available in the C<Vmatch> and C<GUUGle> back-end.
 
 =item C<to_string()> 
 
@@ -353,7 +354,7 @@ for details.
 
 L<Bio::Grep::Filter::FilterI>
 L<Bio::Grep::SearchResult>
-n<Bio::Grep::Backend::BackendI>
+L<Bio::Grep::Backend::BackendI>
 
 =head1 AUTHOR
 

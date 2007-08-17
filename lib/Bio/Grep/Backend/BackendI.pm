@@ -3,7 +3,8 @@ package Bio::Grep::Backend::BackendI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.1');
+use Carp::Assert;
+use version; our $VERSION = qv('0.9.2');
 
 use Fatal qw (open close opendir closedir);
 
@@ -31,7 +32,7 @@ use Class::MethodMaker [
     new    => 'new2',
     scalar => [qw / settings _output_fh _output_fn _current_res_id _tmp_var/],
     array  => [qw / _query_seqs _results/],
-    hash   => [qw / features _mapping/],
+    hash   => [qw / features/],
     abstract => [
         qw / search get_sequences get_databases
             generate_database _parse_next_res/
@@ -204,10 +205,29 @@ sub _sort_by_dg {
     }
 }
 
+sub _results_may_have_gaps {
+    my ( $self ) = @_;
+    my $s = $self->settings;
+    return 1 if (defined $s->editdistance && $s->editdistance > 0);
+    return 1 if (defined $s->insertions   && $s->insertions   > 0);
+    return 1 if (defined $s->deletions    && $s->deletions    > 0);
+    return 0;
+}    
+
 # calculates needleman-wunsch global alignment with the EMBOSS
 # implementation
 sub _get_alignment {
     my ( $self, $seq_a, $seq_b ) = @_;
+    # aligments are easy when settings don't allow gaps
+    # back-ends must return hit coordinates
+    if (!$self->_results_may_have_gaps && 
+        length($seq_a->seq) == length($seq_b->seq) ) {
+        my $alignment = new Bio::SimpleAlign( -source => "Bio::Grep" );
+        $alignment->add_seq($seq_a); 
+        $alignment->add_seq($seq_b); 
+        return $alignment;
+    }   
+
     my $factory = Bio::Factory::EMBOSS->new();
     my $prog    = $factory->program('needle');
     my $outfile = $self->_cat_path_filename( $self->settings->tmppath,
@@ -231,7 +251,15 @@ sub _get_alignment {
             -file   => $outfile
         );
         unlink($outfile);
-        return $align_io->next_aln();
+        my $alignment = $align_io->next_aln();
+        my $s1 = $alignment->get_seq_by_pos(1);
+        my $s2 = $alignment->get_seq_by_pos(2);
+        $s1->start($seq_a->start);
+        $s1->end($seq_a->end);
+        $alignment = new Bio::SimpleAlign( -source => "Bio::Grep" );
+        $alignment->add_seq($s1);
+        $alignment->add_seq($s2);
+        return $alignment;
     }
 
 }
@@ -280,7 +308,7 @@ INT_FEATURE:
         next INT_FEATURE if defined $skip{ uc($option) };
         # check if values are integers and untaint them
         $self->settings->$option(
-            $self->is_integer( $self->settings->$option ) );
+            $self->is_integer( $self->settings->$option, $option ) );
         if ( !defined $self->settings->$option ) {
             my $reset = $option . '_reset';
             $self->settings->$reset;
@@ -719,6 +747,42 @@ sub _prepare_generate_database {
     return %args;
 }
 
+sub _parse_regions {
+    my ( $self, $args ) = @_;
+    my $upstream_seq   = '';
+    my $subject_seq = substr $args->{complete_seq}, $args->{subject_begin},
+    $args->{subject_end} - $args->{subject_begin}; 
+    my $downstream_seq = '';
+
+    # initialized for assert below
+    my $upstream_begin = $args->{subject_begin}; 
+
+    if ( $self->settings->upstream > 0 || $self->settings->downstream > 0 ) {
+
+        # coordinates of upstream region, check if available region is
+        # as large as requested
+        $upstream_begin = $args->{subject_begin} - $self->settings->upstream;
+        $upstream_begin = 0 if $upstream_begin < 0;
+
+        $upstream_seq = substr $args->{complete_seq}, $upstream_begin,
+            $args->{subject_begin} - $upstream_begin;
+        
+        # and same for the downstream region
+        my $downstream_end = $args->{subject_end} + $self->settings->downstream;
+        $downstream_end = length $args->{complete_seq}
+            if $downstream_end > length $args->{complete_seq};
+
+        $downstream_seq = substr $args->{complete_seq}, $args->{subject_end},
+            $downstream_end - $args->{subject_end};
+
+    }
+    my @ret = ($upstream_seq, $subject_seq, $downstream_seq);
+    assert(index($args->{complete_seq},join('',@ret), $upstream_begin) ==
+        $upstream_begin) if DEBUG;
+
+    return @ret;
+}
+
 1;    # Magic true value required at end of module
 __END__
 
@@ -1011,6 +1075,19 @@ when the script exits.
 
 Creates an index of the specified Fasta file with L<Bio::Index::Fasta>.
 Creates an C<Vmatch> alphabet file.
+
+=item C<_parse_regions($hash_ref)>
+
+Takes as argument a hash reference with the gene sequence and the hit
+coordinates (keys C<complete_seq>, C<subject_begin> and C<subject_end>,
+respectively). Calculates the upstream, subject and downstream sequence.
+
+    my ( $upstream_seq, $subject_seq, $downstream_seq ) =
+        $self->_parse_regions({ 
+            complete_seq => $complete_seq,
+            subject_begin=> $subject_begin, 
+            subject_end  => $subject_end, 
+        }); 
 
 =back
 

@@ -3,6 +3,9 @@ package Bio::Grep::Backend::Agrep;
 use strict;
 use warnings;
 
+use Carp::Assert;
+use version; our $VERSION = qv('0.9.2');
+
 use Fatal qw(open close);
 
 use Bio::Grep::SearchResult;
@@ -12,37 +15,71 @@ use base 'Bio::Grep::Backend::BackendI';
 
 use IO::String;
 
-use version; our $VERSION = qv('0.9.1');
-
 sub new {
     my $self = shift;
     $self = $self->SUPER::new;
+    $self->_init;
+    $self;
+}
+
+sub _init {
+    my ( $self ) = @_;
     my %all_features = $self->features;
 
-    # agrep does not supprt this features
-    delete $all_features{NATIVE_ALIGNMENTS};
-    delete $all_features{GUMISMATCHES};
+    $self->{_tre_agrep} = $self->_is_tre_agrep;
+    if ($self->is_tre_agrep) {
+        $self->{_line_regex} = qr{\A(\d+)\-(\d+):(\d+):(.*)\z}xmso;
+    }    
+    else {
+        $self->{_line_regex} = qr{\A(.*):(.*)\z}xmso;
+    }
+    # agrep implementation features
+    # TODO 
     delete $all_features{FILTERS};
-    delete $all_features{EVALUE};
-    delete $all_features{PERCENT_IDENTITY};
     delete $all_features{UPSTREAM};
     delete $all_features{DOWNSTREAM};
-    delete $all_features{ONLINE};
     delete $all_features{SORT};
-    delete $all_features{MAXHITS};
-    delete $all_features{COMPLETE};
     delete $all_features{QUERY_FILE};
     delete $all_features{QUERY_LENGTH};
+    delete $all_features{DIRECT_AND_REV_COM};
+    delete $all_features{NATIVE_D_A_REV_COM};
+    
+    # not available in any agrep implemenation
+    delete $all_features{MAXHITS};
+    delete $all_features{GUMISMATCHES};
+    delete $all_features{REVCOM_DEFAULT};
+    delete $all_features{NATIVE_ALIGNMENTS};
+    # no vmatch features
+    delete $all_features{EVALUE};
+    delete $all_features{PERCENT_IDENTITY};
+    delete $all_features{COMPLETE};
+    delete $all_features{ONLINE};
     delete $all_features{SHOWDESC};
     delete $all_features{QSPEEDUP};
     delete $all_features{HXDROP};
     delete $all_features{EXDROP};
-    delete $all_features{REVCOM_DEFAULT};
-    delete $all_features{DIRECT_AND_REV_COM};
-    delete $all_features{NATIVE_D_A_REV_COM};
     $self->features(%all_features);
-    $self;
+    return;
+}    
+
+sub _is_tre_agrep {
+    my ( $self ) = @_;
+    my $command =
+        $self->_cat_path_filename( $self->settings->execpath, 'agrep' ) . ' -V';
+    my $version_info = `$command`;
+
+    if ($version_info =~ m{TRE}) {
+        return 1;
+    } 
+    else {
+        return 0;
+    }    
 }
+
+sub is_tre_agrep {
+    my ( $self ) = @_;
+    return $self->{_tre_agrep};
+}    
 
 sub search {
     my ($self, $arg_ref) = @_;
@@ -57,16 +94,22 @@ sub search {
         $mm = $s->mismatches;
     }    
 
-    # make insertions and deletions to expensive
+    # make insertions and deletions too expensive
     my $fuzzy = "-$mm -D" . ( $mm + 1 ) . " -I" . ( $mm + 1 );
 
     if ( $s->editdistance_isset ) {
         $fuzzy = "-" . $s->editdistance;
     }
 
+    my $show_position = '';
+
+    if ( $self->is_tre_agrep) {
+        $show_position = ' --show-position ';
+    }    
 
     my $command =
-        $self->_cat_path_filename( $s->execpath, 'agrep' ) . ' -i ' . $fuzzy
+        $self->_cat_path_filename( $s->execpath, 'agrep' ) . $show_position 
+        . ' -i ' . $fuzzy
         . ' '
         . $query . ' '
         . $self->_cat_path_filename( $s->datapath, $s->database . '.dat' );
@@ -85,7 +128,11 @@ sub search {
         -text  => "Agrep call failed. Command was:\n\t$command"
         )
         if !$cmd_ok;
-    #$self->_output_parser($output);
+    
+    my $indexfile = $s->datapath . '/' . $s->database . '.idx';
+    $self->{'_idx'} = Bio::Index::Fasta->new($indexfile);
+
+
     $self->_load_mapping();
     $self->_prepare_results;
     return 1;
@@ -111,13 +158,12 @@ sub generate_database {
     open my $MAPFILE, '>', "$filename.map";
 
     my $in = Bio::SeqIO->new( -file => $filename, -format => $args{format} );
-    my $i = 0;
     
+    my $id = 1;
     while ( my $seq = $in->next_seq() ) {
         print $MAPFILE $seq->id . "\n";
-        print $DATFILE $i . ':' . $seq->seq
-            . "\n";
-        $i++;
+        print $DATFILE $id . ':' . $seq->seq . "\n";
+        $id++;
     }
     close $DATFILE;
     close $MAPFILE;
@@ -135,60 +181,103 @@ sub _load_mapping {
 
     open my $MAPFILE, '<', $mapfile; 
     
-    my $i = 0;
+    my $i = 1;
     while ( my $line = <$MAPFILE> ) {
         chomp $line;
         $mapping{$i++} = $line;
     }
     close $MAPFILE;
 
-    $self->_mapping( %mapping );
+    $self->{_mapping} =  \%mapping;
 }
+
 
 sub _parse_next_res {
     my $self    = shift;
     my $s       = $self->settings;
-    my $query = $self->_prepare_query();
+    my $query = $s->_real_query();
 
-    my $indexfile = $s->datapath . '/' . $s->database . '.idx';
-    my $idx = Bio::Index::Fasta->new($indexfile);
-    
-    my %mapping = $self->_mapping;
 
     my $FH = $self->_output_fh;
+    LINE:
     while (my $line = <$FH>) {
         chomp $line;
-        my ( $pos, $sequence ) = split ":", $line;
-        my $id = $mapping{$pos};
+        #warn $line;
+        my ( $sequence_id, $sequence, $subject_begin, $subject_end,
+            $subject_seq, $upstream_seq, $downstream_seq ); 
+        my ( @ret ) = $line =~ $self->{_line_regex};
 
-        my $seq_subject = $idx->fetch($id);
+        if ($self->is_tre_agrep) {
+            ( $subject_begin, $subject_end, $sequence_id, $sequence ) = @ret;
+            my $pl = 1 + length $sequence_id;
+            $subject_begin -= $pl;
+            $subject_end   -= $pl;
+        }   
+        else {
+            ( $sequence_id, $sequence ) = @ret;
+            $subject_begin = 0;
+            if (!defined $sequence) {
+                $self->warn("Truncated record. Record is:\n" .
+                    $line ."\n\nSkipping hit.");
+                next LINE;
+            }    
+            $subject_end   = length $sequence;
+            $subject_seq   = $sequence;
+        }    
+        my $id = $self->{_mapping}->{$sequence_id};
 
-        my $seq_query = Bio::Seq->new(
-            -display_id => "Query",
-            -seq        => $query
+        my $seq_hit = $self->{_idx}->fetch($id);
+        
+        assert(defined $seq_hit, "Found $sequence_id:$id in Bio::Index") if DEBUG;
+
+        # take complete sequence as subject sequence for standard agrep
+        $subject_seq = $seq_hit->seq;
+        
+        my $seq_query = Bio::LocatableSeq->new(
+            -id   =>  1,
+            -desc => "Query",
+            -seq  => $query,
+            -start => 1,
+            -end   => length $query,
         );
+        
+        my %begin_end;
 
-        # my $seq_subject = Bio::Seq->new(
-        #    -display_id => "Subject",
-        #    -seq        => $query
-        # );
+        if ($self->is_tre_agrep) {
+            # for TRE agrep, get regions
+            ( $upstream_seq, $subject_seq, $downstream_seq ) =
+                $self->_parse_regions({ complete_seq => $subject_seq,
+                                        subject_begin=> $subject_begin, 
+                                        subject_end  => $subject_end, 
+                                      }); 
+            $seq_hit->seq($upstream_seq . $subject_seq . $downstream_seq);
+            %begin_end = (
+                begin       => length($upstream_seq),
+                end         => length($upstream_seq . $subject_seq),
+            );    
+        }
 
-        my $alignment = undef;
-        $alignment = $self->_get_alignment( $seq_query, $seq_subject )
+        my $seq_a =  Bio::LocatableSeq->new(
+                    -id    => 'Subject',
+                    -seq   => $subject_seq,
+                    -start => $subject_begin + 1, # starts at 1, not 0
+                    -end   => $subject_end,
+                );
+
+        my $alignment;
+
+        $alignment = $self->_get_alignment( $seq_a, $seq_query, )
             unless $s->no_alignments;
-
+        
         my $res = Bio::Grep::SearchResult->new({
-                sequence    => $seq_subject,
-                begin       => $s->upstream, 
-                end         => $s->upstream + length($query),
+                sequence    => $seq_hit,
                 alignment   => $alignment, 
-                sequence_id => $seq_subject->id, 
+                sequence_id => $seq_hit->id, 
                 remark      => '',
-                query       => Bio::Seq->new( -display_id => "Query", 
-                                              -seq => $s->query),
-                                      });
+                query       => $seq_query, 
+                %begin_end,
+         });
         # agrep does not support multiple queries yet    
-        $res->query();
         return $res;
     }
     $self->_delete_output();
@@ -240,7 +329,6 @@ Bio::Grep::Backend::Agrep - Agrep back-end
   # output the searchresults with nice alignments
   while ( my $res = $sbe->next_res) {
      print $res->sequence->id . "\n";
-     print $res->mark_subject_uppercase() . "\n";
      # print $res->alignment_string() . "\n\n";
      push @internal_ids, $res->sequence_id;
   }
@@ -281,6 +369,10 @@ Available sortmodes in Agrep:
    
 =back
 
+=item C<$sbe-E<gt>is_tre_agrep()>
+
+Returns 1 if C<agrep> binary is the one from the C<TRE> library, 0 otherwise.
+
 =back
 
 
@@ -293,10 +385,16 @@ See L<Bio::Grep::Backend::BackendI> for other diagnostics.
 =item C<Agrep call failed. Command was: ...> 
 
 It was not possible to run agrep in function search(). Check the search
-settings. Agrep returns also exit(1) whenever no hit is found! If you want to
+settings. C<Agrep> returns also exit(1) whenever no hit is found! If you want to
 reproduce the system() call, you can set the environment variable
 C<BIOGREPDEBUG>. If this variable is set, then the temporary files won't get
 deleted.  C<Bio::Root::SystemException>.
+
+=item C<Warning: Truncated record. Record is: ...>
+
+Can occur with long sequences and the C<WuManber> or C<Glimpse> C<Agrep>
+implementation. The limit of record length can be changed by modifying the parameter
+Max_record in agrep.h.
 
 =back
 
