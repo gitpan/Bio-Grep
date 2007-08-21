@@ -4,11 +4,11 @@ use Test::More tests => 1;
 use lib 't';
 
 BEGIN {
-use_ok( 'BioGrepTest' );
+use_ok( 'BioGrepSkip' );
 }
-use BioGrepTest;
+use BioGrepSkip;
 
-my %prereq = BioGrepTest::check_prereq();
+my %prereq = BioGrepSkip::check_prereq();
 my $bp =<<EOT
 * Bioperl    : NOT FOUND                                                    *
 EOT

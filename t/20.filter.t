@@ -5,67 +5,37 @@
 # Test fasta are sequences from ATH1.cdna, with MODIFIED sequences
 ################################################################################
 
-use strict;
-use warnings;
-
 BEGIN{
     use lib 't';
-    use BioGrepTest;
     use Test::More; 
-
-    my %prereq = BioGrepTest::check_prereq();
-    if (!$prereq{bioperl}) {
-        plan skip_all => 'Bioperl not found';
-    }
-    elsif (!$prereq{bioperl_run}) {
-        plan skip_all => 'Bioperl-run not found';
-    }
+    use BioGrepSkip;
+    my ($skip,$msg) = BioGrepSkip::skip_all();
+    plan skip_all => $msg if $skip;
 }
-
+use BioGrepTest;
 use TestFilter;
 
-my %tests = ( Agrep => 2, Vmatch => 14, GUUGle => 14, RE => 14 );
-my $number_tests = 1;
-
-foreach (keys %tests) {
-    $number_tests += $tests{$_};
-}
-plan tests => $number_tests;
+register_backend_tests({ Agrep => 2, Vmatch => 14, GUUGle => 14, RE => 14 });
+plan tests => ( 1 + number_backend_tests );
 
 ################################################################################
 
 use Bio::Grep::Filter::FilterRemoveDuplicates;
 
-use Bio::Grep;
-use Bio::Perl;
-
 # the number of files we assume in the data directory after
 # database generation. NOT TESTED HERE
 my %backend_filecnt = ( Agrep => 4, Vmatch => 15, GUUGle => 2  );
 
-my $tests = 0;
-mkdir("t/tmp");
-mkdir("t/data");
-
-foreach my $backendname ( sort keys %tests ) {
+while ( my $sbe = next_be() ) {
 SKIP: {
-        if ( $backendname ne 'RE' && BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
-            skip "$backendname not found in path", $tests{$backendname};
-        }
-        else {
-            $tests++;
-        }
+        my ($skip, $msg) =  skip_backend_test();
+        skip $msg, $skip if $skip;
         # diag("\n*** Testing $backendname ***");
-        BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
-            'RNAcofold' );
+        my $backendname = current_backend_name;
         my $gum = 1;
         $gum = 0 if $backendname eq 'GUUGle';
-        my $sbe = Bio::Grep->new($backendname);
 
- # define own tmppath, so that we can check if all temporary files are deleted
-        $sbe->settings->tmppath('t/tmp');
-        $sbe->settings->datapath('t/data');
-        BioGrepTest::delete_files;
+        delete_files;
         $sbe->generate_database( { file => 't/Test2.fasta',
             description => 'Description for Test2.fasta' });
         $sbe->settings->database('Test2.fasta');
@@ -90,6 +60,7 @@ SKIP: {
             is_deeply(\@ids, [ 'At2g42200' ], 'ids correct') || diag join(',',@ids);
         }    
         for my $j ( 0 .. 1 ) {
+            $sbe->settings->no_alignments(1);
             if ($backendname eq 'RE') {
                 $sbe->settings->query('[CG]TGC[AT]CTCTCTCTTCT[CG]TCA');
                 $sbe->settings->reverse_complement(0);

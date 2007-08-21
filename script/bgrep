@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.9.2);
+use version; our $VERSION = qv(0.10.0);
 
 use Bio::Grep ;
 use Getopt::Long qw(:config auto_version);
@@ -123,10 +123,6 @@ else {
 
 bgrep - Wrapper for several suffix array tools
 
-=head1 VERSION
-
-This document describes bgrep version 0.9.2
-
 =head1 SYNOPSIS
 
   # to create a database
@@ -202,7 +198,7 @@ Display only the n (best) hits.
 
 Generate suffix arrays in path p. Default is 'data'
 
-=item C<idsonly>
+=item C<--idsonly>
 
 Display only sequence ids.
 

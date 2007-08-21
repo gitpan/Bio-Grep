@@ -7,7 +7,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 use Class::MethodMaker
  [ new => [ qw / new2 / ],
@@ -65,6 +65,8 @@ characters (this normally represents alternative splice forms).
 
 See L<Bio::Grep::FilterI> for inherited methods.
 
+=head2 CONSTRUCTOR
+
 =over
 
 =item C<Bio::Grep::Filter::FilterRemoveDuplicates-E<gt>new()>
@@ -84,10 +86,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

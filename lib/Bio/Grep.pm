@@ -7,7 +7,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 
 sub new {
@@ -40,11 +40,11 @@ __END__
 
 =head1 NAME
 
-Bio::Grep - Perl extension for searching in Fasta files
+Bio::Grep - Perl extension for searching in DNA and protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.9.2
+This document describes Bio::Grep version 0.10.0
 
 =head1 SYNOPSIS
 
@@ -102,13 +102,15 @@ This document describes Bio::Grep version 0.9.2
 =head1 DESCRIPTION
 
 B<Bio-Grep> is a collection of Perl modules for searching in 
-Fasta files. It supports different back-ends, most importantly some (enhanced) suffix
-array implementations. Currently, there is no suffix array tool that works in
-all scenarios (for example whole genome, protein and RNA data). C<Bio::Grep>
-provides a common API to the most popular tools. This way, you can easily switch or combine
-tools.
+DNA and protein sequences. It supports different back-ends, most importantly 
+some (enhanced) suffix array implementations. Currently, there is no suffix
+array tool that works in all scenarios (for example whole genome, protein and
+RNA data). C<Bio::Grep> provides a common API to the most popular tools. This
+way, you can easily switch or combine tools.
 
 =head1 METHODS
+
+=head2 CONSTRUCTOR
 
 =over 
 
@@ -176,7 +178,7 @@ As a first step, you have to generate a C<Bio::Grep> database out of your Fasta
 file in which you want to search. A C<Bio::Grep> database consists of a couple of
 files and allows you to retrieve informations about the database as well
 as to perform queries as fast and memory efficient as possible. You have to do
-this only once for every Fasta file.
+this only once for every file.
 
 For example:
 
@@ -265,7 +267,11 @@ L<http://vmatch.de/>
 	
 =item C<Agrep> 
 
-L<http://www.tgries.de/agrep/>
+L<ftp://ftp.cs.arizona.edu/agrep/> (original Wu-Manber 1992 implementation for
+UNIX),
+L<http://www.tgries.de/agrep/> (DOS, Windows, OS/2),
+L<http://webglimpse.net/download.php> (Agrep binary of C<Glimpse>) and
+L<http://laurikari.net/tre/download.html> (TRE implementation).
 
 =item C<GUUGle> 
 
@@ -583,10 +589,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

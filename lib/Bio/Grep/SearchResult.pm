@@ -3,7 +3,7 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 use IO::String;
 
@@ -87,7 +87,7 @@ Bio::Grep::SearchResult - Data structure for a back-end search hit
      # $res->subject is a Bio::Seq object without down-/upstream regions 
      print $res->subject->seq . "\n";
 
-     # print down-/upstream regions lower case, subject sequence uppercase
+     # print down-/upstream regions lower case, subject seq. uppercase
      print $res->mark_subject_uppercase() . "\n";
      
      # output alignment
@@ -105,6 +105,8 @@ database.
 =head1 METHODS
 
 See L<Bio::Grep::Root> for inherited methods.
+
+=head2 CONSTRUCTOR
 
 =over 
 
@@ -125,6 +127,37 @@ Only called by the back-end parser.
         }
     );
 
+=back
+
+=head2 PACKAGE METHODS
+
+Some predefined methods for printing objects. 
+
+=over 
+
+=item C<mark_subject_uppercase()>
+
+This function returns the sequence in a string. the substring from
+C<$self-E<gt>begin> to C<$self-E<gt>end> will be in uppercase, the rest in 
+lowercase.
+
+=item C<alignment_string()>
+
+This function returns a string with the formated alignment. We use CLUSTALW
+Format without many blank lines and CLUSTAL header. In some back-ends like
+Agrep, this function will return an empty string if C<no_alignments> is true.
+
+=back
+
+
+=head2 ACCESSORS/MUTATORS
+
+Following the Bioperl guidelines, accessors are also mutators:
+
+  $res->sequence('CCCCC');
+  print $res->sequence; # prints CCCCC
+
+=over
 
 =item C<sequence()>
 
@@ -136,7 +169,13 @@ Get C<sequence> without upstream and downstream regions. L<Bio::Seq> object.
 
 =item C<query()>
 
-Get the query as L<Bio::Seq> object. Useful for multiple queries.
+Get the query as L<Bio::Seq> object. Useful for multiple queries. If
+<direct_and_rev_com> is set, then a reverse complement hit is marked with
+' (reverse complement)' in $query->desc;
+
+  if ($query->desc =~ m{ \(reverse\scomplement\)\z}xms) {
+     ...
+  }
 
 =item C<alignment()>
 
@@ -171,7 +210,7 @@ retrieving downstream regions from the back-end. See C<begin()>.
 
 =item C<dG()>
 
-Get/set dG . See L<Bio::Grep::RNA::HybridizationI> for details.
+Get/set C<dG> . See L<Bio::Grep::RNA::HybridizationI> for details.
 
 =item C<remark()>
 
@@ -184,26 +223,6 @@ Get/set the evalue of this hit.
 =item C<percent_identity()>
 
 Get/set the identity in percent of this hit. 
-
-=back
-
-=head1 OBJECT FORMATTER
-
-Some predefined methods for printing objects. 
-
-=over 
-
-=item C<mark_subject_uppercase()>
-
-This function returns the sequence in a string. the substring from
-C<$self-E<gt>begin> to C<$self-E<gt>end> will be in uppercase, the rest in 
-lowercase.
-
-=item C<alignment_string()>
-
-This function returns a string with the formated alignment. We use CLUSTALW
-Format without many blank lines and CLUSTAL header. In some back-ends like
-Agrep, this function will return an empty string if C<no_alignments> is true.
 
 =back
 
@@ -222,10 +241,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

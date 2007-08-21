@@ -3,7 +3,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 use base 'Bio::Root::Root';
 
@@ -79,6 +79,15 @@ be in the search results of the back-end.
 
 See L<Bio::Grep::Root> for inherited methods.
 
+=head2 ACCESSORS/MUTATORS
+
+Following the Bioperl guidelines, accessors are also mutators:
+
+  $filter->delete(1);
+  if ($filter->delete) {
+    ...
+  }
+
 =over
 
 =item C<$filter-E<gt>delete()>
@@ -90,7 +99,7 @@ Default ist 1.
 
 =back
 
-=head1 ABSTRACT METHODS
+=head2 ABSTRACT METHODS
 
 Every filter must implement these methods:
 
@@ -108,7 +117,7 @@ Get supported alphabets. Returns a hash. Keys are the supported alphabets.
 
 =back
 
-=head1 INTERNAL METHODS
+=head2 INTERNAL METHODS
 
 Only L<Bio::Grep::Backend::BackendI> should call them directly.
 
@@ -170,10 +179,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

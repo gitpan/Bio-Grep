@@ -3,7 +3,7 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 use Carp::Assert;
 
 use Fatal qw(open close seek);
@@ -48,13 +48,13 @@ sub search {
     my ( $self, $arg_ref ) = @_;
     my $s = $self->settings;
     $self->_check_search_settings($arg_ref);
-    my $regex = $s->query;
-    if ( !defined $regex ) {
-        $self->throw(
-            -class => 'Bio::Root::BadParameter',
-            -text  => 'Query not defined.',
-        );
+    my ($query, $query_obj, $db_alphabet) = $self->_bioseq_query();
+    my $regex = $query;
+    # regular expressions can't be Bio::Seq objects
+    if (defined $query_obj->seq) {
+        $self->{_qmapping} = {lc($query_obj->seq) => $query_obj};     
     }
+    $self->{_qmapping} = { default => $query_obj};     
 
     if ( $s->direct_and_rev_com || $s->reverse_complement ) {
         $self->throw(
@@ -64,12 +64,16 @@ sub search {
                 . 'sequence.',
             -value => $regex,
         ) if $regex !~ m{\A [gactu]+ \z}xmsi;
-        my $tmp = Bio::Seq->new( -seq => $regex );
+        my $query_revcom_obj = Bio::Seq->new(-id => $query_obj->id,
+                                             -desc => $query_obj->desc . 
+                                             ' (reverse complement)',
+                                             -seq => $query_obj->revcom->seq);
+        $self->{_qmapping}->{lc($query_revcom_obj->seq)} = $query_revcom_obj;                                 
         if ( $s->direct_and_rev_com ) {
-            $regex = $regex . '|' . $tmp->revcom->seq;
+            $regex = $regex . '|' . $query_revcom_obj->seq;
         }
         else {
-            $regex = $tmp->revcom->seq;
+            $regex = $query_revcom_obj->seq;
         }
     }
 
@@ -136,7 +140,7 @@ sub _parse_next_res {
                 -desc => $seq_obj->desc,
                 -seq => $upstream_seq . $subject_seq . $downstream_seq,
             );
-
+            
             my $tmp_aln = new Bio::SimpleAlign( -source => "Bio::Grep" );
             $tmp_aln->add_seq(
                 Bio::LocatableSeq->new(
@@ -144,6 +148,20 @@ sub _parse_next_res {
                     -seq   => $subject_seq,
                     -start => $subject_begin + 1, # starts at 1, not 0
                     -end   => $subject_end,
+                )
+            );
+            #warn Data::Dumper->Dump([$self]);
+            my $query_obj = $self->{_qmapping}->{lc($subject_seq)};
+            if (!defined $query_obj) {
+                $query_obj = $self->{_qmapping}->{default};
+                $query_obj->seq($subject_seq);
+            }    
+            $tmp_aln->add_seq(
+                Bio::LocatableSeq->new(
+                    -id    => $query_obj->id,
+                    -seq   => $subject_seq,
+                    -start => 1,
+                    -end   => length($subject_seq),
                 )
             );
 
@@ -155,10 +173,7 @@ sub _parse_next_res {
                         alignment   => $tmp_aln,
                         sequence_id => $sequence->id,
                         remark      => '',
-                        query       => Bio::Seq->new( 
-                                           -id  => 'Query', 
-                                           -seq => $subject_seq 
-                                       ),  
+                        query       => $query_obj,
                     }
                 )
             );
@@ -242,26 +257,13 @@ Bio::Grep::Backend::RE - Perl Regular Expression back-end
 B<Bio::Grep::Backend::RE> searches for a query with a
 Perl Regular Expression. 
 
-Note 1: B<BETA RELEASE!> 
-
-Note 2: C<reverse_complement> (and C<direct_and_rev_com> ) are supported, but are
-only available for DNA/RNA queries, not for regular expressions.
-
-Note 3: The i,m,s and x modifiers are added to the regex. 
-
-Note 4: Be careful with RNA sequences: U is not the same as T in this back-end!
-
-Note 5: L<Bio::Grep::Backend::RE> databases are compatible with
-L<Bio::Grep::Backend::Agrep> databases.
-
-Note 6: When C<maxhits> is defined, the sliding window stops when I<maxhits>
-hits were found. 
-
 =head1 METHODS
 
 See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
-=over 2
+=head2 CONSTRUCTOR
+
+=over 
 
 =item C<Bio::Grep::Backend::RE-E<gt>new()>
 
@@ -269,6 +271,12 @@ This method constructs a C<RE> back-end object and should not used directly.
 Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('RE');
+
+=back
+
+head2 PACKAGE METHODS
+
+=over 
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -289,6 +297,39 @@ Available sortmodes in C<RE>:
 Note that 'ga' and 'gd' require that search results have dG set. 
 L<Bio::Grep::RNA> ships with filters for free energy calculation. Also note that
 these two sort options require that we load all results in memory.
+
+=back
+
+=head1 IMPORTANT NOTES
+
+=over
+
+=item Code Quality
+
+B<BETA RELEASE!> 
+
+=item C<reverse_complement> 
+
+C<reverse_complement> (and C<direct_and_rev_com> ) are supported, but are
+only available for DNA/RNA queries, not for regular expressions.
+
+=item Regular Expression modifiers
+
+The i,m,s and x modifiers are added to the regex. 
+
+=item RNA
+
+Be careful with RNA sequences: U is not the same as T in this back-end!
+
+=item C<maxhits>
+
+When C<maxhits> is defined, the sliding window stops when I<maxhits>
+hits were found.
+
+=item Database
+
+L<Bio::Grep::Backend::RE> databases are compatible with
+L<Bio::Grep::Backend::Agrep> databases.
 
 =back
 

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 use Fatal qw(open close);
 
@@ -232,11 +232,11 @@ sub _parse_next_res {
 
         # take complete sequence as subject sequence for standard agrep
         $subject_seq = $seq_hit->seq;
-        
+        # warn Data::Dumper->Dump([$self->{_query_obj}]); 
         my $seq_query = Bio::LocatableSeq->new(
-            -id   =>  1,
-            -desc => "Query",
-            -seq  => $query,
+            -id   =>  $self->{_query_obj}->id,
+            -desc =>  $self->{_query_obj}->desc,
+            -seq  =>  $self->{_query_obj}->seq,
             -start => 1,
             -end   => length $query,
         );
@@ -274,7 +274,7 @@ sub _parse_next_res {
                 alignment   => $alignment, 
                 sequence_id => $seq_hit->id, 
                 remark      => '',
-                query       => $seq_query, 
+                query       => $self->{_query_obj}, 
                 %begin_end,
          });
         # agrep does not support multiple queries yet    
@@ -340,14 +340,13 @@ Bio::Grep::Backend::Agrep - Agrep back-end
 
 B<Bio::Grep::Backend::Agrep> searches for a query with agrep. 
 
-Note: L<Bio::Grep::Backend::Agrep> databases are compatible with
-L<Bio::Grep::Backend::RE> databases.
-
 =head1 METHODS
 
 See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
-=over 2
+=head2 CONSTRUCTOR
+
+=over 
 
 =item C<Bio::Grep::Backend::Agrep-E<gt>new()>
 
@@ -355,6 +354,12 @@ This method constructs an Agrep back-end object and should not used directly.
 Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('Agrep');
+
+=back
+
+=head2 PACKAGE METHODS
+
+=over
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -375,6 +380,16 @@ Returns 1 if C<agrep> binary is the one from the C<TRE> library, 0 otherwise.
 
 =back
 
+=head1 IMPORTANT NOTES
+
+=over
+
+=item Database
+
+L<Bio::Grep::Backend::RE> databases are compatible with
+L<Bio::Grep::Backend::Agrep> databases.
+
+=back
 
 =head1 DIAGNOSTICS
 
@@ -410,17 +425,15 @@ L<Bio::Index::Fasta>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
-
 
 =head1 DISCLAIMER OF WARRANTY
 

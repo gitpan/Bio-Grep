@@ -13,6 +13,8 @@ WriteMakefile(
                             'Pod::Usage'         => 0,   
                             'UNIVERSAL::require' => 0.11,   
                             'Carp::Assert'       => 0,
+                            'ToolSet'            => 0.13,
+                            'Bio::Root::Version' => 0,
                           }, 
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Bio/Grep.pm', # retrieve abstract from module

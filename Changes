@@ -1,5 +1,22 @@
 Revision history for Perl extension Bio::Grep.
 
+0.10.0  Tue Aug  21 17:00:00 2007
+    - POD improvements:
+        * methods now grouped in CONSTRUCTOR, ACCESSORS/MUTATORS, PACKAGE
+          METHODS, INTERNAL METHODS, ABSTRACT METHODS
+        * notes now under IMPORTANT NOTES, not DESCRIPTION  
+    - code cleanup:
+        * standard testfile "header" now in BioGrepTest, requires ToolSet
+    - more tests:
+        * features.alignments
+    - New Features:
+        * Bio::Seq objects as query 
+    - Bugfixes:
+        - bgrep not installed witch Build.PL
+        - Added Bioperl dependency (ticket #28881, thanks siddhartha)
+        - $res->query, $res->alignments not equal in back-ends
+          now, '(reverse complement)' is added to $query->desc  
+
 0.9.2  Fri Aug  17 12:33:00 2007
     - POD improvements
     - huge performance improvements (RE, Agrep)

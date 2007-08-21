@@ -1,40 +1,28 @@
-#!perl -T 
-use strict;
-use warnings;
-use lib 't';
+#!perl #-T 
+
+BEGIN{
+    use lib 't';
+    use BioGrepSkip;
+    use Test::More; 
+    my ($skip,$msg) = BioGrepSkip::skip_all();
+    plan skip_all => $msg if $skip;
+}
+
 use BioGrepTest;
-
-use Test::More; 
-
-my %prereq = BioGrepTest::check_prereq();
-if (!$prereq{bioperl}) {
-    plan skip_all => 'Bioperl not found';
-}
-elsif (!$prereq{bioperl_run}) {
-    plan skip_all => 'Bioperl-run not found';
-}
-
 plan tests => 8;
 
-#$code =<<'EOT'
-#
-#EOT
-#;
-#    eval $code;
-#    ok(!$@,"Cookbook recipe motifs solution a compiles") || diag $@;
-# VMATCH 
 
 my $backendname  = 'Vmatch';
 # make taint happy    
-BioGrepTest::set_path( qw(vmatch guugle agrep) );
-BioGrepTest::delete_files;
+BioGrepSkip::set_path( qw(vmatch guugle agrep) );
+delete_files;
 
 SKIP:{
 
     skip 'Vmatch binary not in path', 3 if
-        BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
+        BioGrepSkip::find_binary_in_path( lc($backendname) ) eq '';
 
-    BioGrepTest::delete_files;
+    delete_files;
 
 my $code =<<'EOT'
   use Bio::Grep;
@@ -93,7 +81,7 @@ EOT
 
     ok(!code_eval($code),"SYNOPSIS compiles") || diag $@;
 
-    BioGrepTest::delete_files;
+    delete_files;
 $code =<<'EOT'
   use Bio::Grep;
   
@@ -203,9 +191,9 @@ $backendname  = 'Agrep';
 SKIP:{
 
     skip 'Agrep binary not in path', 1 if
-        BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
+        BioGrepSkip::find_binary_in_path( lc($backendname) ) eq '';
 
-    BioGrepTest::delete_files;
+    delete_files;
     mkdir 't/data';
 
 my $code =<<'EOT'
@@ -255,9 +243,9 @@ $backendname  = 'GUUGle';
 SKIP:{
 
     skip 'GUUGle binary not in path', 1 if
-        BioGrepTest::find_binary_in_path( lc($backendname) ) eq '';
+        BioGrepSkip::find_binary_in_path( lc($backendname) ) eq '';
     
-     BioGrepTest::delete_files;
+     delete_files;
     mkdir 't/data';
 
 my $code =<<'EOT'
@@ -279,7 +267,7 @@ my $code =<<'EOT'
   # search on both strands (GU allowed) 
   # retrieve up- and downstream regions of size 30
   $sbe->search({
-    query   => 'AGAGCCCT',
+    query   => 'GAGCCCTT',
     direct_and_rev_com => 1, 
     upstream           => 30,
     downstream         => 30,
@@ -313,7 +301,7 @@ EOT
 }
     
 # RE
-BioGrepTest::delete_files;
+delete_files;
 mkdir 't/data';
 
 my $code =<<'EOT'
@@ -386,7 +374,7 @@ $code = 'bllll';
 eval $code;
 ok(code_eval($code),"bllll not compiles");
 
-BioGrepTest::delete_files;
+delete_files;
 rmdir('t/tmp');
 rmdir('t/data');
 rmdir('t/data2');

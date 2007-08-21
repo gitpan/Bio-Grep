@@ -6,31 +6,19 @@
 
 ################################################################################
 
-use strict;
-use warnings;
 BEGIN{
     use Test::More;
     use lib 't';
-    use BioGrepTest;
-    my %prereq = BioGrepTest::check_prereq();
-    if (!$prereq{bioperl}) {
-        plan skip_all => 'Bioperl not found';
-    }
-    elsif (!$prereq{bioperl_run}) {
-        plan skip_all => 'Bioperl-run not found';
-    }
+    use BioGrepSkip;
+    my ($skip,$msg) = BioGrepSkip::skip_all( );
+    plan skip_all => $msg if $skip;
 }
-
 plan tests => 28;
 
-use English qw( -no_match_vars );
-use Cwd;
-use Data::Dumper;
+use BioGrepTest;
+
 use Scalar::Util qw/tainted/;
-
-use Bio::Grep;
-use Bio::Perl;
-
+use Cwd;
 
 my @paths = ( '', '/', '/usr/local/bin' );
 

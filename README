@@ -1,12 +1,12 @@
-Bio-Grep version 0.9.2
-======================
+Bio-Grep version 0.10.0
+=======================
 
-Bio-Grep is a collection of Perl modules for searching in Fasta files. It 
-supports different back-ends, most importantly some (enhanced) suffix
-array implementations. Currently, there is no suffix array tool that works in
-all scenarios (for example whole genome, protein and RNA data). Bio::Grep
-provides a common API to the most popular tools. This way, you can easily 
-switch or combine tools.
+Bio-Grep is a collection of Perl modules for searching in DNA and protein
+sequences. It supports different back-ends, most importantly some (enhanced) 
+suffix array implementations. Currently, there is no suffix array tool that
+works in all scenarios (for example whole genome, protein and RNA data). 
+Bio::Grep provides a common API to the most popular tools. This way, you 
+can easily switch or combine tools.
 
 
 DEPENDENCIES
@@ -130,6 +130,7 @@ Please contribute recipes if you can!
 
   see perldoc Bio::SimpleAlign
 
+
 BUGS
 
 Please report any bugs, recipes for the cookbook or feature requests to
@@ -139,10 +140,10 @@ L<http://rt.cpan.org>.
 
 COPYRIGHT AND LICENCE
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.4 or,

@@ -6,7 +6,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 use Class::MethodMaker [
     new    => 'new2',
@@ -61,6 +61,9 @@ sub set {
             if ( $rt eq 'ARRAY' ) {
                 $self->$key( @{ $arg_ref->{$key} } );
             }
+            else {
+                $self->$key( $arg_ref->{$key} );
+            }    
         }
         else {
             $self->$key( $arg_ref->{$key} );
@@ -115,12 +118,22 @@ Bio::Grep::SearchSettings - Data structure for all search settings
     reverse_complement => 1,
  });
 
+ # Bio::Seq objects are also allowed
+ $sbe->search({
+    query => Bio::Seq->new( -id   => 1,
+                            -desc => 'My Query',
+                            -seq  => $query,
+                            ),
+ });
+
 =head1 DESCRIPTION
 
 B<Bio::Grep::SearchSettings> is the data structure for all search settings.
 Not all back-ends will support every option.
 
 =head1 METHODS
+
+=head2 CONSTRUCTOR
 
 =over 
 
@@ -135,6 +148,12 @@ settings to their default values, call
 
 See set().
 
+=back
+
+=head2 PACKAGE METHODS
+
+=over
+
 =item C<set($hash_ref)>
 
 Sets all settings in the hash reference:
@@ -144,18 +163,44 @@ Sets all settings in the hash reference:
 This function resets everything except the paths and the database to default
 values.
 
+=item C<to_string()> 
+
+This function returns a string representation of this object
+
+=back
+
+=head2 ACCESSORS/MUTATORS
+
+Following the Bioperl guidelines, accessors are also mutators:
+
+  $sbe->settings->query('CCCCC');
+  print $sbe->settings->query; # prints CCCCC
+
+=over
+
 =item C<query()>
 
-Get/Set the query, a simple string. Queries are DNA, RNA, Protein or regular
+Get/Set the query, a string or a L<Bio::Seq> object. Queries are DNA, RNA, Protein or regular
 expressions but not all back-ends support all three query types.
 
 Maybe this will change in future versions to allow multiple queries.
 
+   # a string ...
    $sbe->settings->query('tgacagaagagagtgagcac');
+
+
+   # ... or a Bio::Seq object
+   my $seq = Bio::Seq->new(-id   => 1,
+                           -desc => 'Query',
+                           -sec  => 'tgacagaagagagtgagcac'
+                          );
+
+   $sbe->settings->query($seq);
+                          
 
 =item C<query_file()>
 
-Get/set query_file. The back-ends can create a query file based on the search
+Get/set C<query_file>. The back-ends can create a query file based on the search
 settings ($sbe->query()) or you can define one with $sbe->query_file.
 
     $sbe->settings->query_file('oligos.fasta');
@@ -167,7 +212,7 @@ Currently only available in the Vmatch and GUUGle back-end.
 
 =item C<reverse_complement()>
 
-Get/set reverse_complement.
+Get/set C<reverse_complement>.
 
    #  search for the reverse complement
    $sbe->settings->reverse_complement(1)
@@ -177,7 +222,7 @@ Get/set reverse_complement.
 
 =item C<direct_and_rev_com()>
 
-Get/set direct_and_rev_com. Searches for direct matches and the reverse
+Get/set C<direct_and_rev_com>. Searches for direct matches and the reverse
 complement. 
 
 Currently only available in Vmatch (-d AND -p flag), GUUGle (query file with two queries), and RE (regex
@@ -207,7 +252,7 @@ Get/Set allowed number of insertions. Not supported by any back-end.
 
 =item C<upstream()>
 
-Get/set upstream. This is the number of bases upstream the match.
+Get/set C<upstream>. This is the number of bases upstream the match.
  
    $sbe->settings->upstream( 10 );
 
@@ -215,7 +260,7 @@ Not available in the Agrep backend.
 
 =item C<downstream()>
 
-Get/set downstream. This is the number of bases downstream the match.
+Get/set C<downstream>. This is the number of bases downstream the match.
    
    $sbe->settings->downstream( 10 );
 
@@ -267,7 +312,7 @@ Not available (meaning not necessary) in the Vmatch and GUUGle back-end.
 
 =item C<online()>
 
-Get/set online. Vmatch back-end allows searching without using the index. When
+Get/set C<online>. Vmatch back-end allows searching without using the index. When
 you allow many mismatches, this could be faster. 
 
 Only available in the Vmatch back-end.
@@ -281,14 +326,14 @@ a description from the back-end:
 
 =item C<maxhits()>
 
-Get/set maxhits. Tells the back-end that it should output only the best or
+Get/set C<maxhits>. Tells the back-end that it should output only the best or
 first (see back-end documentation) I<n> hits.
 
 Not available in the C<Agrep> back-end.
 
 =item C<gumismatches()>
 
-Get/set gumismatches. Tells the back-end how it should count GU mismatches.
+Get/set C<gumismatches>. Tells the back-end how it should count GU mismatches.
 Valid values in C<GUUGle> are 0, in all other back-ends 1 (default).
 
 Only available in the C<GUUGle> back-end.
@@ -301,14 +346,9 @@ search for all substrings of that size.
 
 Only available in the C<Vmatch> and C<GUUGle> back-end.
 
-=item C<to_string()> 
-
-This function returns a string representation of this object
-
-
 =back
 
-=head2 Vmatch only
+=head3 Vmatch only
 
 =over
 
@@ -362,10 +402,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

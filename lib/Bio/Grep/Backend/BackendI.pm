@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 use Fatal qw (open close opendir closedir);
 
@@ -25,6 +25,8 @@ use Bio::SeqIO;
 
 use Bio::Grep::SearchSettings;
 use Bio::Grep::Root;
+
+use UNIVERSAL qw(isa);
 
 use base 'Bio::Grep::Root';
 
@@ -51,6 +53,7 @@ sub new {
     $self->settings->execpath('');
 
     $self->features( %{ $self->_get_all_possible_features() } );
+    $self->import;
     $self;
 }
 
@@ -465,29 +468,45 @@ sub _guess_alphabet_of_file {
     return $in->next_seq->alphabet;
 }
 
-# prepares the query, for example calculating the reverse complement
-# if necessary
-# returns the prepared query. settings->query is unchanged!
-sub _prepare_query {
-    my $self  = shift;
-    my $query = $self->settings->query;
-    if ( !defined $query ) {
+sub _bioseq_query {
+    my ( $self ) = @_;
+    my $query_obj = $self->settings->query;
+    my $query;
+
+    if ( !defined $query_obj ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
             -text  => 'Query not defined.',
         );
     }
-
-    #if (!$self->settings->reverse_complement_isset) {
-    #    $self->settings->reverse_complement(0)
-    #}
     my $db_alphabet
         = $self->get_alphabet_of_database( $self->settings->database );
 
-    if ( $db_alphabet eq 'dna' ) {
-        $query =~ tr/uU/tT/;
+    if (isa $query_obj, 'Bio::Seq') { 
+        $query = $query_obj->seq;
+    }   
+    else {
+        $query = $query_obj;
+        if ($query =~ m{\A \w+ \z}xms) {
+            if ( $db_alphabet eq 'dna' ) {
+                $query =~ tr/uU/tT/;
+            }
+            $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query', -seq => $query );
+        }
+        else {
+            $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query' );
+        }    
     }
-    my $seq = Bio::Seq->new( -seq => $query );
+    return ($query, $query_obj, $db_alphabet);
+}   
+
+# prepares the query, for example calculating the reverse complement
+# if necessary
+# returns the prepared query. settings->query is unchanged!
+sub _prepare_query {
+    my $self  = shift;
+    my ($query, $seq, $db_alphabet) = $self->_bioseq_query();
+    
     if ( $seq->alphabet ne $db_alphabet ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
@@ -495,13 +514,22 @@ sub _prepare_query {
             -value => 'Seq: ' . $seq->alphabet . ", DB: $db_alphabet"
         );
     }
-    if (   $self->settings->reverse_complement
-        || $self->settings->direct_and_rev_com )
+    if (    $self->settings->reverse_complement
+        ||  $self->settings->direct_and_rev_com )
     {
         if ( $db_alphabet eq 'dna' ) {
-            $query = $seq->revcom->seq
-                if ( !defined $self->features->{REVCOM_DEFAULT}
-                || $self->settings->direct_and_rev_com );
+            if (defined $self->features->{REVCOM_DEFAULT}) {
+                $seq->desc($seq->desc . ' (reverse complement)');
+            }
+            elsif (defined $self->features->{NATIVE_D_A_REV_COM} &&
+                $self->settings->direct_and_rev_com) {
+                # nothing
+            }    
+            else {
+                $query = $seq->revcom->seq;
+                $seq->desc($seq->desc . ' (reverse complement)');
+                $seq->seq($query);
+            }
         }
         else {
             $self->throw(
@@ -515,8 +543,10 @@ sub _prepare_query {
         && $db_alphabet eq 'dna' )
     {
         $query = $seq->revcom->seq;
+        $seq->seq($query);
     }
     $self->settings->_real_query( uc($query) );
+    $self->{_query_obj} = $seq;
     return $self->settings->_real_query();
 }
 
@@ -661,10 +691,7 @@ sub _create_tmp_query_file {
               # we can reproduce it.
 
         # construct a temporary fasta file with the query for vmatch
-        my $seqobj = Bio::Seq->new(
-            -id  => 'Query',
-            -seq => $query
-        );
+        my $seqobj = $self->{_query_obj};
 
         my $outseqio = Bio::SeqIO->new(
             -fh     => $tmp_fh,
@@ -677,7 +704,14 @@ sub _create_tmp_query_file {
             && !defined $self->features->{NATIVE_D_A_REV_COM} )
         {
             my $seqobj2 = $seqobj->revcom;
-            $seqobj2->display_id('QueryRC');
+            if (defined $self->features->{REVCOM_DEFAULT}) {
+                my ( $desc ) = $seqobj->desc =~ 
+                    m{\A(.*) \s\(reverse\scomplement\) \z}xms;
+                $seqobj2->desc($desc);
+            }   
+            else {
+                $seqobj2->desc($seqobj->desc . ' (reverse complement)');
+            }    
             $outseqio->write_seq($seqobj2);
             push @query_seqs, $seqobj2;
         }
@@ -803,7 +837,9 @@ directly.
 
 See L<Bio::Grep::Root> for inherited methods.
 
-=over 
+=head2 CONSTRUCTOR
+
+=over  
 
 =item C<new()>
 
@@ -811,7 +847,11 @@ This method constructs a L<Bio::Grep::Backend::BackendI> object and is never use
 directly. Rather, all other back-ends in this package inherit the methods of
 this interface and call its constructor internally.
 
-=cut
+=back
+
+=head2 PACKAGE METHODS
+
+=over  
 
 =item C<$sbe-E<gt>next_res>
 
@@ -869,7 +909,7 @@ otherwise.
 
 =back
 
-=head1 ABSTRACT METHODS
+=head2 ABSTRACT METHODS
 
 Every back-end must implement these methods.
 
@@ -991,7 +1031,7 @@ description.
 
 =back
 
-=head1 INTERNAL METHODS 
+=head2 INTERNAL METHODS 
 
 Only back-ends should call them directly. These internal methods are
 documented for authors of new back-ends.
@@ -1192,10 +1232,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

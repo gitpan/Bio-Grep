@@ -1,41 +1,28 @@
-#!perl #-T 
+#!perl -T 
 ################################################################################
 # some backend tests
 #
 # Test fasta are sequences from ATH1.cdna, with MODIFIED sequences
 ################################################################################
 
-use strict;
-use warnings;
 
 BEGIN {
     use lib 't';
-    use BioGrepTest;
+    use BioGrepSkip;
     use Test::More;
-    my ( $skip, $msg ) = BioGrepTest::skip_all();
+    my ( $skip, $msg ) = BioGrepSkip::skip_all();
     plan skip_all => $msg if $skip;
 }
 
+use BioGrepTest;
+
 use TestFilter;
 
-our %tests = ( Agrep => 74, Vmatch => 153, GUUGle => 57, RE => 55 );
-my $number_tests = 1;
-
-foreach ( keys %tests ) {
-    $number_tests += $tests{$_};
-}
-plan tests => $number_tests;
+register_backend_tests( { Agrep => 74, Vmatch => 153, GUUGle => 57, RE => 55 } );
+plan tests => (1+number_backend_tests);
 
 # backends
 ################################################################################
-
-use English qw( -no_match_vars );
-use Cwd;
-use Scalar::Util qw/tainted/;
-use Data::Dumper;
-
-use Bio::Grep;
-use Bio::Perl;
 
 # the number of files we assume in the data directory after
 # database generation.
@@ -73,7 +60,6 @@ my %hits_sequences = (
     At1g09950 =>
         'gccggggacaacGTTTTCACTTTCTTCTGCCCaccgtggttt'    # too short upstream
 );
-my $tests = 0;
 
 my %sort_modes = (
     GUUGle => [ 'ga', 'gd' ],
@@ -83,23 +69,12 @@ my %sort_modes = (
 );
 
 BACKEND:
-foreach my $backendname ( sort keys %tests ) {
+while ( my $sbe = next_be() ) {
 SKIP: {
-
-#if ( $backendname eq 'RE' || BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' ) {
-        if ( $backendname ne 'RE'
-            && BioGrepTest::find_binary_in_path( lc($backendname) ) eq '' )
-        {
-            skip "$backendname not found in path", $tests{$backendname};
-        }
-        else {
-            $tests++;
-        }
-
+        my ( $skip, $msg ) = skip_backend_test();
+        skip $msg, $skip if $skip;
         #diag("\n*** Testing $backendname ***");
-        BioGrepTest::set_path( ( map { lc($_) } keys %backend_filecnt ),
-            'RNAcofold' );
-        my $sbe = Bio::Grep->new($backendname);
+        my $backendname = current_backend_name;
         my %asm = $sbe->available_sort_modes();
         is_deeply(
             [ sort keys %asm ],
@@ -107,14 +82,8 @@ SKIP: {
             'sortmodes as expected'
         );
 
- # define own tmppath, so that we can check if all temporary files are deleted
-        $sbe->settings->tmppath('t/tmp');
-        mkdir("t/tmp");
-        mkdir("t/data");
         mkdir("t/data2");
-        BioGrepTest::delete_files;
 
-        $sbe->settings->datapath('t/data');
         eval {
             $sbe->generate_database(
                 {   file        => 't/wrong\ named.fasta',
@@ -510,7 +479,6 @@ SKIP: {
                     },
                     'At1g01030.1' => {
                         id   => 'c',
-                        desc => '',
                         seq  => 'gttttcttccgattctagggttttcatatttc'
                     },
                     'At1g01010.1' => {
@@ -1106,7 +1074,6 @@ SKIP: {
 eval { Bio::Grep->new('UnknownBackend'); };
 ok( $EVAL_ERROR, 'Exception occured with unknown backend' );
 
-#ok( $tests > 0, " at least one backend found in path" );
 
 # some helper functions
 ################################################################################

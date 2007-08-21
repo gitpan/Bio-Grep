@@ -3,15 +3,16 @@ package Bio::Grep::Root;
 use strict;
 use warnings;
 
+use version; our $VERSION = qv('0.10.0');
+
 use Bio::Root::Root;
 
 use base 'Bio::Root::Root';
 
+
 use File::Spec;
 use File::Copy;
 use Scalar::Util qw(reftype);
-
-use version; our $VERSION = qv('0.9.2');
 
 sub is_integer {
     my ( $self, $variable, $desc ) = @_;
@@ -132,7 +133,6 @@ __END__
 
 Bio::Grep::Root - Superclass for all Bio::Grep* packages
 
-
 =head1 DESCRIPTION
 
 This superclass adds some useful methods to all Bio::Grep packages.
@@ -140,6 +140,8 @@ This superclass adds some useful methods to all Bio::Grep packages.
 =head1 METHODS
 
 See L<Bio::Root::Root> for inherited methods.
+
+=head2 PACKAGE METHODS
 
 =over
 
@@ -212,13 +214,12 @@ use this method. C<Bio::Root::BadParameter>.
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

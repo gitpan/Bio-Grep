@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.9.2');
+use version; our $VERSION = qv('0.10.0');
 
 sub new {
     my $self = shift;
@@ -70,8 +70,8 @@ sub search {
     #set query_length automatically
     my $auto_query_length = 0;
     if (!defined $s->query_length) {
-        if ($s->query) {
-            $s->query_length( length($s->query) );
+        if ($query) {
+            $s->query_length( length($query) );
             $auto_query_length = 1;
         }
         else {
@@ -184,9 +184,6 @@ sub _parse_next_res {
     my $s       = $self->settings;
     my @query_seqs = $self->_query_seqs;
 
-    for my $i ( 0 .. $#query_seqs ) {
-
-    }    
     # temp variables. for parsing only
     my ($subject_id,$subject_desc, $subject_pos, $subject_seq, 
         $query_desc, $query_pos, $query_seq, $matchlength, $upstream) =
@@ -243,7 +240,7 @@ sub _parse_next_res {
         my $query = $self->{_mapping}->{$query_desc};
         #use Data::Dumper; 
         #warn "BLA $query_desc "; 
-        #warn Data::Dumper->Dump( [$self->_mapping ]); 
+        #warn Data::Dumper->Dump( [$self->{_mapping} ]); 
         # already reverse, so just the complement here:
         $query_seq =~ tr[UTGCAutgca][AACGUaacgu];
 
@@ -301,12 +298,10 @@ sub _parse_next_res {
                 -end   => $subject_pos+ length($subject_seq)-1,
             )
         );
-        my $rct = '';
-        $rct =  '(Reverse Complement)' if $s->query_isset &&
-            $s->reverse_complement;
         $tmp_aln->add_seq(
             Bio::LocatableSeq->new(
-                -id    => "Query$rct",
+                -id    => $query->id,
+                -desc  => $query->desc,
                 -seq   => $query_seq,
                 -start => $query_pos,
                 -end   => $query_pos + length($query_seq)-1,
@@ -404,21 +399,14 @@ Bio::Grep::Backend::GUUGle - GUUGle back-end
 B<Bio::Grep::Backend::GUUGle> searches for a query in a C<GUUGle> suffix 
 array. 
 
-NOTE 1: C<GUUGle> always searches for the reverse complement. If you specify
-a query file, C<Bio::Grep> throws an exception if C<reverse_complement> is 
-not set.
-
-NOTE 2: C<GUUGle> only allows search for exact matches. It counts GU as no
-mismatch.
-
-NOTE 3: When "maxhits" is defined, this back-end returns the I<maxhits> first
-hits.
 
 =head1 METHODS
 
 See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
-=over 2
+=head2 CONSTRUCTOR
+
+=over 
 
 =item C<Bio::Grep::Backend::GUUGle-E<gt>new()>
 
@@ -427,6 +415,12 @@ directly. Rather, a back-end should be constructed by the main class
 L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('GUUGle');
+
+=back
+
+=head2 PACKAGE METHODS
+
+=over
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -447,6 +441,28 @@ Available sortmodes in C<GUUGle>:
 Note that 'ga' and 'gd' require that search results have dG set. 
 L<Bio::Grep::RNA> ships with filters for free energy calculation. Also note that
 these two sort options require that we load all results in memory.
+
+=back
+
+=head1 IMPORTANT NOTES
+
+=over
+
+=item C<reverse_complement>
+
+C<GUUGle> always searches for the reverse complement. If you specify
+a query file, C<Bio::Grep> throws an exception if C<reverse_complement> is 
+not set.
+
+=item C<mismatches>
+
+C<GUUGle> only allows search for exact matches. It counts GU as no
+mismatch.
+
+=item C<maxhits>
+
+When "maxhits" is defined, this back-end returns the I<maxhits> first
+hits.
 
 =back
 
@@ -486,10 +502,9 @@ L<Bio::Seq>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007  by M. Riester. All rights reserved. 
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

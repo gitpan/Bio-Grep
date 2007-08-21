@@ -5,32 +5,19 @@
 # Test fasta are sequences from ATH1.cdna, with MODIFIED sequences
 ################################################################################
 
-use strict;
-use warnings;
-
 BEGIN{
     use lib 't';
     use Test::More; 
-    use BioGrepTest;
-
-
-    my %prereq = BioGrepTest::check_prereq();
-    if (!$prereq{bioperl}) {
-        plan skip_all => 'Bioperl not found';
-    }
-    elsif (!$prereq{bioperl_run}) {
-        plan skip_all => 'Bioperl-run not found';
-    }
+    use BioGrepSkip; 
+    my ($skip,$msg) = BioGrepSkip::skip_all( );
+    plan skip_all => $msg if $skip;
 }
-my $backendname  = 'RE';
-plan tests => 35;
 
-use English qw( -no_match_vars );
-use Cwd;
-use Data::Dumper;
-use Bio::Grep;
+use BioGrepTest;
 
-use Bio::Perl;
+register_backend_tests({ RE => 35 });
+
+plan tests => number_backend_tests;
 
 my %test_seq = (
     id   => 'At2g42200',
@@ -60,17 +47,9 @@ my %hits_sequences5 = (
  'At1g01010.3' => 'atggaggatcaagttgggtt',
 );
 
-my $sbe = Bio::Grep->new($backendname);
-
-# define own tmppath, so that we can check if all temporary files are deleted
-$sbe->settings->tmppath('t/tmp');
-mkdir("t/tmp");
-mkdir("t/data");
-BioGrepTest::delete_files;
-
+my $sbe = next_be;
 
 $sbe->settings->reverse_complement(0);
-$sbe->settings->datapath('t/data');
 $sbe->generate_database( { file => 't/Test.fasta',
 description => 'Description for Test.fasta'} );
 $sbe->generate_database( { file => 't/TestGUUGleExtend.fasta',
@@ -143,7 +122,7 @@ my $seqio        = $sbe->get_sequences( [$test_seq_internal_id] );
 my $test_seq_obj = $seqio->next_seq();
 
 SKIP: {
-    skip "Could not get sequence object ($backendname)", 3
+    skip "Could not get sequence object", 3
         if !defined $test_seq_obj;
 
     is( $test_seq_obj->id,   $test_seq{id} );

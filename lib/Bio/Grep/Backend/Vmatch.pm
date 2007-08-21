@@ -3,6 +3,8 @@ package Bio::Grep::Backend::Vmatch;
 use strict;
 use warnings;
 
+use version; our $VERSION = qv('0.10.0');
+
 use Fatal qw(open close);
 
 use Bio::Grep::SearchResult;
@@ -13,8 +15,6 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
-
-use version; our $VERSION = qv('0.9.2');
 
 sub new {
     my $self = shift;
@@ -282,7 +282,7 @@ LINE:
                 );
                 $tmp_aln->add_seq(
                     Bio::LocatableSeq->new(
-                        -id    => "Query",
+                        -id    => $results[-1]->query->id,
                         -seq   => $query,
                         -start => ( $query_pos - length($query) ) + 1,
                         -end   => $query_pos
@@ -309,6 +309,7 @@ LINE:
         # make taint mode happy
         ( $fields[0] ) = $fields[0] =~ /(\d+)/;
         ( $fields[2] ) = $fields[2] =~ /(\d+)/;
+        ( $fields[3] ) = $fields[3] =~ /([DP])/;
 
         if ( $s->showdesc_isset ) {
 
@@ -372,7 +373,12 @@ LINE:
         else {
             $query = $query_seqs[ $fields[5] ];
         }
-
+        
+        my $rct = ''; my $rcs = $query->seq;
+        if ($s->direct_and_rev_com && $fields[3] eq 'P') {
+            $rct = ' (reverse complement)';
+            $rcs = $query->revcom->seq;
+        }    
         my $result = Bio::Grep::SearchResult->new(
             {   sequence         => $fasta,
                 begin            => $upstream,
@@ -382,7 +388,11 @@ LINE:
                 remark           => '',
                 evalue           => $fields[8],
                 percent_identity => $fields[10],
-                query            => $query,
+                query            => Bio::Seq->new(
+                                        -id   => $query->id,
+                                        -desc => $query->desc . $rct,
+                                        -seq  => $rcs,
+                                    ),
             }
         );
         push( @results, $result );
@@ -527,19 +537,32 @@ Bio::Grep::Backend::Vmatch - Vmatch back-end
   # ... but one can retrieve all complete sequences with
   # just one call of vseqselect
   my $seq_io = $sbe->get_sequences(\@internal_ids);
+
+  # search for multiple patterns 
+  $sbe->search({
+    query_file   => 'Oligos.fasta',
+    mismatches   => 1,
+    complete     => 1,
+    showdesc     => 100,
+  });
   
+  while ( my $res = $sbe->next_res ) {
+    print $res->query->id . " found in " . 
+          $res->sequence->id . "\n";
+  }
+
 =head1 DESCRIPTION
 
 B<Bio::Grep::Backend::Vmatch> searches for a query in a C<Vmatch> suffix array. 
 
-NOTE 1: When "maxhits" is defined, this back-end returns the I<maxhits> best
-hits (those with smallest E-values).
 
 =head1 METHODS
 
 See L<Bio::Grep::Backend::BackendI> for inherited methods. 
 
-=over 2
+=head2 CONSTRUCTOR
+
+=over 
 
 =item C<Bio::Grep::Backend::Vmatch-E<gt>new()>
 
@@ -548,6 +571,12 @@ directly. Rather, a back-end should be constructed by the main class
 L<Bio::Grep>:
 
   my $sbe = Bio::Grep->new('Vmatch');
+
+=back
+
+=head2 PACKAGE METHODS
+
+=over
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -597,6 +626,17 @@ ids. Otherwise it will take the first array element as query.
 The internal ids are stored in C<$res-E<gt>sequence_id>. If you have specified
 C<showdesc>, then C<sequence_id> will contain the gene id (e.g. At1g1234),
 NOT the C<Vmatch> internal id.
+
+=back
+
+=head1 IMPORTANT NOTES
+
+=over
+
+=item C<maxhits>
+
+When C<maxhits> is defined, this back-end returns the I<maxhits> best
+hits (those with smallest E-values).
 
 =back
 
@@ -666,10 +706,10 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Based on Weigel::Search v0.13
+Copyright (C) 2007 by M. Riester. All rights reserved. 
 
-Copyright (C) 2005-2006 by Max Planck Institute for Developmental Biology, 
-Tuebingen.
+Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
+Institute for Developmental Biology, Tuebingen.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

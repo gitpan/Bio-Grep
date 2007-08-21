@@ -15,7 +15,10 @@ my $builder = Module::Build->new(
                             'Pod::Usage'         => 0,   
                             'UNIVERSAL::require' => 0.11,   
                             'Carp::Assert'       => 0,
+                            'ToolSet'            => 0.13,
+                            'Bio::Root::Version' => 0,
                             },
+    script_files        => [ 'script/bgrep' ], 
     add_to_cleanup      => [ 'Bio-Grep-*' ],
 );
 
