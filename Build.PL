@@ -2,7 +2,20 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $builder = Module::Build->new(
+my $class = Module::Build->subclass(
+            code => q{
+
+    sub ACTION_dist {
+        my $self = shift;
+        system('perl -I lib/ examples/benchmark.pl') if $self->y_n(
+            "Do you want to create new benchmarks?",'N');
+        $self->SUPER::ACTION_dist;
+    }
+
+},
+);
+
+my $builder = $class->new(
     module_name         => 'Bio::Grep',
     license             => 'perl',
     dist_author         => 'Markus Riester <mriester@gmx.de>',
@@ -18,7 +31,7 @@ my $builder = Module::Build->new(
                             'ToolSet'            => 0.13,
                             'Bio::Root::Version' => 0,
                             },
-    script_files        => [ 'script/bgrep' ], 
+    script_files        => [ 'examples/bgrep' ], 
     add_to_cleanup      => [ 'Bio-Grep-*' ],
 );
 

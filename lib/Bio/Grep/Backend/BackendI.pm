@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.0');
+use version; our $VERSION = qv('0.10.1');
 
 use Fatal qw (open close opendir closedir);
 
@@ -824,14 +824,10 @@ __END__
 
 Bio::Grep::Backend::BackendI - Superclass for all back-ends  
 
-=head1 SYNOPSIS
-
-See the back-end modules for example code.
-
 =head1 DESCRIPTION
 
-B<Bio::Grep::Backend::BackendI> is the superclass for all back-ends. Don't use this class
-directly. 
+B<Bio::Grep::Backend::BackendI> is the superclass for all back-ends. Don't 
+use this class directly.
 
 =head1 METHODS
 
@@ -843,9 +839,9 @@ See L<Bio::Grep::Root> for inherited methods.
 
 =item C<new()>
 
-This method constructs a L<Bio::Grep::Backend::BackendI> object and is never used 
-directly. Rather, all other back-ends in this package inherit the methods of
-this interface and call its constructor internally.
+This method constructs a L<Bio::Grep::Backend::BackendI> object and is never 
+used directly. Rather, all other back-ends in this package inherit the methods
+of this interface and call its constructor internally.
 
 =back
 
@@ -864,18 +860,6 @@ called.
         # output result
     }
 
-=item C<$sbe-E<gt>results()>
-
-Get the results after search() was called. This is an array of 
-L<Bio::Grep::SearchResult> objects.
-  
-  $sbe->search();
-
-  foreach my $res (@{$sbe->results}) {
-        # output result
-  }
-
-This method is DEPRECATED. See next_res().
           
 =item C<$sbe-E<gt>settings()>
 
@@ -892,8 +876,8 @@ Get the settings. This is a L<Bio::Grep::SearchSettings> object
 Get available features. This is a hash. Valid features are
 MISMATCHES, GUMISMATCHES, EDITDISTANCE, INSERTIONS, DELETIONS, 
 FILTERS, NATIVE_ALIGNMENTS, PROTEINS, UPSTREAM, DOWNSTREAM, MAXHITS, COMPLETE,
-QUERY, QUERY_FILE, QUERY_LENGTH, DIRECT_AND_REV_COM, SHOWDESC, QSPEEDUP, HXDROP, 
-EXDROP, EVALUE and PERCENT_IDENTITY.
+QUERY, QUERY_FILE, QUERY_LENGTH, DIRECT_AND_REV_COM, SHOWDESC, QSPEEDUP, 
+HXDROP, EXDROP, EVALUE and PERCENT_IDENTITY.
 
   if (defined($sbe->features->{GUMISMATCHES})) {
           # $sbe->settings->gumismatches(0);
@@ -930,40 +914,6 @@ default values.
                  reverse_complement => 0, 
                  query => $query });
 
-=item C<$sbe-E<gt>get_sequences>
-
-This method returns all sequences with the ids in the specified array reference as
-a L<Bio::SeqIO> object. 
-
-
-   my $seqio = $sbe->get_sequences([$id]);
-   my $string;  my $stringio = IO::String->new($string);
-   my $out = Bio::SeqIO->new('-fh' => $stringio,
-                             '-format' => 'fasta');
-
-   while ( my $seq = $seqio->next_seq() ) {
-      # write the sequences in a string
-      $out->write_seq($seq);
-   }
-   print $string;
- 
-
-=item C<$sbe-E<gt>get_databases>
-
-Returns a hash with all available databases. The keys are the filenames,
-the values are descriptions (or the filename if no description is available).
-
-Descriptions can be set in info files. For example, if you indexed file
-ATH1.cdna, C<Vmatch> constructs a lot of ATH1.cdna.* files. Now simply
-create a file ATH1.cdna.nfo and write a description in that file. The method
-generate_database() will create this file if C<description> is specified (see
-generate_database()).
-
-  my %local_dbs_description = $sbe->get_databases();
-  my @local_dbs = sort keys %local_dbs_description;
-  
-  # take first available database 
-  $sbe->settings->database($local_dbs[0]);
 
 =item C<$sbe-E<gt>generate_database({ file =E<gt> $file })>
 
@@ -1019,9 +969,34 @@ Example:
             verbose     => 1,
     });
 
-=item C<$sbe-E<gt>generate_database_out_of_fastafile($fastafile)>
+=item C<$sbe-E<gt>get_databases>
 
-DEPRECATED. Use generate_database() instead.
+Returns a hash with all available databases. The keys are the filenames,
+the values are descriptions (or the filename if no description is available).
+
+  my %local_dbs_description = $sbe->get_databases();
+  my @local_dbs = sort keys %local_dbs_description;
+  
+  # take first available database 
+  $sbe->settings->database($local_dbs[0]);
+
+=item C<$sbe-E<gt>get_sequences>
+
+This method returns all sequences with the ids in the specified array reference as
+a L<Bio::SeqIO> object. 
+
+
+   my $seqio = $sbe->get_sequences([$id]);
+   my $string;  my $stringio = IO::String->new($string);
+   my $out = Bio::SeqIO->new('-fh' => $stringio,
+                             '-format' => 'fasta');
+
+   while ( my $seq = $seqio->next_seq() ) {
+      # write the sequences in a string
+      $out->write_seq($seq);
+   }
+   print $string;
+ 
 
 =item C<$sbe-E<gt>available_sort_modes()>
 
@@ -1093,10 +1068,10 @@ info file with that name. The content of that file will be used as description.
 When no file is found, the description will be the filename without the suffix:
 
 
-   %dbs = _get_databases('.al1');  # finds file ATH1.cdna.al1, searches for
-                                   # ATH1.cdna.nfo
-   print $dbs{'ATH1.cdna'};        # prints content of ATH1.cdna.nfo or 
-                                   # 'ATH1.cdna'
+  %dbs = _get_databases('.al1'); # finds file ATH1.cdna.al1, searches 
+                                 # for ATH1.cdna.nfo
+  print $dbs{'ATH1.cdna'};       # prints content of ATH1.cdna.nfo
+                                 # or 'ATH1.cdna'
 
 
 =item C<_get_sequences_from_bio_index($id)>
@@ -1128,6 +1103,29 @@ respectively). Calculates the upstream, subject and downstream sequence.
             subject_begin=> $subject_begin, 
             subject_end  => $subject_end, 
         }); 
+
+=back
+
+=head2 DEPRECATED METHODS
+
+=over
+
+=item C<$sbe-E<gt>results()> 
+
+B<DEPRECATED>. Get the results after search() was called. This is an array of 
+L<Bio::Grep::SearchResult> objects.
+  
+  $sbe->search();
+
+  foreach my $res (@{$sbe->results}) {
+        # output result
+  }
+
+Use next_res() instead.
+
+=item C<$sbe-E<gt>generate_database_out_of_fastafile($fastafile)> 
+
+B<DEPRECATED>. Use generate_database() instead.
 
 =back
 

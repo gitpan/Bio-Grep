@@ -7,7 +7,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.10.0');
+use version; our $VERSION = qv('0.10.1');
 
 
 sub new {
@@ -40,11 +40,11 @@ __END__
 
 =head1 NAME
 
-Bio::Grep - Perl extension for searching in DNA and protein sequences
+Bio::Grep - Perl extension for searching in DNA and Protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.10.0
+This document describes Bio::Grep version 0.10.1
 
 =head1 SYNOPSIS
 
@@ -102,7 +102,7 @@ This document describes Bio::Grep version 0.10.0
 =head1 DESCRIPTION
 
 B<Bio-Grep> is a collection of Perl modules for searching in 
-DNA and protein sequences. It supports different back-ends, most importantly 
+DNA and Protein sequences. It supports different back-ends, most importantly 
 some (enhanced) suffix array implementations. Currently, there is no suffix
 array tool that works in all scenarios (for example whole genome, protein and
 RNA data). C<Bio::Grep> provides a common API to the most popular tools. This

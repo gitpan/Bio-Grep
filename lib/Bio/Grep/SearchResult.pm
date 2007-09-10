@@ -3,7 +3,7 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.0');
+use version; our $VERSION = qv('0.10.1');
 
 use IO::String;
 
@@ -131,7 +131,17 @@ Only called by the back-end parser.
 
 =head2 PACKAGE METHODS
 
-Some predefined methods for printing objects. 
+=over 
+
+=item C<subject()>
+
+Creates a L<Bio::Seq> object with the sequence found in the database (see 
+sequence(), L<"ACCESSORS/MUTATORS">), but without upstream and downstream 
+regions. 
+
+=back
+
+Some predefined methods for printing objects: 
 
 =over 
 
@@ -149,7 +159,6 @@ Agrep, this function will return an empty string if C<no_alignments> is true.
 
 =back
 
-
 =head2 ACCESSORS/MUTATORS
 
 Following the Bioperl guidelines, accessors are also mutators:
@@ -161,11 +170,8 @@ Following the Bioperl guidelines, accessors are also mutators:
 
 =item C<sequence()>
 
-Get/set the sequence found in database. L<Bio::Seq> object.
-
-=item C<subject()>
-
-Get C<sequence> without upstream and downstream regions. L<Bio::Seq> object.
+Get/set the sequence found in database with up- and downstream regions. 
+L<Bio::Seq> object.
 
 =item C<query()>
 

@@ -3,7 +3,7 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.0');
+use version; our $VERSION = qv('0.10.1');
 use Carp::Assert;
 
 use Fatal qw(open close seek);
@@ -274,7 +274,7 @@ Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 
 =back
 
-head2 PACKAGE METHODS
+=head2 PACKAGE METHODS
 
 =over 
 

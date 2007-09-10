@@ -8,83 +8,83 @@ A collection of quick and dirty benchmarks.
 
 =head1 BENCHMARKS
 
-2 x Intel(R) Xeon(TM) CPU 2.40GHz, 1GB RAM. Fedora Core 6.
+[% cpuinfo %], 1GB RAM. Fedora Core 6.
 
-TAIR7_cdna_20070425 (Arabidopsis CDNA Fasta file, 52MB). 
+[% filenameCDNA %] (Arabidopsis CDNA Fasta file, 52MB). 
 
-Bio::Grep v0.10.1. 
+Bio::Grep [% biogrepv %]. 
 
 =head2 Database Generation
 
-Average over 2 iterations.
+Average over [% iterationsdb %] iterations.
 
-  GUUGle         :  11.75 sec
-  Agrep/RE       :  24.36 sec
-  Vmatch (-pl 3) : 187.65 sec
+  GUUGle         : [% guugle_dbgen %] sec
+  Agrep/RE       : [% agrep_dbgen  %] sec
+  Vmatch (-pl 3) : [% vmatch_dbgen %] sec
 
   
 =head2 Mismatches
 
 Query: C<ugacagaagagagugagcac> (revcom)
 
-Average over 20 iterations.
+Average over [% iterations %] iterations.
 
 =over
 
 =item B<No mismatches (exact matching):>
 
-  Agrep (Wu-Manber):  0.60 sec
-  Vmatch           :  2.81 sec
-  RE               :  1.82 sec
-  Vmatch (-online) :  4.14 sec
-  GUUGle           : 10.13 sec
+  Agrep (Wu-Manber):  [%  agrep_mm_0_0 %] sec
+  Vmatch           :  [% vmatch_mm_0_0 %] sec
+  RE               :  [%     re_mm_0_0 %] sec
+  Vmatch (-online) :  [% vmatch_mm_0_1 %] sec
+  GUUGle           : [% guugle_mm_0_0 %] sec
   Agrep (TRE)      : 15.96 sec
 
 Note that C<Vmatch> needs one slow run to load the suffix arrays in memory
-(Values are the average over 20 iterations). Also note that GUUGle
+(Values are the average over [% iterations %] iterations). Also note that GUUGle
 allows GU mismatches.
 
 =item B<One mismatch:>
 
-  Vmatch           :  0.15 sec
-  Agrep (Wu-Manber):  1.09 sec
-  Vmatch (-online) :  4.21 sec
+  Vmatch           :  [% vmatch_mm_1_0 %] sec
+  Agrep (Wu-Manber):  [%  agrep_mm_1_0 %] sec
+  Vmatch (-online) :  [% vmatch_mm_1_1 %] sec
   Agrep (TRE)      : 47.01 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Two mismatches:>
 
-  Vmatch           :  0.20 sec
-  Agrep (Wu-Manber):  1.44 sec
-  Vmatch (-online) :  4.33 sec
+  Vmatch           :  [% vmatch_mm_2_0 %] sec
+  Agrep (Wu-Manber):  [%  agrep_mm_2_0 %] sec
+  Vmatch (-online) :  [% vmatch_mm_2_1 %] sec
   Agrep (TRE)      : 59.17 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Three mismatches:>
 
-  Vmatch           :  0.46 sec
-  Agrep (Wu-Manber):  1.93 sec
-  Vmatch (-online) :  4.78 sec
+  Vmatch           :  [% vmatch_mm_3_0 %] sec
+  Agrep (Wu-Manber):  [%  agrep_mm_3_0 %] sec
+  Vmatch (-online) :  [% vmatch_mm_3_1 %] sec
   Agrep (TRE)      : 72.56 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Four mismatches:>
 
-  Vmatch           :  1.65 sec
-  Agrep (Wu-Manber):  2.29 sec
-  Vmatch (-online) :  5.27 sec
+  Vmatch           :  [% vmatch_mm_4_0 %] sec
+  Agrep (Wu-Manber):  [%  agrep_mm_4_0 %] sec
+  Vmatch (-online) :  [% vmatch_mm_4_1 %] sec
   Agrep (TRE)      : 83.50 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Five mismatches:>
 
-  Agrep (Wu-Manber):  2.95 sec
-  Vmatch           :  6.90 sec
-  Vmatch (-online) :  9.00 sec
+  Agrep (Wu-Manber):  [%  agrep_mm_5_0 %] sec
+  Vmatch           :  [% vmatch_mm_5_0 %] sec
+  Vmatch (-online) :  [% vmatch_mm_5_1 %] sec
   Agrep (TRE)      : 96.16 sec
   GUUGle           :       n/a
   RE               :       n/a

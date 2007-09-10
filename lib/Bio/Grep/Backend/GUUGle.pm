@@ -11,7 +11,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.10.0');
+use version; our $VERSION = qv('0.10.1');
 
 sub new {
     my $self = shift;

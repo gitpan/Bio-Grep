@@ -1,5 +1,12 @@
 Revision history for Perl extension Bio::Grep.
 
+0.10.1  Mon Sep  10 11:54:00 2007
+    - Minor POD improvements
+    - Benchmarks: 
+       * generated with Template::Toolkit
+       * added vmatch -online
+       * ./Build dist asks whether benchmarks should be created
+
 0.10.0  Tue Aug  21 17:00:00 2007
     - POD improvements:
         * methods now grouped in CONSTRUCTOR, ACCESSORS/MUTATORS, PACKAGE
