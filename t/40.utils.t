@@ -72,11 +72,11 @@ ok(!$EVAL_ERROR, 'ok' ) || diag $EVAL_ERROR;
 no warnings;
 eval {$sbe->_check_variable()};
 cmp_ok($EVAL_ERROR, '=~', qr{Missing arguments: require hash with keys},
-    "Exception with missing argument");
+    "Exception with missing argument") || diag $EVAL_ERROR;
 use warnings;
 eval {$sbe->_check_variable( bla => 1 )};
 cmp_ok($EVAL_ERROR, '=~', qr{Missing arguments: require hash with keys},
-    "Exception with missing argument");
+    "Exception with missing argument") || diag $EVAL_ERROR;
 
 eval {$sbe->_check_variable( variable => 'bla',  regex => 'real' )};
 cmp_ok($EVAL_ERROR, '=~', qr{Unknown regex},
@@ -93,7 +93,7 @@ ok(!$sbe->_rnas_match('uguggu','cgcguu'), 'rna matching function');
 
 my $tmp = $sbe->settings->tmppath;
 $sbe->settings->datapath('data');
-$sbe->settings->database('Test.fasta');
+$sbe->settings->database('Test_DB_Big.fasta');
 $sbe->settings->reverse_complement(1);
 
 my $settings_dump =<<EOT
@@ -101,7 +101,7 @@ my $settings_dump =<<EOT
                  'datapath' => 'data',
                  'no_alignments' => 0,
                  'execpath' => '',
-                 'database' => 'Test.fasta',
+                 'database' => 'Test_DB_Big.fasta',
                  'deletions' => '0',
                  'upstream' => '0',
                  'insertions' => '0',

@@ -1,11 +1,18 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 20:55:22 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 495 $
+#############################################################################
+
 package Bio::Grep::Backend::BackendI;
 
 use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
+use English qw( -no_match_vars );
 use Fatal qw (open close opendir closedir);
 
 use File::Spec;
@@ -14,8 +21,8 @@ use File::Temp qw/ tempfile tempdir /;
 use File::Basename;
 
 use Scalar::Util qw(reftype);
-
 use Cwd 'abs_path';
+use IPC::Open3 'open3';
 
 use Bio::AlignIO;
 use Bio::Factory::EMBOSS;
@@ -50,11 +57,11 @@ sub new {
     $self->settings($settings);
 
     # assume back-end binary is in path
-    $self->settings->execpath('');
+    $self->settings->execpath(q{});
 
     $self->features( %{ $self->_get_all_possible_features() } );
     $self->import;
-    $self;
+    return $self;
 }
 
 sub _get_all_possible_features {
@@ -96,18 +103,18 @@ sub _get_databases {
     my ( $self, $suffix ) = @_;
     my %result = ();
     opendir my $DIR, $self->settings->datapath;
-    my @files = grep {/${suffix}$/} readdir $DIR;
+    my @files = grep {/${suffix} \z/xms} readdir $DIR;
     closedir $DIR;
 FILE:
     foreach my $file (@files) {
         my $prefix = $file;
-        $prefix =~ s/$suffix//;
+        $prefix =~ s/$suffix//xms;
         $result{$prefix} = $prefix;
-        $file =~ s/$suffix/\.nfo/;
+        $file =~ s/$suffix/\.nfo/xms;
         $file = $self->_cat_path_filename( $self->settings->datapath, $file );
         next FILE if !-e $file;
         open my $FILE, '<', $file;
-        my $desc = "";
+        my $desc = q{};
 
         while ( my $line = <$FILE> ) {
             chomp $line;
@@ -126,12 +133,14 @@ sub _filter_result {
             $filter->message_reset;
             $res->_real_query( $self->settings->_real_query );
             $filter->search_result($res);
-            unless ( $filter->filter ) {
+            if ( !$filter->filter ) {
                 if ( $filter->delete ) {
                     return 0;
                 }
             }
-            $res->remark( $filter->message ) if $filter->message_isset;
+            if ( $filter->message_isset ) {
+                $res->remark( $filter->message );
+            }
         }
     }
     return $res;
@@ -139,12 +148,12 @@ sub _filter_result {
 
 sub results {
     my ($self) = @_;
-    $self->deprecated("Use 'while (my \$res = \$sbe->next_res)' instead");
+    $self->deprecated(q{Use 'while (my \$res = \$sbe->next_res)' instead});
     my @results;
     while ( my $res = $self->next_res ) {
         push @results, $res;
     }
-    wantarray ? @results : \@results;
+    return wantarray ? @results : \@results;
 }
 
 sub _prepare_results {
@@ -163,6 +172,7 @@ sub _prepare_results {
         }
         @results = $self->_sort_by_dg(@results);
         $self->_results(@results);
+
         # reset for next_res iterator
         $self->_current_res_id(0);
     }
@@ -177,12 +187,12 @@ sub next_res {
     my $id = $self->_current_res_id;
     $self->_current_res_id( $id + 1 );
     if ( $self->_results_isset ) {
-        if ($id >= scalar @{$self->_results}) {
+        if ( $id >= scalar @{ $self->_results } ) {
             return 0;
         }
         else {
             return $self->_results->[$id];
-        }    
+        }
     }
     else {
         return $self->_parse_next_res();
@@ -194,14 +204,13 @@ sub _sort_by_dg {
     foreach my $result (@results) {
         if ( !$result->dG_isset ) {
             $self->warn(
-                "Not sorting results by dG because some results have no
-         dG calculated. Use Bio::Grep::RNA."
-            );
+                'Not sorting results by dG because some results have no '
+                    . 'dG calculated. Use Bio::Grep::RNA.' );
             return @results;
         }
     }
     if ( $self->settings->sort eq 'gd' ) {
-        return sort { $b->dG <=> $a->dG } @results;
+        return reverse sort { $a->dG <=> $b->dG } @results;
     }
     else {
         return sort { $a->dG <=> $b->dG } @results;
@@ -209,34 +218,38 @@ sub _sort_by_dg {
 }
 
 sub _results_may_have_gaps {
-    my ( $self ) = @_;
+    my ($self) = @_;
     my $s = $self->settings;
-    return 1 if (defined $s->editdistance && $s->editdistance > 0);
-    return 1 if (defined $s->insertions   && $s->insertions   > 0);
-    return 1 if (defined $s->deletions    && $s->deletions    > 0);
+    return 1 if ( defined $s->editdistance && $s->editdistance > 0 );
+    return 1 if ( defined $s->insertions   && $s->insertions > 0 );
+    return 1 if ( defined $s->deletions    && $s->deletions > 0 );
     return 0;
-}    
+}
 
 # calculates needleman-wunsch global alignment with the EMBOSS
 # implementation
 sub _get_alignment {
     my ( $self, $seq_a, $seq_b ) = @_;
+
     # aligments are easy when settings don't allow gaps
     # back-ends must return hit coordinates
-    if (!$self->_results_may_have_gaps && 
-        length($seq_a->seq) == length($seq_b->seq) ) {
-        my $alignment = new Bio::SimpleAlign( -source => "Bio::Grep" );
-        $alignment->add_seq($seq_a); 
-        $alignment->add_seq($seq_b); 
+    if ( !$self->_results_may_have_gaps
+        && length $seq_a->seq == length $seq_b->seq )
+    {
+        my $alignment = new Bio::SimpleAlign( -source => 'Bio::Grep' );
+        $alignment->add_seq($seq_a);
+        $alignment->add_seq($seq_b);
         return $alignment;
-    }   
+    }
 
     my $factory = Bio::Factory::EMBOSS->new();
     my $prog    = $factory->program('needle');
     my $outfile = $self->_cat_path_filename( $self->settings->tmppath,
-        $seq_a->id . ".out" );
+        $seq_a->id . '.out' );
     my $gapopen = '5.0';
-    $gapopen = '50.0' if !$self->settings->editdistance_isset;
+    if ( !$self->settings->editdistance_isset ) {
+        $gapopen = '50.0';
+    }
 
     $prog->run(
         {   -asequence => $seq_a,
@@ -248,18 +261,18 @@ sub _get_alignment {
     );
 
     if ( -e $outfile ) {
-        my $alignio_fmt = "emboss";
+        my $alignio_fmt = 'emboss';
         my $align_io    = new Bio::AlignIO(
             -format => $alignio_fmt,
             -file   => $outfile
         );
-        unlink($outfile);
+        unlink $outfile;
         my $alignment = $align_io->next_aln();
-        my $s1 = $alignment->get_seq_by_pos(1);
-        my $s2 = $alignment->get_seq_by_pos(2);
-        $s1->start($seq_a->start);
-        $s1->end($seq_a->end);
-        $alignment = new Bio::SimpleAlign( -source => "Bio::Grep" );
+        my $s1        = $alignment->get_seq_by_pos(1);
+        my $s2        = $alignment->get_seq_by_pos(2);
+        $s1->start( $seq_a->start );
+        $s1->end( $seq_a->end );
+        $alignment = new Bio::SimpleAlign( -source => 'Bio::Grep' );
         $alignment->add_seq($s1);
         $alignment->add_seq($s2);
         return $alignment;
@@ -270,27 +283,68 @@ sub _get_alignment {
 # concatenates a path and a filename platform-independently
 sub _cat_path_filename {
     my ( $self, $path, $filename ) = @_;
-    if ($path eq '') {
+    if ( $path eq q{} ) {
         return $filename;
     }
     else {
         return File::Spec->catfile( $path, $filename );
-    }    
+    }
 }
 
 sub _check_search_settings {
     my ( $self, $arg_ref ) = @_;
 
     if ( defined $arg_ref ) {
-        $self->settings->set($arg_ref);
+        $self->settings->set_attributes($arg_ref);
     }
-    $self->settings->upstream(0)   if !defined $self->settings->upstream;
-    $self->settings->downstream(0) if !defined $self->settings->downstream;
+    if ( !defined $self->settings->upstream ) {
+        $self->settings->upstream(0);
+    }
+    if ( !defined $self->settings->downstream ) {
+        $self->settings->downstream(0);
+    }
 
-    my %all_features = %{ $self->_get_all_possible_features() };
+    $self->_check_int_features();
+    $self->_check_sort_mode();
+    $self->_check_database();
+    $self->_check_for_unsupported_features();
 
-    my @int_features = map { lc $_ } keys %all_features, 'reverse_complement',
-        'no_alignments';
+    if (   defined $self->settings->editdistance
+        && defined $self->settings->mismatches
+        && $self->settings->editdistance > 0
+        && $self->settings->mismatches > 0 )
+    {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => q{Can't combine editdistance and mismatches.},
+            -value => $self->settings->editdistance . ' and '
+                . $self->settings->mismatches,
+        );
+    }
+    if ( $ENV{BIOGREPDEBUG} ) {
+        carp $self->settings->to_string();
+    }
+
+    # reset all filters
+    if ( $self->settings->filters_isset ) {
+        foreach my $filter ( @{ $self->settings->filters } ) {
+            $filter->reset_filter;
+        }
+    }
+    $self->_results_reset;
+    $self->_current_res_id(0);
+    return;
+}
+
+### SOME IMPORTANT SETTINGS TESTS
+### called by _check_search_settings()
+
+sub _check_int_features {
+    my ($self) = @_;
+
+    my @int_features
+        = map { lc $_ } keys %{ $self->_get_all_possible_features() },
+        'reverse_complement', 'no_alignments';
 
     my %skip = (
         FILTERS            => 1,    # checked later
@@ -308,7 +362,8 @@ sub _check_search_settings {
 
 INT_FEATURE:
     for my $option (@int_features) {
-        next INT_FEATURE if defined $skip{ uc($option) };
+        next INT_FEATURE if defined $skip{ uc $option };
+
         # check if values are integers and untaint them
         $self->settings->$option(
             $self->is_integer( $self->settings->$option, $option ) );
@@ -317,48 +372,14 @@ INT_FEATURE:
             $self->settings->$reset;
         }
     }
+    return 1;
+}
 
-    if ( $self->settings->sort_isset ) {
-        my %sort_modes = $self->available_sort_modes();
-        if ( defined $sort_modes{ $self->settings->sort } ) {
-            my ($sort_mode) = $self->settings->sort =~ /(\w+)/;
-            $self->settings->sort($sort_mode);    #make taint happy
-        }
-        else {
-            $self->throw(
-                -class => 'Bio::Root::BadParameter',
-                -text  => 'Sort mode not valid.',
-                -value => 'sort mode'
-            );
-        }
-    }
-
-    if (!$self->settings->datapath_isset) {
-        $self->settings->datapath('./');
-    }    
-
-    # check if database is set and valid
-    my $found_database = 0;
-    if ( defined $self->settings->database ) {
-        $self->settings->database(
-            $self->is_word( $self->settings->database ) );
-        my %available_dbs = $self->get_databases;
-        $self->throw(
-            -class => 'Bio::Root::BadParameter',
-            -text  => 'Database not found.',
-            -value => $self->settings->database,
-        ) if !defined $available_dbs{ $self->settings->database };
-
-    }
-    else {
-        $self->throw(
-            -class => 'Bio::Root::BadParameter',
-            -text  => 'Database not defined.',
-        );
-    }
+sub _check_for_unsupported_features {
+    my ($self) = @_;
 
     # some warnings if user requests features that are not available
-    %skip = (
+    my %skip = (
         NATIVE_ALIGNMENTS  => 1,
         NATIVE_D_A_REV_COM => 1,
         PERCENT_IDENTITY   => 1,
@@ -369,14 +390,14 @@ INT_FEATURE:
     );
 
 FEATURE:
-    for my $feature ( keys %all_features ) {
+    for my $feature ( keys %{ $self->_get_all_possible_features() } ) {
         next FEATURE if defined $skip{$feature};
         my $value_ok = 0;
         if ( $feature eq 'GUMISMATCHES' ) {
             $value_ok = 1;
         }
-        if ( !defined( $self->features->{$feature} ) ) {
-            my $lc_f = lc($feature);
+        if ( !defined $self->features->{$feature} ) {
+            my $lc_f = lc $feature;
             my $lc_i = $lc_f . '_isset';
             if (   $self->settings->$lc_i
                 && $self->settings->$lc_f ne $value_ok )
@@ -385,32 +406,60 @@ FEATURE:
             }
         }
     }
-    if (   defined $self->settings->editdistance
-        && defined $self->settings->mismatches
-        && $self->settings->editdistance > 0
-        && $self->settings->mismatches > 0 )
-    {
-        $self->throw(
-            -class => 'Bio::Root::BadParameter',
-            -text  => "Can't combine editdistance and mismatches.",
-            -value => $self->settings->editdistance . ' and '
-                . $self->settings->mismatches,
-        );
-    }
-    if ( $ENV{BIOGREPDEBUG} ) {
-        warn $self->settings->to_string();
-    }
-
-    # reset all filters
-    if ( $self->settings->filters_isset ) {
-        foreach my $filter ( @{ $self->settings->filters } ) {
-            $filter->reset;
-        }
-    }
-    $self->_results_reset;
-    $self->_current_res_id(0);
     return;
 }
+
+sub _check_database {
+    my ($self) = @_;
+
+    if ( !$self->settings->datapath_isset ) {
+        $self->settings->datapath(q{./});
+    }
+
+    # check if database is set and valid
+    my $found_database = 0;
+    if ( defined $self->settings->database ) {
+        $self->settings->database(
+            $self->is_word( $self->settings->database ) );
+        my %available_dbs = $self->get_databases;
+        if ( !defined $available_dbs{ $self->settings->database } ) {
+            $self->throw(
+                -class => 'Bio::Root::BadParameter',
+                -text  => 'Database not found.',
+                -value => $self->settings->database,
+            );
+        }
+    }
+    else {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Database not defined.',
+        );
+    }
+    return 1;
+}
+
+sub _check_sort_mode {
+    my ($self) = @_;
+
+    if ( $self->settings->sort_isset ) {
+        my %sort_modes = $self->available_sort_modes();
+        if ( defined $sort_modes{ $self->settings->sort } ) {
+            my ($sort_mode) = $self->settings->sort =~ /(\w+)/xms;
+            $self->settings->sort($sort_mode);    #make taint happy
+        }
+        else {
+            $self->throw(
+                -class => 'Bio::Root::BadParameter',
+                -text  => 'Sort mode not valid.',
+                -value => 'sort mode'
+            );
+        }
+    }
+    return 1;
+}
+
+### END OF SETTINGS TESTS
 
 # copies the specified fasta file in the data directory and cerate a file
 # <databasename>.nfo with the description, specified in the optional 2nd
@@ -421,42 +470,40 @@ sub _copy_fasta_file_and_create_nfo {
 
     # throw exception if filename looks wrong
     $self->is_word( $args->{basefilename}, 'Fasta filename' );
-    
-    
+
     my $newfile = $self->_cat_path_filename( $self->settings->datapath,
         $args->{basefilename} );
 
     $args->{filename} = $newfile;
-    
+
     my %dbs = $self->get_databases;
 
-    if (defined $dbs{$args->{basefilename}}) {
-        $self->warn("Database with that name already exists.\n" .
-            "Skipping database generation.");
+    if ( defined $dbs{ $args->{basefilename} } ) {
+        $self->warn( "Database with that name already exists.\n"
+                . 'Skipping database generation.' );
         $args->{skip} = 1;
         return;
-    }    
+    }
 
     if ( defined $args->{copy} && $args->{copy} ) {
         copy( $args->{file}, $newfile )
             or $self->throw(
             -class => 'Bio::Root::IOException',
-            -text  => "Can't copy " . $args->{file} . " to $newfile",
-            -value => $!
+            -text  => q{Can't copy } . $args->{file} . " to $newfile",
+            -value => $OS_ERROR,
             );
     }
     else {
         my $abs_path = $self->is_path( abs_path( $args->{file} ) );
-        symlink( $abs_path, $newfile )
-            or $self->throw(
+        symlink $abs_path, $newfile || $self->throw(
             -class => 'Bio::Root::IOException',
-            -text  => "Can't symlink " . $abs_path . " to $newfile",
-            -value => $!
+            -text  => q{Can't symlink } . $abs_path . " to $newfile",
+            -value => $OS_ERROR,
             );
     }
-    if ( defined( $args->{description} ) ) {
+    if ( defined $args->{description} ) {
         open my $NFOFILE, '>', $newfile . '.nfo';
-        print $NFOFILE $args->{description};
+        print ${NFOFILE} $args->{description};
         close $NFOFILE;
     }
     return;
@@ -469,7 +516,7 @@ sub _guess_alphabet_of_file {
 }
 
 sub _bioseq_query {
-    my ( $self ) = @_;
+    my ($self) = @_;
     my $query_obj = $self->settings->query;
     my $query;
 
@@ -482,31 +529,32 @@ sub _bioseq_query {
     my $db_alphabet
         = $self->get_alphabet_of_database( $self->settings->database );
 
-    if (isa $query_obj, 'Bio::Seq') { 
+    if ( eval { $query_obj->isa('Bio::Seq') } ) {
         $query = $query_obj->seq;
-    }   
+    }
     else {
         $query = $query_obj;
-        if ($query =~ m{\A \w+ \z}xms) {
+        if ( $query =~ m{\A \w+ \z}xms ) {
             if ( $db_alphabet eq 'dna' ) {
                 $query =~ tr/uU/tT/;
             }
-            $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query', -seq => $query );
+            $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query',
+                -seq => $query );
         }
         else {
             $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query' );
-        }    
+        }
     }
-    return ($query, $query_obj, $db_alphabet);
-}   
+    return ( $query, $query_obj, $db_alphabet );
+}
 
 # prepares the query, for example calculating the reverse complement
 # if necessary
 # returns the prepared query. settings->query is unchanged!
 sub _prepare_query {
-    my $self  = shift;
-    my ($query, $seq, $db_alphabet) = $self->_bioseq_query();
-    
+    my $self = shift;
+    my ( $query, $seq, $db_alphabet ) = $self->_bioseq_query();
+
     if ( $seq->alphabet ne $db_alphabet ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
@@ -514,28 +562,28 @@ sub _prepare_query {
             -value => 'Seq: ' . $seq->alphabet . ", DB: $db_alphabet"
         );
     }
-    if (    $self->settings->reverse_complement
-        ||  $self->settings->direct_and_rev_com )
+    if (   $self->settings->reverse_complement
+        || $self->settings->direct_and_rev_com )
     {
         if ( $db_alphabet eq 'dna' ) {
-            if (defined $self->features->{REVCOM_DEFAULT}) {
-                $seq->desc($seq->desc . ' (reverse complement)');
+            if ( defined $self->features->{REVCOM_DEFAULT} ) {
+                $seq->desc( $seq->desc . ' (reverse complement)' );
             }
-            elsif (defined $self->features->{NATIVE_D_A_REV_COM} &&
-                $self->settings->direct_and_rev_com) {
-                # nothing
-            }    
+            elsif ( defined $self->features->{NATIVE_D_A_REV_COM}
+                && $self->settings->direct_and_rev_com )
+            {
+            }
             else {
                 $query = $seq->revcom->seq;
-                $seq->desc($seq->desc . ' (reverse complement)');
+                $seq->desc( $seq->desc . ' (reverse complement)' );
                 $seq->seq($query);
             }
         }
         else {
             $self->throw(
                 -class => 'Bio::Root::BadParameter',
-                -text  => 
-                   'Reverse complement only available for DNA databases.',
+                -text =>
+                    'Reverse complement only available for DNA databases.',
             );
         }
     }
@@ -545,7 +593,7 @@ sub _prepare_query {
         $query = $seq->revcom->seq;
         $seq->seq($query);
     }
-    $self->settings->_real_query( uc($query) );
+    $self->settings->_real_query( uc $query );
     $self->{_query_obj} = $seq;
     return $self->settings->_real_query();
 }
@@ -553,7 +601,7 @@ sub _prepare_query {
 sub generate_database_out_of_fastafile {
     my ( $self, @args ) = @_;
     $self->deprecated( "generate_database_out_of_fastafile() is deprecated.\n"
-            . "Use generate_database() instead." );
+            . q{Use generate_database() instead.} );
     return $self->generate_database(@args);
 }
 
@@ -569,7 +617,7 @@ sub _get_sequences_from_bio_index {
     my ( $self, $seqid ) = @_;
 
     $self->is_arrayref_of_size( $seqid, 1 );
-    my $indexfile = $self->settings->datapath . '/'
+    my $indexfile = $self->settings->datapath . q{/}
         . $self->settings->database . '.idx';
     my $idx = Bio::Index::Fasta->new($indexfile);
     my $string;
@@ -601,7 +649,7 @@ sub get_alphabet_of_database {
         $lines++;
     }
     close $ALFILE;
-    $lines <= 5 ? return 'dna' : return 'protein';
+    return $lines <= 5 ? return 'dna' : return 'protein';
 }
 
 sub _delete_output {
@@ -611,8 +659,8 @@ sub _delete_output {
     unlink $self->_output_fn
         or $self->throw(
         -class => 'Bio::Root::IOException',
-        -text  => "Cannot remove " . $self->_output_fn,
-        -value => $!,
+        -text  => q{Can't remove } . $self->_output_fn,
+        -value => $OS_ERROR,
         );
     return 1;
 }
@@ -624,9 +672,19 @@ sub _execute_command {
         = tempfile( 'parser_XXXXXXXXXXXX', DIR => $self->settings->tmppath );
     $self->_output_fh($tmp_fh);
     $self->_output_fn($tmp_fn);
-    system("$cmd > $tmp_fn");
+    system "$cmd > $tmp_fn";
 
-    return !$?;
+    return !$CHILD_ERROR;
+}
+
+sub _execute_command_and_return_output {
+    my ( $self, $cmd ) = @_;
+    my ( $writer, $reader, $err );
+    my $pid = open3( $writer, $reader, $err, $cmd );
+    waitpid $pid, 0;
+    my $output = join q{}, <$reader>;
+#    my $error = join q{}, <$err>;
+    return $output;
 }
 
 sub _create_index_and_alphabet_file {
@@ -636,7 +694,7 @@ sub _create_index_and_alphabet_file {
     if ( !defined $self->features->{PROTEINS} && $alphabet eq 'protein' ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
-            -text  => "Back-end does not support protein data",
+            -text  => 'Back-end does not support protein data',
             -value => $alphabet,
         );
     }
@@ -644,10 +702,10 @@ sub _create_index_and_alphabet_file {
     # create a vmatch alphabet file
     open my $ALFILE, '>', "$filename.al1";
     if ( $alphabet eq 'dna' ) {
-        print $ALFILE "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n";
+        print ${ALFILE} "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n";
     }
     else {
-        print $ALFILE
+        print ${ALFILE}
             "L\nV\nI\nF\nK\nR\nE\nD\nA\nG\nS\nT\nN\nQ\nY\nW\nP\nH\nM\nC\nXUBZ*\n";
     }
     close $ALFILE;
@@ -673,13 +731,13 @@ sub _create_tmp_query_file {
     if ( $s->query_isset && $s->query_file_isset ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
-            -text  => "Query and query_file are set. I am confused...",
+            -text  => 'Query and query_file are set. I am confused...',
             -value => $s->query . ' and ' . $s->query_file,
         );
     }
     my @query_seqs = ();
 
-    my $query = '';
+    my $query = q{};
     if ( !$query_file ) {
         $query = $self->_prepare_query();
 
@@ -704,14 +762,15 @@ sub _create_tmp_query_file {
             && !defined $self->features->{NATIVE_D_A_REV_COM} )
         {
             my $seqobj2 = $seqobj->revcom;
-            if (defined $self->features->{REVCOM_DEFAULT}) {
-                my ( $desc ) = $seqobj->desc =~ 
-                    m{\A(.*) \s\(reverse\scomplement\) \z}xms;
+            if ( defined $self->features->{REVCOM_DEFAULT} ) {
+                my ($desc)
+                    = $seqobj->desc
+                    =~ m{\A(.*) \s\(reverse\scomplement\) \z}xms;
                 $seqobj2->desc($desc);
-            }   
+            }
             else {
-                $seqobj2->desc($seqobj->desc . ' (reverse complement)');
-            }    
+                $seqobj2->desc( $seqobj->desc . ' (reverse complement)' );
+            }
             $outseqio->write_seq($seqobj2);
             push @query_seqs, $seqobj2;
         }
@@ -767,15 +826,16 @@ sub _prepare_generate_database {
         $args{format} = 'Fasta';
     }
     if ( defined $args{prefix_length} ) {
+
         # untaint pl
         $args{prefix_length} = $self->is_integer( $args{prefix_length} );
     }
     if ( defined $args{datapath} ) {
         $self->settings->datapath( $args{datapath} );
     }
-    if (!defined $self->settings->datapath) {
-        $self->settings->datapath('./');
-    }    
+    if ( !defined $self->settings->datapath ) {
+        $self->settings->datapath(q{./});
+    }
     $self->_copy_fasta_file_and_create_nfo( \%args );
 
     return %args;
@@ -783,36 +843,43 @@ sub _prepare_generate_database {
 
 sub _parse_regions {
     my ( $self, $args ) = @_;
-    my $upstream_seq   = '';
+    my $upstream_seq = q{};
     my $subject_seq = substr $args->{complete_seq}, $args->{subject_begin},
-    $args->{subject_end} - $args->{subject_begin}; 
-    my $downstream_seq = '';
+        $args->{subject_end} - $args->{subject_begin};
+    my $downstream_seq = q{};
 
     # initialized for assert below
-    my $upstream_begin = $args->{subject_begin}; 
+    my $upstream_begin = $args->{subject_begin};
 
     if ( $self->settings->upstream > 0 || $self->settings->downstream > 0 ) {
 
         # coordinates of upstream region, check if available region is
         # as large as requested
         $upstream_begin = $args->{subject_begin} - $self->settings->upstream;
-        $upstream_begin = 0 if $upstream_begin < 0;
+        if ( $upstream_begin < 0 ) {
+            $upstream_begin = 0;
+        }
 
         $upstream_seq = substr $args->{complete_seq}, $upstream_begin,
             $args->{subject_begin} - $upstream_begin;
-        
+
         # and same for the downstream region
-        my $downstream_end = $args->{subject_end} + $self->settings->downstream;
-        $downstream_end = length $args->{complete_seq}
-            if $downstream_end > length $args->{complete_seq};
+        my $downstream_end
+            = $args->{subject_end} + $self->settings->downstream;
+
+        if ( $downstream_end > length $args->{complete_seq} ) {
+            $downstream_end = length $args->{complete_seq};
+        }
 
         $downstream_seq = substr $args->{complete_seq}, $args->{subject_end},
             $downstream_end - $args->{subject_end};
 
     }
-    my @ret = ($upstream_seq, $subject_seq, $downstream_seq);
-    assert(index($args->{complete_seq},join('',@ret), $upstream_begin) ==
-        $upstream_begin) if DEBUG;
+    my @ret = ( $upstream_seq, $subject_seq, $downstream_seq );
+    assert(
+        index( $args->{complete_seq}, join( q{}, @ret ), $upstream_begin )
+            == $upstream_begin )
+        if DEBUG;
 
     return @ret;
 }

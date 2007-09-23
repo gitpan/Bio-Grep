@@ -12,15 +12,15 @@ A collection of quick and dirty benchmarks.
 
 TAIR7_cdna_20070425 (Arabidopsis CDNA Fasta file, 52MB). 
 
-Bio::Grep v0.10.1. 
+Bio::Grep v0.10.2. 
 
 =head2 Database Generation
 
 Average over 2 iterations.
 
-  GUUGle         :  11.75 sec
-  Agrep/RE       :  24.36 sec
-  Vmatch (-pl 3) : 187.65 sec
+  GUUGle         :  10.60 sec
+  Agrep/RE       :  22.44 sec
+  Vmatch (-pl 3) : 171.53 sec
 
   
 =head2 Mismatches
@@ -33,11 +33,11 @@ Average over 20 iterations.
 
 =item B<No mismatches (exact matching):>
 
-  Agrep (Wu-Manber):  0.60 sec
-  Vmatch           :  2.81 sec
-  RE               :  1.82 sec
-  Vmatch (-online) :  4.14 sec
-  GUUGle           : 10.13 sec
+  Agrep (Wu-Manber):  0.53 sec
+  Vmatch           :  1.72 sec
+  RE               :  1.78 sec
+  Vmatch (-online) :  4.38 sec
+  GUUGle           :  9.59 sec
   Agrep (TRE)      : 15.96 sec
 
 Note that C<Vmatch> needs one slow run to load the suffix arrays in memory
@@ -46,45 +46,45 @@ allows GU mismatches.
 
 =item B<One mismatch:>
 
-  Vmatch           :  0.15 sec
+  Vmatch           :  0.10 sec
   Agrep (Wu-Manber):  1.09 sec
-  Vmatch (-online) :  4.21 sec
+  Vmatch (-online) :  4.24 sec
   Agrep (TRE)      : 47.01 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Two mismatches:>
 
-  Vmatch           :  0.20 sec
-  Agrep (Wu-Manber):  1.44 sec
-  Vmatch (-online) :  4.33 sec
+  Vmatch           :  0.24 sec
+  Agrep (Wu-Manber):  1.41 sec
+  Vmatch (-online) :  4.32 sec
   Agrep (TRE)      : 59.17 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Three mismatches:>
 
-  Vmatch           :  0.46 sec
-  Agrep (Wu-Manber):  1.93 sec
-  Vmatch (-online) :  4.78 sec
+  Vmatch           :  0.48 sec
+  Agrep (Wu-Manber):  1.68 sec
+  Vmatch (-online) :  4.60 sec
   Agrep (TRE)      : 72.56 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Four mismatches:>
 
-  Vmatch           :  1.65 sec
-  Agrep (Wu-Manber):  2.29 sec
-  Vmatch (-online) :  5.27 sec
+  Vmatch           :  1.48 sec
+  Agrep (Wu-Manber):  2.05 sec
+  Vmatch (-online) :  5.34 sec
   Agrep (TRE)      : 83.50 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Five mismatches:>
 
-  Agrep (Wu-Manber):  2.95 sec
-  Vmatch           :  6.90 sec
-  Vmatch (-online) :  9.00 sec
+  Agrep (Wu-Manber):  2.77 sec
+  Vmatch           :  6.13 sec
+  Vmatch (-online) :  8.81 sec
   Agrep (TRE)      : 96.16 sec
   GUUGle           :       n/a
   RE               :       n/a

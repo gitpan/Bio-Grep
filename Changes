@@ -1,5 +1,23 @@
 Revision history for Perl extension Bio::Grep.
 
+0.10.2  Sun Sep  23 16:08:00 2007
+    - code cleanup:
+        * renamed test data files
+        * perlcritic
+        * renamed FilterI->reset to FilterI->reset_filter
+          because reset is a buildin function
+        * renamed SearchSettings->set to SearchSettings->set_attributes
+          cause set is an ambigious name
+    - more tests:
+        * features.updownstream (more or less moved from guugle/RE specific
+          tests)
+    - New Features:
+        * upstream / downstream in SearchResult
+        * reverse_complement in SearchResult
+    - Bugfixes:
+        * Vmatch: $res->sequence undef when available downstream region
+                  to small
+
 0.10.1  Mon Sep  10 11:54:00 2007
     - Minor POD improvements
     - Benchmarks: 

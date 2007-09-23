@@ -1,0 +1,20 @@
+# 3 in the next release ;)
+severity=4
+# we use Fatal qw(open close)
+[-InputOutput::RequireCheckedOpen]
+[-InputOutput::RequireCheckedClose]
+
+# I WANT THEM :)
+[-Variables::ProhibitMatchVars]
+
+#[Documentation::RequirePodSections]
+#source   = module_starter_pbp_0_0_3
+#language = en_US
+
+[Miscellanea::RequireRcsKeywords]
+keywords = Date Author Revision
+
+[-Documentation::RequirePodSections]
+#lib_sections    = NAME│SYNOPSIS│DESCRIPTION|METHODS|BUGS AND LIMITATIONS│AUTHOR|LICENSE AND COPYRIGHT
+#script_sections = NAME│USAGE│REQUIRED ARGUMENTS|OPTIONS│DESCRIPTION│AUTHOR|LICENSE AND COPYRIGHT
+

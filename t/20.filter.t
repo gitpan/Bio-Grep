@@ -36,9 +36,9 @@ SKIP: {
         $gum = 0 if $backendname eq 'GUUGle';
 
         delete_files;
-        $sbe->generate_database( { file => 't/Test2.fasta',
-            description => 'Description for Test2.fasta' });
-        $sbe->settings->database('Test2.fasta');
+        $sbe->generate_database( { file => 't/Test_DB_Small.fasta',
+            description => 'Description for Test_DB_Small.fasta' });
+        $sbe->settings->database('Test_DB_Small.fasta');
         my $sequence = 'tgacagaagagagtgagcac';
         my $filter = Bio::Grep::Filter::FilterRemoveDuplicates->new();
         if ($backendname ne 'Agrep') {

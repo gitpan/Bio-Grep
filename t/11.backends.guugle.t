@@ -13,7 +13,7 @@ BEGIN{
     plan skip_all => $msg if $skip;
 }
 use BioGrepTest;
-register_backend_tests({ GUUGle => 55 });
+register_backend_tests({ GUUGle => 49});
 
 plan tests => number_backend_tests;
 
@@ -53,12 +53,12 @@ my %hits_sequences5 = (
 my $sbe = next_be;
 
 $sbe->settings->reverse_complement(0);
-$sbe->generate_database( { file => 't/Test.fasta',
- description => 'Description for Test.fasta'} );
-$sbe->generate_database( { file => 't/TestGUUGleExtend.fasta',
- description => 'Description for Test.fasta' });
+$sbe->generate_database( { file => 't/Test_DB_Big.fasta',
+ description => 'Description for Test_DB_Big.fasta'} );
+$sbe->generate_database( { file => 't/Test_DB_Extend.fasta',
+ description => 'Description for Test_DB_Big.fasta' });
 $sbe->settings->query('auggaggaucaaguugg');
-$sbe->settings->database('TestGUUGleExtend.fasta');
+$sbe->settings->database('Test_DB_Extend.fasta');
 $sbe->settings->gumismatches(0);
 $sbe->search();
 while (my $res = $sbe->next_res() ) {
@@ -67,11 +67,6 @@ while (my $res = $sbe->next_res() ) {
 # upstream downstream tests
 $sbe->settings->upstream(5);
 $sbe->settings->downstream(5);
-$sbe->search();
-while (my $res = $sbe->next_res() ) {
-    is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
-    is($res->sequence->seq, $hits_sequences{$res->sequence->id}, 'sequence correct'); 
-}
 $sbe->settings->query_length(14);
 $sbe->search();
 while (my $res = $sbe->next_res() ) {
@@ -137,7 +132,7 @@ while (my $res = $sbe->next_res() ) {
 # test database
 $sbe->search({
     reverse_complement => 0,
-    database           => 'Test.fasta',
+    database           => 'Test_DB_Big.fasta',
     gumismatches => 0,
     query              => 'CAGAGTCGGGTGGTTCCTCCACTGAGTCATCCTCTTTCAGTGGAGGGCTCAT',
 });
@@ -161,7 +156,7 @@ SKIP: {
 
 $sbe->search({
     reverse_complement => 1,
-    database           => 'Test.fasta',
+    database           => 'Test_DB_Big.fasta',
     gumismatches       => 0,
     query_file         => 't/Test_query_revcom.fasta',
     query_length       => 20,
@@ -207,7 +202,7 @@ $sbe->settings->upstream_reset;
 
 ###
  
-eval { $sbe->search( { query_file => 't/Test.fasta',  
+eval { $sbe->search( { query_file => 't/Test_DB_Big.fasta',  
                  query_length => 20,
                  gumismatches => 0,
              } ); 
@@ -217,7 +212,7 @@ ok($EVAL_ERROR, 'Exception occured when revcom not set');
 
 ###
 
-eval { $sbe->search( { query_file => 't/Test.fasta', 
+eval { $sbe->search( { query_file => 't/Test_DB_Big.fasta', 
                  query_length => 20, 
                  gumismatches => 0,
                  reverse_complement => 1  } 
@@ -229,7 +224,7 @@ ok(!$EVAL_ERROR, 'No exception occured when revcom set') || diag $EVAL_ERROR;
 ###
 
 $sbe->verbose(2);
-eval { $sbe->search( { query_file => 't/Test.fasta', 
+eval { $sbe->search( { query_file => 't/Test_DB_Big.fasta', 
                  query_length => 20, 
                  gumismatches => 1,
                  reverse_complement => 1  } 
@@ -241,7 +236,7 @@ cmp_ok($EVAL_ERROR, '=~',
     qr{GUUGle counts GU always as no mismatch},
     'Warning occurs.');
 
-eval { $sbe->search( { query_file => 't/Test.fasta', 
+eval { $sbe->search( { query_file => 't/Test_DB_Big.fasta', 
                  query_length => 20, 
                  gumismatches => 0,
                  reverse_complement => 1  } 
@@ -252,7 +247,7 @@ ok(!$EVAL_ERROR, 'No exception occured when revcom set') || diag $EVAL_ERROR;
 
 ###
 
-eval { $sbe->search( { query_file => 't/Test.fasta', 
+eval { $sbe->search( { query_file => 't/Test_DB_Big.fasta', 
                        gumismatches => 0,
                        reverse_complement => 1  } 
              ); 

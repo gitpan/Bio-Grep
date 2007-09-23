@@ -1,9 +1,15 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 16:59:40 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 488 $
+#############################################################################
+
 package Bio::Grep::Backend::RE;
 
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 use Carp::Assert;
 
 use Fatal qw(open close seek);
@@ -16,11 +22,11 @@ use base 'Bio::Grep::Backend::Agrep';
 sub new {
     my $self = shift;
     $self = $self->SUPER::new;
-    $self;
+    return $self;
 }
 
 sub _init {
-    my ( $self ) = @_;
+    my ($self) = @_;
     my %all_features = $self->features;
     delete $all_features{GUMISMATCHES};
     delete $all_features{EVALUE};
@@ -48,44 +54,49 @@ sub search {
     my ( $self, $arg_ref ) = @_;
     my $s = $self->settings;
     $self->_check_search_settings($arg_ref);
-    my ($query, $query_obj, $db_alphabet) = $self->_bioseq_query();
+    my ( $query, $query_obj, $db_alphabet ) = $self->_bioseq_query();
     my $regex = $query;
+
     # regular expressions can't be Bio::Seq objects
-    if (defined $query_obj->seq) {
-        $self->{_qmapping} = {lc($query_obj->seq) => $query_obj};     
+    if ( defined $query_obj->seq ) {
+        $self->{_qmapping} = { lc( $query_obj->seq ) => $query_obj };
     }
-    $self->{_qmapping} = { default => $query_obj};     
+    $self->{_qmapping} = { default => $query_obj };
 
     if ( $s->direct_and_rev_com || $s->reverse_complement ) {
-        $self->throw(
-            -class => 'Bio::Root::BadParameter',
-            -text =>
-                "While doing a reverse-complement the query does not look like a DNA/RNA\n"
-                . 'sequence.',
-            -value => $regex,
-        ) if $regex !~ m{\A [gactu]+ \z}xmsi;
-        my $query_revcom_obj = Bio::Seq->new(-id => $query_obj->id,
-                                             -desc => $query_obj->desc . 
-                                             ' (reverse complement)',
-                                             -seq => $query_obj->revcom->seq);
-        $self->{_qmapping}->{lc($query_revcom_obj->seq)} = $query_revcom_obj;                                 
+        if ( $regex !~ m{\A [gactu]+ \z}xmsi ) {
+            $self->throw(
+                -class => 'Bio::Root::BadParameter',
+                -text =>
+                    "While doing a reverse-complement the query does not look like a DNA/RNA\n"
+                    . 'sequence.',
+                -value => $regex,
+            );
+        }
+        my $query_revcom_obj = Bio::Seq->new(
+            -id   => $query_obj->id,
+            -desc => $query_obj->desc . ' (reverse complement)',
+            -seq  => $query_obj->revcom->seq
+        );
+        $self->{_qmapping}->{ lc $query_revcom_obj->seq }
+            = $query_revcom_obj;
         if ( $s->direct_and_rev_com ) {
-            $regex = $regex . '|' . $query_revcom_obj->seq;
+            $regex = $regex . q{|} . $query_revcom_obj->seq;
         }
         else {
             $regex = $query_revcom_obj->seq;
         }
     }
 
-    # compile the regex 
+    # compile the regex
     $self->{_regex}  = qr{$regex}imsx;
     $self->{_puffer} = [];
 
     open my $FH, '<',
         $self->_cat_path_filename( $s->datapath, $s->database . '.dat' );
     $self->_output_fh($FH);
-    
-    my $indexfile = $s->datapath . '/' . $s->database . '.idx';
+
+    my $indexfile = $s->datapath . q{/} . $s->database . '.idx';
     $self->{'_idx'} = Bio::Index::Fasta->new($indexfile);
 
     $self->_load_mapping();
@@ -94,68 +105,71 @@ sub search {
 }
 
 sub _parse_next_res {
-    my $self   = shift;
-    my $s      = $self->settings;
-    if ( scalar  @{ $self->{_puffer} } > 0 ) {
+    my $self = shift;
+    my $s    = $self->settings;
+    if ( scalar @{ $self->{_puffer} } > 0 ) {
         return shift @{ $self->{_puffer} };
     }
-    
+
     my $FH = $self->_output_fh;
     while ( my $line = <$FH> ) {
         chomp $line;
         my ( $linenumber, $complete_seq ) = $line =~ $self->{_line_regex};
 
-
         # store sequence for multiple queries (TODO)
-        my $seq = $complete_seq;
+        my $seq        = $complete_seq;
         my $found_hits = 0;
         my $seq_obj;
-        HIT:
-        while ( $seq =~ /$self->{_regex}/g ) {
-            if ($s->maxhits_isset && 
-                $self->_current_res_id + $found_hits > $s->maxhits) {
+    HIT:
+        while ( $seq =~ /$self->{_regex}/gxms ) {
+            if (   $s->maxhits_isset
+                && $self->_current_res_id + $found_hits > $s->maxhits )
+            {
                 seek $FH, 0, 2;
                 last HIT;
             }
-            if ($found_hits == 0) {
-                $seq_obj = $self->{_idx}->fetch( $self->{_mapping}->{
-                        $linenumber } );
-            }    
+            if ( $found_hits == 0 ) {
+                $seq_obj = $self->{_idx}
+                    ->fetch( $self->{_mapping}->{$linenumber} );
+            }
             $found_hits++;
+
             # get coordinates of hit
-            my $subject_begin  = length $`;
-            my $subject_seq    = $&;
-            my $subject_end    = $subject_begin + length($subject_seq);
+            my $subject_begin = length $`;
+            my $subject_seq   = $&;
+            my $subject_end   = $subject_begin + length $subject_seq;
 
-            my ( $upstream_seq, $dummy, $downstream_seq ) =
-                $self->_parse_regions({ complete_seq => $complete_seq,
-                                        subject_begin=> $subject_begin, 
-                                        subject_end  => $subject_end, 
-                                      });  
+            my ( $upstream_seq, $dummy, $downstream_seq )
+                = $self->_parse_regions(
+                {   complete_seq  => $complete_seq,
+                    subject_begin => $subject_begin,
+                    subject_end   => $subject_end,
+                }
+                );
 
-            assert($dummy eq $subject_seq) if DEBUG;
+            assert( $dummy eq $subject_seq ) if DEBUG;
 
             my $sequence = Bio::Seq->new(
-                -id  => $seq_obj->id,
+                -id   => $seq_obj->id,
                 -desc => $seq_obj->desc,
-                -seq => $upstream_seq . $subject_seq . $downstream_seq,
+                -seq  => $upstream_seq . $subject_seq . $downstream_seq,
             );
-            
-            my $tmp_aln = new Bio::SimpleAlign( -source => "Bio::Grep" );
+
+            my $tmp_aln = new Bio::SimpleAlign( -source => 'Bio::Grep' );
             $tmp_aln->add_seq(
                 Bio::LocatableSeq->new(
                     -id    => 'Subject',
                     -seq   => $subject_seq,
-                    -start => $subject_begin + 1, # starts at 1, not 0
+                    -start => $subject_begin + 1,    # starts at 1, not 0
                     -end   => $subject_end,
                 )
             );
-            #warn Data::Dumper->Dump([$self]);
-            my $query_obj = $self->{_qmapping}->{lc($subject_seq)};
-            if (!defined $query_obj) {
+
+            my $query_obj = $self->{_qmapping}->{ lc $subject_seq };
+            if ( !defined $query_obj ) {
                 $query_obj = $self->{_qmapping}->{default};
                 $query_obj->seq($subject_seq);
-            }    
+            }
             $tmp_aln->add_seq(
                 Bio::LocatableSeq->new(
                     -id    => $query_obj->id,
@@ -169,15 +183,15 @@ sub _parse_next_res {
                 Bio::Grep::SearchResult->new(
                     {   sequence    => $sequence,
                         begin       => length($upstream_seq),
-                        end         => length($upstream_seq . $subject_seq),
+                        end         => length( $upstream_seq . $subject_seq ),
                         alignment   => $tmp_aln,
                         sequence_id => $sequence->id,
-                        remark      => '',
+                        remark      => q{},
                         query       => $query_obj,
                     }
                 )
             );
-             
+
             if ($res) {
                 push @{ $self->{_puffer} }, $res;
             }

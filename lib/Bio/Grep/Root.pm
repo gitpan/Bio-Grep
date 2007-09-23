@@ -1,14 +1,19 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 18:47:42 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 493 $
+#############################################################################
+
 package Bio::Grep::Root;
 
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
 use Bio::Root::Root;
 
 use base 'Bio::Root::Root';
-
 
 use File::Spec;
 use File::Copy;
@@ -85,8 +90,8 @@ sub _check_variable {
     if ( !%args || !defined $args{regex} ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
-            -text  => 'Missing arguments: require hash with keys "regex",
-                 "variable" and optional "desc"',
+            -text  => 'Missing arguments: require hash with keys "regex"'
+                . '"variable" and optional "desc"',
         );
     }
     return if !defined $args{variable};
@@ -96,17 +101,15 @@ sub _check_variable {
     }
     my $value;
 
-    if ( $args{regex} eq 'int' ) {
-        ($value) = $args{variable} =~ m{ ( \A \d+ \z ) }xms;
-    }
-    elsif ( $args{regex} eq 'word' ) {
-        ($value) = $args{variable} =~ m{ ( \A [\w.\-]+ \z ) }xms;
-    }
-    elsif ( $args{regex} eq 'path' ) {
-        ($value) = $args{variable} =~ m{ ( \A [\w.\-/\\:]+ \z ) }xms;
-    }
-    elsif ( $args{regex} eq 'sentence' ) {
-        ($value) = $args{variable} =~ m{  \A ([\w.\-/|:(),;]+)  }xms;
+    my %regexes = (
+        'int'      => qr{ ( \A \d+ \z ) }xms,
+        'word'     => qr{ ( \A [\w.\-]+ \z ) }xms,
+        'path'     => qr{ ( \A [\w.\-/\\:]+ \z ) }xms,
+        'sentence' => qr{  \A ([\w.\-/|:(),;]+)  }xms,
+    );
+
+    if ( defined $regexes{ $args{regex} } ) {
+        ($value) = $args{variable} =~ $regexes{ $args{regex} };
     }
     else {
         $self->throw(

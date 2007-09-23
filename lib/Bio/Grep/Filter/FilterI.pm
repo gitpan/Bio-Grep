@@ -1,9 +1,15 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 18:47:42 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 493 $
+#############################################################################
+
 package Bio::Grep::Filter::FilterI;
 
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
 use base 'Bio::Root::Root';
 
@@ -11,7 +17,7 @@ use Class::MethodMaker [
     new      => 'new2',
     scalar   => [qw /search_result message delete/],
     hash     => [qw /supports_alphabet/],
-    abstract => [qw /filter new reset /],
+    abstract => [qw /filter new reset_filter /],
 ];
 
 1;    # Magic true value required at end of module
@@ -56,7 +62,7 @@ Bio::Grep::Filter::FilterI - Superclass for all filter modules
       return 1;
    }   
    
-   sub reset {
+   sub reset_filter {
       my $self = shift;
       # if you need local variables, you can clean up here
    }
@@ -130,9 +136,9 @@ have to set the search result with the function
 C<$filter-E<gt>search_result> before. L<Bio::Grep::Backend::BackendI>
 takes care of that.
 
-=item C<$filter-E<gt>reset()>
+=item C<$filter-E<gt>reset_filter()>
 
-Get/set reset. A flag needed by some Filters like
+Get/set reset_filter. A flag needed by some Filters like
 L<Bio::Grep::Filter::FilterRemoveDuplicates> to tell them, it
 is a new search, forget everything. 
 

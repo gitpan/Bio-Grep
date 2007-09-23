@@ -3,12 +3,13 @@ use strict;
 use warnings;
 
 use Time::HiRes qw(gettimeofday tv_interval);
-
-use Bio::Grep;
-use Bio::Perl;
 use Data::Dumper;
 use English qw( -no_match_vars ) ; 
 use Template;
+use Sys::Info::CPU;
+
+use Bio::Grep;
+use Bio::Perl;
 
 my $template = Template->new();
 
@@ -89,18 +90,10 @@ for $b (sort keys %be) {
 }    
 
 CREATETMP:
-
-$results{cpuinfo} = get_cpu();
+$results{cpuinfo} = scalar Sys::Info::CPU->new->identify; 
 $results{filenameCDNA} = $filenameCDNA;
 $results{biogrepv} = $Bio::Grep::VERSION;
 $results{iterations} = $iterations;
 $results{iterationsdb} = $iterationsdb;
 $template->process('examples/Benchmarks.tt', \%results, 'lib/Bio/Grep/Benchmarks.pod') || die
 $template->error(), "\n";
-
-print Dumper \%results;
-
-sub get_cpu {
-    use Sys::Info::CPU;
-    return scalar Sys::Info::CPU->new->identify;    
-}    

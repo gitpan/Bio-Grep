@@ -12,7 +12,7 @@ BEGIN {
 }
 use BioGrepTest;
 
-register_backend_tests( { Agrep => 18, Vmatch => 27, GUUGle => 27, RE => 27 } );
+register_backend_tests( { Agrep => 20, Vmatch => 29, GUUGle => 29, RE => 29 } );
 plan tests => (number_backend_tests);
 
 ################################################################################
@@ -20,15 +20,15 @@ plan tests => (number_backend_tests);
 BACKEND:
 while ( my $sbe = next_be() ) {
 SKIP: {
-#        diag current_backend_name;
+        # diag current_backend_name;
         my ( $skip, $msg ) = skip_backend_test();
         skip $msg, $skip if $skip;
 
         $sbe->generate_database(
-            {  file     => 't/Test2.fasta', }
+            {  file     => 't/Test_DB_Small.fasta', }
         );
         $sbe->generate_database(
-            {  file     => 't/TestRevCom.fasta', }
+            {  file     => 't/Test_DB_RevCom.fasta', }
         );
         my $gumm = 1;
         $gumm = 0 if current_backend_name eq 'GUUGle';
@@ -41,7 +41,7 @@ SKIP: {
             $sbe->search(
                 {   query        => $query,
                     gumismatches => $gumm,
-                    database     => 'Test2.fasta',
+                    database     => 'Test_DB_Small.fasta',
                 }
             );
         }; # eval
@@ -122,6 +122,7 @@ SKIP: {
             is( $query->id, '42',  'Alignment Query id Bio::Seq revcom' );
             is( $res->query->desc, 'Some Query (reverse complement)' ,  
                 'Query desc Bio::Seq revcom' );
+            ok($res->reverse_complement, 'reverse_complement is 1');
         }; # while 
         
         $query_obj = Bio::Seq->new(-id => '42',
@@ -145,6 +146,7 @@ SKIP: {
             is( $query->id, '42',  'Alignment Query id Bio::Seq no revcom' );
             is( $res->query->desc, 'Some Query' ,  
                 'Query desc Bio::Seq no revcom' );
+            ok(!$res->reverse_complement, 'reverse_complement is 0');
         }; # while 
 
         next BACKEND if !defined $sbe->features->{DIRECT_AND_REV_COM};
@@ -160,7 +162,7 @@ SKIP: {
                 {   query              => $query_obj,
                     gumismatches       => $gumm,
                     direct_and_rev_com => 1,
-                    database           => 'TestRevCom.fasta',
+                    database           => 'Test_DB_RevCom.fasta',
                 }
             );
         }; # eval

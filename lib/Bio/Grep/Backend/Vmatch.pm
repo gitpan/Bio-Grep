@@ -1,11 +1,18 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 22:22:27 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 498 $
+#############################################################################
+
 package Bio::Grep::Backend::Vmatch;
 
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
 use Fatal qw(open close);
+use English qw( -no_match_vars );
 
 use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
@@ -15,6 +22,7 @@ use base 'Bio::Grep::Backend::BackendI';
 use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
+use Carp::Assert;
 
 sub new {
     my $self = shift;
@@ -25,7 +33,7 @@ sub new {
     delete $all_features{INSERTIONS};
     delete $all_features{REVCOM_DEFAULT};
     $self->features(%all_features);
-    $self;
+    return $self;
 }
 
 sub search {
@@ -35,11 +43,146 @@ sub search {
 
     my ( $query, $query_file, $tmp_query_file )
         = $self->_create_tmp_query_file();
+    $self->_check_search_settings_vmatch($query_file);
 
+    my $command = $self->_generate_vmatch_command( $query, $query_file,
+        $tmp_query_file );
+    if ( $ENV{BIOGREPDEBUG} ) {
+        warn $command . "\n";
+    }
+
+    my $cmd_ok = $self->_execute_command($command);
+
+    if ( !$cmd_ok ) {
+        $self->throw(
+            -class => 'Bio::Root::SystemException',
+            -text  => "Vmatch call failed. Command was:\n\t$command"
+        );
+    }
+
+    $self->_create_query_desc_lookup();
+
+    $self->_prepare_results;
+    return 1;
+}
+
+sub _generate_vmatch_command {
+    my ( $self, $query, $query_file, $tmp_query_file ) = @_;
+    my $s = $self->settings;
+
+    my @params;
+
+    my %flags = (
+        'online'   => 'online',
+        'complete' => 'complete',
+    );
+
+    for my $option ( keys %flags ) {
+        my $option_isset = $option . '_isset';
+        if ( $s->$option_isset && $s->$option ) {
+            push @params, " -$flags{$option} ";
+        }
+    }
+
+    my $auto_query_length = 0;
+    if ( !defined $s->query_length && !$s->complete && !$query_file ) {
+        $s->query_length( length $query );
+        $auto_query_length = 1;
+    }
+
+    # dg sorting done by BackendI, not vmatch
+    if ( $s->sort_isset && substr( $s->sort, 0, 1 ) ne 'g' ) {
+        push @params, ' -sort ' . $s->sort;
+    }
+
+    if ( $s->qspeedup_isset ) {
+        if ( $s->complete_isset ) {
+            $self->throw(
+                -class => 'Bio::Root::BadParameter',
+                -text  => q{You can't combine qspeedup and complete.},
+            );
+        }
+
+        push @params, ' -qspeedup ' . $s->qspeedup . q{ };
+    }
+
+    if ( $s->direct_and_rev_com ) {
+        push @params, ' -p -d ';
+    }
+    elsif ( $s->query_file && $s->reverse_complement ) {
+        push @params, ' -p ';
+    }
+
+    my %arguments = (
+        'mismatches'   => q{h},
+        'editdistance' => q{e},
+        'query_length' => q{l},
+        'maxhits'      => 'best',
+        'showdesc'     => 'showdesc',
+        'hxdrop'       => 'hxdrop',
+        'exdrop'       => 'exdrop',
+    );
+
+    for my $option ( keys %arguments ) {
+        my $option_isset = $option . '_isset';
+        if ( $s->$option_isset && $s->$option ) {
+            push @params, " -$arguments{$option} " . $s->$option;
+        }
+    }
+
+    if ($auto_query_length) {
+        $s->query_length_reset;
+    }
+    return $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
+        . $tmp_query_file
+        . join( q{ }, @params ) . ' -s '
+        . $self->_cat_path_filename( $s->datapath, $s->database );
+}
+
+###########################################################################
+# Usage      : _create_query_desc_lookup();
+# Purpose    : create a lookup hash where the keys are query descriptions
+#              like the ones the Vmatch output. The values are the
+#              corresponding Bio::Seq objects
+# Returns    : nothing
+# Parameters : none
+
+sub _create_query_desc_lookup {
+    my ($self) = @_;
+    if ( $self->settings->showdesc_isset ) {
+        my %query_desc_lookup;
+        foreach my $query_seq ( @{ $self->_query_seqs } ) {
+
+            # simulate how this sequence would look in vmatch output
+            my $query_desc = $query_seq->id;
+
+            if ( $query_seq->desc && length($query_desc) > 0 ) {
+                $query_desc .= q{ } . $query_seq->desc;
+            }
+            $query_desc = substr $query_desc, 0, $self->settings->showdesc;
+            $query_desc =~ s/\s/_/gxms;
+            $query_desc_lookup{$query_desc} = $query_seq;
+        }
+        $self->{_mapping} = \%query_desc_lookup;
+    }
+    return;
+}
+
+###########################################################################
+# Usage      : _check_search_settings_vmatch()
+# Purpose    : extends _check_search_settings() with some Vmatch specific
+#              tests.
+# Returns    : nothing
+# Parameters : none
+# Throws     : Bio::Root::BadParameter
+
+sub _check_search_settings_vmatch {
+    my ( $self, $query_file ) = @_;
+    my $s = $self->settings;
     if ( ( $s->upstream > 0 || $s->downstream > 0 ) && $s->showdesc_isset ) {
         $self->throw(
             -class => 'Bio::Root::BadParameter',
-            -text  => "You can't use showdesc() with upstream or downstream.",
+            -text => q{You can't use showdesc() with upstream or downstream.},
         );
     }
     if ( $query_file && !$s->complete && !$s->query_length_isset ) {
@@ -49,108 +192,6 @@ sub search {
                 . 'the flags -complete and -l in the Vmatch documentation.',
         );
     }
-
-    # now generate the command string
-    my $fuzzy = '';
-    if ( $s->mismatches_isset && $s->mismatches > 0 ) {
-        $fuzzy = ' -h ' . $s->mismatches . ' ';
-    }
-    if ( $s->editdistance_isset && $s->editdistance > 0 ) {
-        $fuzzy = ' -e ' . $s->editdistance . ' ';
-    }
-    my $online = '';
-    $online = ' -online ' if ( $s->online_isset && $s->online );
-    my $auto_query_length = 0;
-    if ( !defined $s->query_length && !$s->complete && !$query_file ) {
-        $s->query_length( length($query) );
-        $auto_query_length = 1;
-    }
-    my $length = '';
-    $length = ' -l ' . $s->query_length if defined $s->query_length;
-    my $complete = '';
-    $complete = ' -complete ' if ( $s->complete_isset && $s->complete );
-
-    my $sort = '';
-
-    # dg sorting done by BackendI, not vmatch
-    if ( $s->sort_isset && substr( $s->sort, 0, 1 ) ne 'g' ) {
-        $sort = ' -sort ' . $s->sort;
-    }
-    my $maxhits = '';
-    $maxhits = ' -best ' . $s->maxhits . ' ' if $s->maxhits_isset;
-
-    my $showdesc = '';
-    $showdesc = ' -showdesc ' . $s->showdesc . ' ' if $s->showdesc_isset;
-
-    my $qspeedup = '';
-    if ( $s->qspeedup_isset ) {
-        $self->throw(
-            -class => 'Bio::Root::BadParameter',
-            -text  => "You can't combine qspeedup and complete.",
-        ) if $s->complete_isset;
-
-        $qspeedup = ' -qspeedup ' . $s->qspeedup . ' ';
-
-    }
-
-    my $hxdrop = '';
-    $hxdrop = ' -hxdrop ' . $s->hxdrop . ' ' if $s->hxdrop_isset;
-
-    my $exdrop = '';
-    $exdrop = ' -exdrop ' . $s->exdrop . ' ' if $s->exdrop_isset;
-
-    my $pflag = '';
-    $pflag = ' -p ' if ( $s->query_file && $s->reverse_complement );
-
-    if ( $s->direct_and_rev_com ) {
-        $pflag = ' -p -d ';
-    }
-    my $command = $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
-        . $tmp_query_file
-        . $complete
-        . $sort
-        . $fuzzy
-        . $maxhits
-        . $qspeedup
-        . $showdesc
-        . $length . ' -s '
-        . $online
-        . $hxdrop
-        . $exdrop
-        . $pflag
-        . $self->_cat_path_filename( $s->datapath, $s->database );
-
-    if ( $ENV{BIOGREPDEBUG} ) {
-        warn $command . "\n";
-    }
-
-    my $cmd_ok = $self->_execute_command($command);
-
-    # delete temporary files
-    #unlink($tmp_query_file) if !$query_file;
-
-    $self->throw(
-        -class => 'Bio::Root::SystemException',
-        -text  => "Vmatch call failed. Command was:\n\t$command"
-    ) if !$cmd_ok;
-
-    if ( $s->showdesc_isset ) {
-        my %query_desc_lookup;
-        foreach my $query_seq ( @{ $self->_query_seqs } ) {
-
-            # simulate how this sequence would look in vmatch output
-            my $query_desc = $query_seq->id;
-            $query_desc .= ' ' . $query_seq->desc
-                if ( $query_seq->desc
-                && length($query_desc) > 0 );
-            $query_desc = substr $query_desc, 0, $s->showdesc;
-            $query_desc =~ s{ }{_}g;
-            $query_desc_lookup{$query_desc} = $query_seq;
-        }
-        $self->{_mapping} = \%query_desc_lookup;
-    }
-    $self->settings->query_length_reset if $auto_query_length;
-    $self->_prepare_results;
     return 1;
 }
 
@@ -163,20 +204,22 @@ sub generate_database {
     my ( $self, @args ) = @_;
     my %args = $self->_prepare_generate_database(@args);
 
-    if (defined $args{skip}) {
+    if ( defined $args{skip} ) {
         return 0;
-    }   
+    }
 
     my $alphabet = $self->_guess_alphabet_of_file( $args{filename} );
-    my $alphabet_specific_arguments = '';
+    my $alphabet_specific_arguments = q{};
 
-    #warn $alphabet;
-    #
-    my $verbose = '';
-    $verbose = ' -v ' if defined $args{verbose};
+    my $verbose = q{};
+    if ( defined $args{verbose} ) {
+        $verbose = ' -v ';
+    }
 
     my $pl = ' -pl ';
-    $pl .= $args{prefix_length} . ' ' if defined $args{prefix_length};
+    if ( defined $args{prefix_length} ) {
+        $pl .= $args{prefix_length} . q{ };
+    }
 
     if ( $alphabet eq 'protein' ) {
         $alphabet_specific_arguments = ' -protein ';
@@ -204,12 +247,14 @@ sub generate_database {
         warn $command . "\n";
     }
     my $output_dir = $self->settings->datapath;
-    system(qq{ cd $output_dir ; exec $command });
-    $self->throw(
-        -class => 'Bio::Root::SystemException',
-        -text =>
-            "mkvtree call failed. Cannot generate suffix array. Command was:\n\t$command"
-    ) if ($?);
+    system qq{ cd $output_dir ; exec $command };
+    if ($CHILD_ERROR) {
+        $self->throw(
+            -class => 'Bio::Root::SystemException',
+            -text  => 'mkvtree call failed. Cannot generate suffix array. '
+                . "Command was:\n\t$command",
+        );
+    }
     return 1;
 }
 
@@ -230,53 +275,61 @@ sub _parse_next_res {
 LINE:
     while ( my $line = <$FH> ) {
         chomp $line;
-        $line =~ s/\s+/ /g;
-        if ( $line !~ /\s/ ) {
+        $line =~ s/\s+/ /gxms;
+        if ( $line !~ /\s/xms ) {
             $skipped_lines++;
-            if ( $skipped_lines == 2 ) {
-                $results[-1]->alignment($tmp_aln);
-                my $real_subject = $subject;
+            next LINE if $skipped_lines != 2;
+            $results[-1]->alignment($tmp_aln);
+            my $real_subject = $subject;
 
-                # remove gaps out of alignment
-                $real_subject =~ s{-}{}g;
-                $results[-1]->sequence->seq($real_subject)
-                    if $s->showdesc_isset;
+            # remove gaps out of alignment
+            $real_subject =~ s{-}{}gxms;
 
-                #            $results[-1]->query->seq($query);
-                my $res = $self->_filter_result( $results[-1] );
-                return $res if $res;
-                $alignment_in_output = -1;
-                next LINE;
+            if ( $s->showdesc_isset ) {
+                $results[-1]->sequence->seq($real_subject);
             }
-            else {
-                next LINE;
-            }
-        }
-        else {
-            $skipped_lines = 0;
-        }
-        my @fields = split ' ', $line;
-        $alignment_in_output = 0
-            if ( $line =~ /^Sbjct:/ && !$skip_next_alignment );
 
-        next unless ( $fields[0] =~ /^\d+$/ || $alignment_in_output >= 0 );
+            my $res = $self->_filter_result( $results[-1] );
+            return $res if $res;
+            $alignment_in_output = -1;
+            next LINE;
+        }
+
+        $skipped_lines = 0;
+
+        my @fields = split q{ }, $line;
+        if ( $line =~ m{\A Sbjct: }xms && !$skip_next_alignment ) {
+            $alignment_in_output = 0;
+        }
+
+        next
+            if !( $fields[0] =~ m{\A \d+ \z}xms
+            || $alignment_in_output >= 0 );
         $skip_next_alignment = 0;
 
-        if ( $line =~ /^Sbjct: (.*)$/ ) {
+        if ( $line =~ m{\A Sbjct: \s (.*) \z}xms ) {
             $subject = $1;
         }
-        if ( $line =~ /^Query: (.*)$/ ) {
+        if ( $line =~ m{\A Query: \s (.*) \z}xms ) {
             my $query = $1;
-            $query =~ s/\s+(\d+)\s*$//;
-            my $query_pos = $1;
-            $subject =~ s/\s+(\d+)\s*$//;
-            my $subject_pos = $1;
+
+            my ( $query_pos, $subject_pos );
+
+            if ( $query =~ s{\s+ (\d+) \s* \z}{}xms ) {
+                $query_pos = $1;
+            }
+            if ( $subject =~ s{\s + (\d+) \s* \z}{}xms ) {
+                $subject_pos = $1;
+            }
+            assert( defined $query_pos )   if DEBUG;
+            assert( defined $subject_pos ) if DEBUG;
+
             if ( !$tmp_aln->no_sequences ) {
                 $tmp_aln->add_seq(
                     Bio::LocatableSeq->new(
                         -id    => 'Subject',
                         -seq   => $subject,
-                        -start => ( $subject_pos - length($subject) ) + 1,
+                        -start => ( $subject_pos - length $subject ) + 1,
                         -end   => $subject_pos
                     )
                 );
@@ -284,7 +337,7 @@ LINE:
                     Bio::LocatableSeq->new(
                         -id    => $results[-1]->query->id,
                         -seq   => $query,
-                        -start => ( $query_pos - length($query) ) + 1,
+                        -start => ( $query_pos - length $query ) + 1,
                         -end   => $query_pos
                     )
                 );
@@ -296,7 +349,7 @@ LINE:
                 $s1->seq( $s1->seq . $subject );
                 $s2->end($query_pos);
                 $s2->seq( $s2->seq . $query );
-                $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
+                $tmp_aln = new Bio::SimpleAlign( -source => 'VMATCH' );
                 $tmp_aln->add_seq($s1);
                 $tmp_aln->add_seq($s2);
             }
@@ -304,27 +357,9 @@ LINE:
         }
         next LINE if $alignment_in_output >= 0;
 
-        $tmp_aln = new Bio::SimpleAlign( -source => "VMATCH" );
+        $tmp_aln = new Bio::SimpleAlign( -source => 'VMATCH' );
 
-        # make taint mode happy
-        ( $fields[0] ) = $fields[0] =~ /(\d+)/;
-        ( $fields[2] ) = $fields[2] =~ /(\d+)/;
-        ( $fields[3] ) = $fields[3] =~ /([DP])/;
-
-        if ( $s->showdesc_isset ) {
-
-            # not numerical with showdesc on
-            # don't worry about this unclean untainting, we don't use that
-            # description in dangerous ways
-            ( $fields[1] ) = $fields[1] =~ /(.+)/;
-            ( $fields[5] ) = $fields[5] =~ /(.+)/;
-        }
-        else {
-            ( $fields[1] ) = $fields[1] =~ /(\d+)/;
-            ( $fields[5] ) = $fields[5] =~ /(\d+)/;
-        }
-
-        #     warn Data::Dumper->Dump([ %descs ]);
+        $self->_untaint_parsed_data( \@fields );
 
         my $fasta;
         my $upstream        = $s->upstream;
@@ -340,28 +375,19 @@ LINE:
                 $start    = 0;
             }
             my $length = $upstream + $fields[0] + $s->downstream;
-            $command
-                = $self->_cat_path_filename( $s->execpath, 'vsubseqselect' )
-                . " -seq $length $fields[1] "
-                . $start . ' '
-                . $self->_cat_path_filename( $s->datapath, $s->database );
-            $output = `$command`;
-            if ( $ENV{BIOGREPDEBUG} ) {
-                warn $command . "\n";
-            }
-            my $stringio = IO::String->new($output);
-            my $in       = Bio::SeqIO->new(
-                '-fh'     => $stringio,
-                '-format' => 'fasta'
-            );
-            $fasta = $in->next_seq();
+            $fasta = $self->_get_subsequence( $length, $internal_seq_id,
+                $start );
         }
         else {
             my ( $seq_id, $seq_desc )
                 = $fields[1] =~ m{\A (.+?) _ (.*) \z}xms;
-            $seq_id   = $fields[1] if !defined $seq_id;
-            $seq_desc = ''         if !defined $seq_desc;
-            $seq_desc =~ s{_}{ }g;
+            if ( !defined $seq_id ) {
+                $seq_id = $fields[1];
+            }
+            if ( !defined $seq_desc ) {
+                $seq_desc = q{};
+            }
+            $seq_desc =~ s{_}{ }gxms;
             $fasta = Bio::Seq->new( -id => $seq_id, -desc => $seq_desc );
             $internal_seq_id = $seq_id;
         }
@@ -373,32 +399,79 @@ LINE:
         else {
             $query = $query_seqs[ $fields[5] ];
         }
-        
-        my $rct = ''; my $rcs = $query->seq;
-        if ($s->direct_and_rev_com && $fields[3] eq 'P') {
+
+        my $rct = q{};
+        my $rcs = $query->seq;
+        if ( $s->direct_and_rev_com && $fields[3] eq q{P} ) {
             $rct = ' (reverse complement)';
             $rcs = $query->revcom->seq;
-        }    
+        }
         my $result = Bio::Grep::SearchResult->new(
             {   sequence         => $fasta,
                 begin            => $upstream,
                 end              => $upstream + $fields[0],
                 alignment        => Bio::SimpleAlign->new(),
                 sequence_id      => $internal_seq_id,
-                remark           => '',
+                remark           => q{},
                 evalue           => $fields[8],
                 percent_identity => $fields[10],
                 query            => Bio::Seq->new(
-                                        -id   => $query->id,
-                                        -desc => $query->desc . $rct,
-                                        -seq  => $rcs,
-                                    ),
+                    -id   => $query->id,
+                    -desc => $query->desc . $rct,
+                    -seq  => $rcs,
+                ),
             }
         );
-        push( @results, $result );
+        push @results, $result;
     }
     $self->_delete_output();
     return 0;
+}
+
+sub _untaint_parsed_data {
+    my ( $self, $fields ) = @_;
+
+    ( $fields->[0] ) = $fields->[0] =~ m{ (\d+) }xms;
+    ( $fields->[2] ) = $fields->[2] =~ m{ (\d+) }xms;
+    ( $fields->[3] ) = $fields->[3] =~ m{ ([DP]) }xms;
+
+    if ( $self->settings->showdesc_isset ) {
+
+        # not numerical with showdesc on
+        # don't worry about this unclean untainting, we don't use that
+        # description in dangerous ways
+        ( $fields->[1] ) = $fields->[1] =~ m{ (.+) }xms;
+        ( $fields->[5] ) = $fields->[5] =~ m{ (.+) }xms;
+    }
+    else {
+        ( $fields->[1] ) = $fields->[1] =~ m{ (\d+) }xms;
+        ( $fields->[5] ) = $fields->[5] =~ m{ (\d+) }xms;
+    }
+    return;
+}
+
+sub _get_subsequence {
+    my ( $self, $length, $id, $start ) = @_;
+    my $command = $self->_cat_path_filename( $self->settings->execpath,
+        'vsubseqselect' )
+        . " -seq $length $id $start "
+        . $self->_cat_path_filename( $self->settings->datapath,
+        $self->settings->database );
+    my $output = $self->_execute_command_and_return_output($command);
+
+    if ( $ENV{BIOGREPDEBUG} ) {
+        warn $command . "\n";
+    }
+    if ( $output =~ m{(\d+).*must\sbe\ssmaller\sthan\s (\d+)}xms ) {
+        return $self->_get_subsequence( $length - ( $1 - $2 + 1 ), $id,
+            $start );
+    }
+    my $stringio = IO::String->new($output);
+    my $in       = Bio::SeqIO->new(
+        '-fh'     => $stringio,
+        '-format' => 'fasta'
+    );
+    return $in->next_seq();
 }
 
 sub get_sequences {
@@ -408,40 +481,39 @@ sub get_sequences {
     $self->_check_search_settings();
     my ( $tmp_fh, $tmpfile );
 
-    my $seq_query = '';
+    my $seq_query = q{};
 
     if ( @{$seqid}[0] =~ m{\A \d+ \z}xms ) {
         ( $tmp_fh, $tmpfile )
             = tempfile( 'vseqselect_XXXXXXXXXXXXX', DIR => $s->tmppath );
 
-        foreach ( @{$seqid} ) {
-            print $tmp_fh $_ . " \n ";
+        for my $sid ( @{$seqid} ) {
+            print ${tmp_fh} $sid . " \n ";
         }
         close $tmp_fh;
         $seq_query = ' -seqnum ' . $tmpfile;
     }
     else {
         my $seq_desc = $self->is_sentence( @{$seqid}[0] );
-        $seq_query = ' -matchdesc "' . $seq_desc . '"';
+        $seq_query = ' -matchdesc "' . $seq_desc . q{"};
     }
 
     my $command = $self->_cat_path_filename( $s->execpath, 'vseqselect' )
-        . $seq_query . ' '
+        . $seq_query . q{ }
         . $self->_cat_path_filename( $s->datapath, $s->database );
 
     if ( $ENV{BIOGREPDEBUG} ) {
         warn $command . "\n";
     }
 
-    my $output = `$command`;
-    if ( $? && $output !~ m{\A \> }xms ) {
+    my $output = $self->_execute_command_and_return_output($command);
+    if ( $CHILD_ERROR && $output !~ m{\A \> }xms ) {
         $self->throw(
             -class => 'Bio::Root::SystemException',
-            -text =>
-                "vseqselect call failed. Cannot fetch sequences. Command was:\n\t$command\n$output"
+            -text  => 'vseqselect call failed. Cannot fetch sequences. '
+                . "Command was:\n\t$command\n$output",
         );
     }
-    unlink($tmpfile) if $tmpfile;
     my $stringio = IO::String->new($output);
     my $out      = Bio::SeqIO->new(
         '-fh'     => $stringio,
@@ -704,7 +776,7 @@ L<Bio::SeqIO>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
 Copyright (C) 2007 by M. Riester. All rights reserved. 
 

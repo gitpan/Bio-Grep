@@ -1,4 +1,4 @@
-Bio-Grep version 0.10.1
+Bio-Grep version 0.10.2
 =======================
 
 Bio-Grep is a collection of Perl modules for searching in DNA and protein
@@ -78,22 +78,18 @@ INSTALLATION
 To install this module type the following (AFTER the installation of
 the software in the "Dependecies"-section):
 
-   perl Makefile.PL
-   make
-   make test  (optional, but highly recommended*)
-   make install
-
-Alternatively, to install with Module::Build, you can use the following
-commands:
-
     perl Build.PL
     ./Build
     ./Build test
     ./Build install
 
+Alternatively, to install it "the old way", you can use the following
+commands:
 
-* Bio::Grep needs a lot of other software. It is very likely that 
-some problems with the installation of the dependecies show up!
+   perl Makefile.PL
+   make
+   make test 
+   make install
 
 
 DOCUMENTATION

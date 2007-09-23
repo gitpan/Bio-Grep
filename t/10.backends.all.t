@@ -33,7 +33,7 @@ my %backend_filecnt = (
     RE     => 6
 );
 
-# the hits in Test.fasta we assume with n mismatches
+# the hits in Test_DB_Big.fasta we assume with n mismatches
 my %hits = (
     At1g53160 => 2,
     At2g42200 => 1,
@@ -109,8 +109,8 @@ SKIP: {
         $sbe->settings->datapath('t/wrongdata');
         eval {
             $sbe->generate_database(
-                {   file        => 't/Test.fasta',
-                    description => 'Description for Test.fasta'
+                {   file        => 't/Test_DB_Big.fasta',
+                    description => 'Description for Test_DB_Big.fasta'
                 }
             );
         };
@@ -121,8 +121,8 @@ SKIP: {
         my $ret = 0;
         eval {
             $ret = $sbe->generate_database(
-                {   file          => 't/Test.fasta',
-                    description   => 'Description for Test.fasta',
+                {   file          => 't/Test_DB_Big.fasta',
+                    description   => 'Description for Test_DB_Big.fasta',
                     verbose       => 1,
                     copy          => 1,
                     prefix_length => 3,
@@ -138,8 +138,8 @@ SKIP: {
         eval {
             $sbe->verbose(2);
             $ret = $sbe->generate_database(
-                {   file        => 't/Test.fasta',
-                    description => 'Description for Test.fasta',
+                {   file        => 't/Test_DB_Big.fasta',
+                    description => 'Description for Test_DB_Big.fasta',
                 }
             );
         };
@@ -151,8 +151,8 @@ SKIP: {
             "Warning occured."
         ) || diag $EVAL_ERROR;
 
-        is( $sbe->get_alphabet_of_database('Test.fasta'), 'dna',
-            "Test.fasta dna
+        is( $sbe->get_alphabet_of_database('Test_DB_Big.fasta'), 'dna',
+            "Test_DB_Big.fasta dna
         ($backendname)"
         );
 
@@ -171,7 +171,7 @@ SKIP: {
                 }
                 close(FILE);
                 is( $filecontent,
-                    'Description for Test.fasta',
+                    'Description for Test_DB_Big.fasta',
                     'Description ok'
                 );
             }
@@ -182,8 +182,8 @@ SKIP: {
 
         eval {
             $sbe->generate_database(
-                {   file        => 't/Test_pep.fasta',
-                    description => 'Description for Test_pep.fasta'
+                {   file        => 't/Test_DB_Protein.fasta',
+                    description => 'Description for Test_DB_Protein.fasta'
                 }
             );
         };
@@ -200,7 +200,7 @@ SKIP: {
         }
 
         opendir( DIR, "t/data" ) || die "can't opendir t/data: $!";
-        my @files2 = grep { /Test_pep/ && -f "t/data/$_" } readdir(DIR);
+        my @files2 = grep { /Test_DB_Protein/ && -f "t/data/$_" } readdir(DIR);
         closedir DIR;
 
         if ( $backendname ne 'GUUGle' ) {
@@ -213,7 +213,7 @@ SKIP: {
                     }
                     close(FILE);
                     is( $filecontent,
-                        'Description for Test_pep.fasta',
+                        'Description for Test_DB_Protein.fasta',
                         'Description ok'
                     );
                 }
@@ -226,21 +226,21 @@ SKIP: {
 
         if ( defined $sbe->features->{PROTEINS} ) {
 
-            is( $sbe->get_alphabet_of_database('Test_pep.fasta'), 'protein',
-                "Test.fasta
+            is( $sbe->get_alphabet_of_database('Test_DB_Protein.fasta'), 'protein',
+                "Test_DB_Big.fasta
             protein
             ($backendname)"
             );
 
             is_deeply(
                 { $sbe->get_databases },
-                {   'Test.fasta'     => 'Description for Test.fasta',
-                    'Test_pep.fasta' => 'Description for Test_pep.fasta'
+                {   'Test_DB_Big.fasta'     => 'Description for Test_DB_Big.fasta',
+                    'Test_DB_Protein.fasta' => 'Description for Test_DB_Protein.fasta'
                 }
             );
         }
 
-        $sbe->settings->database('Test.fasta');
+        $sbe->settings->database('Test_DB_Big.fasta');
 
         my $sequence = 'ttattagatataccaaaccagagaaaacaaatacat';
 
@@ -273,7 +273,7 @@ SKIP: {
                 is( lc( $db_seq->subseq( 1, $t_el ) ),
                     lc($t_ss), 'sequence found in db' );
             }
-            $sbe->settings->set( {} );
+            $sbe->settings->set_attributes( {} );
         }
         if ( defined $sbe->features->{MAXHITS} ) {
             $sequence = 'ttatt';
@@ -291,17 +291,17 @@ SKIP: {
             }
             is( $cnt, 5, 'maxhits(5) returned 5 hits' );
 
-            $sbe->settings->set( {} );
+            $sbe->settings->set_attributes( {} );
         }
 
         if ( $sbe->features->{DIRECT_AND_REV_COM} ) {
             my $sbe2 = Bio::Grep->new($backendname);
             $sbe2->settings->datapath('t/data2');
-            $sbe2->generate_database( { file => 't/TestRevCom.fasta' } );
+            $sbe2->generate_database( { file => 't/Test_DB_RevCom.fasta' } );
             $sbe2->search(
                 {   query              => 'GAGCCCTT',
                     direct_and_rev_com => 1,
-                    database           => 'TestRevCom.fasta',
+                    database           => 'Test_DB_RevCom.fasta',
                 }
             );
             my @drc_results;
@@ -321,7 +321,7 @@ SKIP: {
             #warn Dumper $sbe2->get_databases;
             is_deeply(
                 { $sbe2->get_databases },
-                { 'TestRevCom.fasta' => 'TestRevCom.fasta' },
+                { 'Test_DB_RevCom.fasta' => 'Test_DB_RevCom.fasta' },
                 'filename as description when no desc'
             );
 
@@ -524,7 +524,7 @@ SKIP: {
 
             #'Agrep wants shorter queries
             $sbe->search(
-                {   database     => 'Test.fasta',
+                {   database     => 'Test_DB_Big.fasta',
                     query        => $long_query,
                     gumismatches => $gum,
                 }
@@ -604,7 +604,7 @@ SKIP: {
         ) || diag $EVAL_ERROR;
 
         # check exceptions with insecure sortmode
-        $sbe->settings->database('Test.fasta');
+        $sbe->settings->database('Test_DB_Big.fasta');
         $sbe->settings->sort('&& ls *;');
         $sbe->settings->query('ATTTTCG');
         $sbe->settings->mismatches(0);
@@ -685,7 +685,7 @@ SKIP: {
         $sbe->settings->database('&& ls *;');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong database" );
-        $sbe->settings->database('Test.fasta');
+        $sbe->settings->database('Test_DB_Big.fasta');
         eval { $sbe->search() };
         ok( !$EVAL_ERROR, "No Exception occured with correct database" )
             || diag $EVAL_ERROR;
@@ -694,7 +694,7 @@ SKIP: {
         ok( $EVAL_ERROR, "Exception occured with no database" );
 
         # check exceptions with insecure mismatches
-        $sbe->settings->database('Test.fasta');
+        $sbe->settings->database('Test_DB_Big.fasta');
         $sbe->settings->mismatches('&& ls *;');
         eval { $sbe->search() };
         ok( $EVAL_ERROR, "Exception occured with wrong mismatches" );
@@ -881,7 +881,7 @@ SKIP: {
         eval { $sbe->search() };
         ok( !$EVAL_ERROR, "No Exception occured with correct editdistance" );
 
-        $sbe->settings->database('Test_pep.fasta');
+        $sbe->settings->database('Test_DB_Protein.fasta');
         eval { $sbe->search() };
         ok( $EVAL_ERROR,
             "Exception occured when searching dna seq in pep db" );
@@ -914,7 +914,7 @@ SKIP: {
             $sbe->settings->reverse_complement(0);
         }
 
-        $sbe->settings->database('Test.fasta');
+        $sbe->settings->database('Test_DB_Big.fasta');
         eval { $sbe->search() };
         ok( $EVAL_ERROR,
             "Exception occured when searching pep seq in dna db" );

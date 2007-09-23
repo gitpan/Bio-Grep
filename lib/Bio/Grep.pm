@@ -1,3 +1,9 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 14:18:43 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 483 $
+#############################################################################
+
 package Bio::Grep;
 
 use strict;
@@ -7,35 +13,38 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.10.1');
-
+use version; our $VERSION = qv('0.10.2');
 
 sub new {
-   my ( $class, $backendname) = @_;
-   my $self = $class->SUPER::new();
+    my ( $class, $backendname ) = @_;
+    my $self = $class->SUPER::new();
 
-   $backendname = 'Vmatch' if !defined $backendname;
-   my %known_backends = (
-       Agrep  => 1,
-       Vmatch => 1,
-       GUUGle => 1,
-       RE     => 1,
-   ); 
-   
-   if (!defined $known_backends{$backendname}) {
-      $self->throw(-class => 'Bio::Root::BadParameter',
-                   -text  => 'Unknown back-end.',
-                   -value => $backendname . ' not supported.');
-   }
+    if ( !defined $backendname ) {
+        $backendname = 'Vmatch';
+    }
+    my %known_backends = (
+        Agrep  => 1,
+        Vmatch => 1,
+        GUUGle => 1,
+        RE     => 1,
+    );
 
-   my $module = "Bio::Grep::Backend::$backendname";
-   $module->require;
-   
-   my $backend = $module->new();
-   $backend->settings->tmppath( File::Spec->tmpdir() );
-   return $backend;
+    if ( !defined $known_backends{$backendname} ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text  => 'Unknown back-end.',
+            -value => $backendname . ' not supported.'
+        );
+    }
+
+    my $module = "Bio::Grep::Backend::$backendname";
+    $module->require;
+
+    my $backend = $module->new();
+    $backend->settings->tmppath( File::Spec->tmpdir() );
+    return $backend;
 }
-1;# Magic true value required at end of module
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME
@@ -44,7 +53,7 @@ Bio::Grep - Perl extension for searching in DNA and Protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.10.1
+This document describes Bio::Grep version 0.10.2
 
 =head1 SYNOPSIS
 
@@ -421,10 +430,10 @@ L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>
 
 C<Vmatch> is fast but needs a lot of memory. C<Agrep> is the best choice if
 you allow many mismatches in short sequences, if you want to search in Fasta
-files with relatively short sequences (e.g transcript databases) and if you 
-are only interested in which sequences the approximate match was found. Its 
-performance is in this case amazing. If you want the exact positions of a match 
-in the sequence, choose C<Vmatch>. If you want nice alignments, choose 
+files with relatively short sequences (e.g CDNA or Protein databases) and if
+you are only interested in which sequences the approximate match was found. 
+Its performance is in this case amazing. If you want the exact positions of a
+match in the sequence, choose C<Vmatch>. If you want nice alignments, choose 
 C<Vmatch> too (C<EMBOSS> can automatically align the sequence and the query in
 the C<Agrep> back-end, but then C<Vmatch> is faster). Filters require exact 
 positions, so you can't use them with C<Agrep>. This may change in future 
@@ -433,14 +442,17 @@ version or not. The C<Agrep> implementation of the C<TRE> library
 limitations and more features (e.g. you get the exact hit positions) but is
 much slower. See L<Bio::Grep::Benchmarks>.
 
-C<GUUGle> may be the best choice if you have RNA queries (counts GU as no mismatch)
-and if you are interested in only exact matches. Another
-solution here would be to use C<Vmatch> and write a filter (see next section) that
-only allows GU mismatches. Of course, this is only an alternative if you
+C<GUUGle> may be the best choice if you have RNA queries (counts GU as no 
+mismatch) and if you are interested in only exact matches. Another
+solution here would be to use C<Vmatch> and write a filter (see next section)
+that only allows GU mismatches. Of course, this is only an alternative if you
 can limit (C<$sbe-E<gt>settings-E<gt>mismatches()>) the maximal number of GU
-mismatches. C<Vmatch> with its precalculated suffix arrays is really fast, so you
-should consider this option.
+mismatches. C<Vmatch> with its precalculated suffix arrays is really fast, so 
+you should consider this option.
 
+Perl regular expressions are available in the C<RE> back-end. It is a very
+simple back-end which is written in pure perl and which does not require any
+additional software.
 
 =head1 FILTERS
 
@@ -481,7 +493,7 @@ straightforward:
       return 1;
    }   
    
-   sub reset {
+   sub reset_filter {
       my $self = shift;
       # if you need local variables, you can clean up here
    }
@@ -587,7 +599,7 @@ C<GUUGle>: L<http://bioinformatics.oxfordjournals.org/cgi/content/full/22/6/762>
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
 Copyright (C) 2007 by M. Riester. All rights reserved. 
 

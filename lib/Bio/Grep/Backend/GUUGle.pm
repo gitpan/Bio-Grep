@@ -1,3 +1,9 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 17:38:22 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 490 $
+#############################################################################
+
 package Bio::Grep::Backend::GUUGle;
 
 use strict;
@@ -8,10 +14,9 @@ use Bio::Grep::Backend::BackendI;
 
 use base 'Bio::Grep::Backend::BackendI';
 
-use Data::Dumper;
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
 sub new {
     my $self = shift;
@@ -33,64 +38,61 @@ sub new {
     delete $all_features{NATIVE_D_A_REV_COM};
     $self->settings->gumismatches(0);
     $self->features(%all_features);
-    $self;
+    return $self;
 }
 
 sub search {
-    my ($self, $arg_ref) = @_;
-    my $s    = $self->settings;
+    my ( $self, $arg_ref ) = @_;
+    my $s = $self->settings;
     $self->_check_search_settings($arg_ref);
 
-    my ( $query, $query_file, $tmp_query_file) =
-    $self->_create_tmp_query_file();
+    my ( $query, $query_file, $tmp_query_file )
+        = $self->_create_tmp_query_file();
 
     # now generate the command string
-    my $eflag = '';
-    if ($s->upstream > 0 || $s->downstream > 0) {
-        $eflag = ' -e ' . max($s->upstream,$s->downstream) . ' ';     
+    my $eflag = q{};
+    if ( $s->upstream > 0 || $s->downstream > 0 ) {
+        $eflag = ' -e ' . max( $s->upstream, $s->downstream ) . q{ };
     }
-    
-    if ($s->gumismatches > 0 && !$s->direct_and_rev_com) {
-        $self->warn("GUUGle counts GU always as no mismatch.\n" .
-            'Set gumismatches(0) to hide this warning.'
-        );
-    }   
-    if (!$s->reverse_complement && $s->query_file) {
-        $self->throw( 
-             -class => 'Bio::Root::BadParameter',
-             -text => 'GUUGle searches only for the reverse '. 
-             'complement. ',
-             -value => $s->reverse_complement,
-         );     
-    }   
 
-    my $lflag = '';
-    $lflag = ' -l ' . $s->maxhits . ' ' if $s->maxhits_isset;
+    if ( $s->gumismatches > 0 && !$s->direct_and_rev_com ) {
+        $self->warn( "GUUGle counts GU always as no mismatch.\n"
+                . 'Set gumismatches(0) to hide this warning.' );
+    }
+    if ( !$s->reverse_complement && $s->query_file ) {
+        $self->throw(
+            -class => 'Bio::Root::BadParameter',
+            -text => 'GUUGle searches only for the reverse ' . 'complement. ',
+            -value => $s->reverse_complement,
+        );
+    }
+
+    my $lflag = q{};
+    if ( $s->maxhits_isset ) {
+        $lflag = ' -l ' . $s->maxhits . q{ };
+    }
 
     #set query_length automatically
     my $auto_query_length = 0;
-    if (!defined $s->query_length) {
+    if ( !defined $s->query_length ) {
         if ($query) {
-            $s->query_length( length($query) );
+            $s->query_length( length $query );
             $auto_query_length = 1;
         }
         else {
-            $self->throw( 
+            $self->throw(
                 -class => 'Bio::Root::BadParameter',
-                -text => 'query_length not set. See -d flag in the '. 
-                'GUUGle documentation. ',
-         );     
-        }    
-    }    
+                -text  => 'query_length not set. See -d flag in the '
+                    . 'GUUGle documentation. ',
+            );
+        }
+    }
 
-    my $command =
-        $self->_cat_path_filename( $s->execpath, 'guugle' )
-        . $eflag
-        . $lflag
-        . ' -d ' . $s->query_length . ' '
-        . $self->_cat_path_filename( $s->datapath, $s->database ) . ' '
-        . $tmp_query_file
-        ;
+    my $command = $self->_cat_path_filename( $s->execpath, 'guugle' ) . $eflag
+        . $lflag . ' -d '
+        . $s->query_length . q{ }
+        . $self->_cat_path_filename( $s->datapath, $s->database ) . q{ }
+        . $tmp_query_file;
 
     if ( $ENV{BIOGREPDEBUG} ) {
         warn $command . "\n";
@@ -98,27 +100,29 @@ sub search {
 
     my $cmd_ok = $self->_execute_command($command);
 
-    # delete temporary files
-    #unlink($tmp_query_file) if !$query_file;
-
-    $self->throw(
-        -class => 'Bio::Root::SystemException',
-        -text  => "GUUGle call failed. Command was:\n\t$command"
-        )
-        if !$cmd_ok;
+    if ( !$cmd_ok ) {
+        $self->throw(
+            -class => 'Bio::Root::SystemException',
+            -text  => "GUUGle call failed. Command was:\n\t$command"
+        );
+    }
 
     $self->_skip_header();
     my %query_desc_lookup;
-    foreach my $query_seq (@{ $self->_query_seqs }) {
+    foreach my $query_seq ( @{ $self->_query_seqs } ) {
+
         # simulate how this sequence would look in guugle output
         my $query_desc = $query_seq->id;
-        $query_desc .= ' ' . $query_seq->desc if ($query_seq->desc &&
-        length($query_desc) > 0);
+        if ( $query_seq->desc && length($query_desc) > 0 ) {
+            $query_desc .= q{ } . $query_seq->desc;
+        }
         $query_desc_lookup{$query_desc} = $query_seq;
     }
     $self->{_mapping} = \%query_desc_lookup;
     $self->_prepare_results;
-    $self->settings->query_length_reset if $auto_query_length;
+    if ($auto_query_length) {
+        $self->settings->query_length_reset;
+    }
     return 1;
 }
 
@@ -132,170 +136,189 @@ sub generate_database {
 
     my %args = $self->_prepare_generate_database(@args);
 
-    if (defined $args{skip}) {
+    if ( defined $args{skip} ) {
         return 0;
-    }   
+    }
 
     $self->_create_index_and_alphabet_file( $args{filename} );
     return 1;
 }
 
 sub _skip_header {
-    my ( $self ) = @_;
-    my $FH = $self->_output_fh;
+    my ($self)      = @_;
+    my $FH          = $self->_output_fh;
     my $blank_lines = 0;
-    while (my $line = <$FH>) {
+    while ( my $line = <$FH> ) {
         chomp $line;
+
         # skip everything before first line
-        if ($line =~ /^\s*$/) {
+        if ( $line =~ m{\A \s* \z}xms ) {
             $blank_lines++;
             return if $blank_lines == 2;
         }
     }
+    return;
 }
 
 sub _rnas_match {
-    my ( $self, $s1, $s2) = @_;
+    my ( $self, $s1, $s2 ) = @_;
     return 1 if $s1 eq $s2;
-    return 0 if length($s1) != length($s2);
+    return 0 if length $s1 != length $s2;
+
     # now check for wobble pairs
-    for my $i (0 .. (length($s1) -1)) {
-        my $a = substr $s1, $i, 1;
-        my $b = substr $s2, $i, 1;
-        if ($a ne $b && join('',$a,$b) ne 'uc' && join('',$a,$b) ne 'ga') {
+    for my $i ( 0 .. ( length($s1) - 1 ) ) {
+        my $base_a = substr $s1, $i, 1;
+        my $base_b = substr $s2, $i, 1;
+        if (   $base_a ne $base_b
+            && join( q{}, $base_a, $base_b ) ne 'uc'
+            && join( q{}, $base_a, $base_b ) ne 'ga' )
+        {
             return 0;
-        }    
-    }    
+        }
+    }
     return 1;
-}    
+}
 
 sub _get_subject_id_and_desc {
     my ( $self, $text ) = @_;
-    if ( $text =~ m{(.*?)\s(.*)}xms) {
-        return ($1,$2);
+    if ( $text =~ m{(.*?)\s(.*)}xms ) {
+        return ( $1, $2 );
     }
     else {
-        return ($text,'');
-    }    
-}   
+        return ( $text, q{} );
+    }
+}
 
 sub _parse_next_res {
-    my $self    = shift;
-    my $s       = $self->settings;
+    my $self       = shift;
+    my $s          = $self->settings;
     my @query_seqs = $self->_query_seqs;
 
     # temp variables. for parsing only
-    my ($subject_id,$subject_desc, $subject_pos, $subject_seq, 
-        $query_desc, $query_pos, $query_seq, $matchlength, $upstream) =
-    (0,'',0,0,'',0,0,0,0);
-    
-    my ($up_seq, $down_seq) = ('','');
+    my ($subject_id,  $subject_desc, $subject_pos,
+        $subject_seq, $query_desc,   $query_pos,
+        $query_seq,   $matchlength,  $upstream
+    ) = ( 0, q{}, 0, 0, q{}, 0, 0, 0, 0 );
+
+    my ( $up_seq, $down_seq ) = ( q{}, q{} );
 
     my $FH = $self->_output_fh;
-    LINE:
-    while (my $line = <$FH>) {
+LINE:
+    while ( my $line = <$FH> ) {
         chomp $line;
 
-        if ( $line =~ m{MatchLength} ) {
-            ( $matchlength, $subject_id, $subject_pos, 
-                $query_desc, $query_pos ) = $line =~ m{\A
+        if ($line =~ m{\A
                 MatchLength:\s(\d+)\s
                 "(.*?)"
                 \sat\s(\d+)\s
                 vs\.\s
                 "(.*?)"\s
                 at\s(\d+)
-             }xms;
-             ( $subject_id, $subject_desc) =
-                 $self->_get_subject_id_and_desc($subject_id);
+             }xms
+            )
+        {
+            (   $matchlength, $subject_id, $subject_pos,
+                $query_desc,  $query_pos
+            ) = ( $1, $2, $3, $4, $5 );
+            ( $subject_id, $subject_desc )
+                = $self->_get_subject_id_and_desc($subject_id);
 
-             next LINE;   
-        }    
-        elsif ( $line =~ m{ \A > }xms ) { # -e mode
-            ( $subject_id, $subject_pos, 
-                $query_desc, $query_pos ) = $line =~ m{\A
+            next LINE;
+        }
+
+        if ($line =~ m{\A
                 >(.*?)
                 _at_(\d+)
                 _with_
                 (.*?)
                 _at_(\d+)
-             }xms;
-             ( $subject_id, $subject_desc) =
-                 $self->_get_subject_id_and_desc($subject_id);
-             next LINE;   
-        }    
-        elsif ( $line =~ m{ \A 5 }xms) {
-            ( $subject_seq ) = $line =~ m{ \A 5 (.*) 3 \z}xms;
-            next LINE;
-        }    
-        elsif ( $line =~ m{ \A 3 }xms) {
-            ( $query_seq ) = $line =~ m{ \A 3 (.*) 5 \z}xms;
+             }xms
+            )
+        {    # -e mode
+
+            ( $subject_id, $subject_pos, $query_desc, $query_pos, )
+                = ( $1, $2, $3, $4, );
+            ( $subject_id, $subject_desc )
+                = $self->_get_subject_id_and_desc($subject_id);
             next LINE;
         }
-        elsif ( $line =~ m{\A Maximum\snumber}xms ) {
+
+        if ( $line =~ m{ \A 5 (.*) 3 \z}xms ) {
+            $subject_seq = $1;
+            next LINE;
+        }
+
+        if ( $line =~ m{ \A 3 (.*) 5 \z}xms ) {
+            $query_seq = $1;
+            next LINE;
+        }
+
+        if ( $line =~ m{\A Maximum\snumber}xms ) {
             last LINE;
-        }    
+        }
 
         # find the query that belongs to the match
         my $query = $self->{_mapping}->{$query_desc};
-        #use Data::Dumper; 
-        #warn "BLA $query_desc "; 
-        #warn Data::Dumper->Dump( [$self->{_mapping} ]); 
+
         # already reverse, so just the complement here:
         $query_seq =~ tr[UTGCAutgca][AACGUaacgu];
 
         # -e mode
         if ( $line =~ m{ \A [gucaGUCA]+ \z }xms ) {
+
             # find subject in string. a little bit complicated because
             # don't know if the upstream/downstream region is as large
             # as we request
-            my $qrc = lc($query->revcom->seq);
-            $qrc =~ s/t/u/g;
-            my $ql =  $s->query_length || length($query->seq);
-            SUBSTRING:
-            for my $length ( reverse($ql .. length($query->seq)) ) { 
-                for my $start ( reverse( 0 .. max($s->upstream,$s->downstream) ) ) {
-                        my $query_start =
-                        length($query->seq)-$query_pos+1-$length;
-                        my $qs = substr $qrc, $query_start, $length;
-                        my $ss = substr $line, $start, $length;
-                        #warn "L:$length S:$start QS:$query_start $qrc $qs $line $ss";
-                        if ($self->_rnas_match($ss, $qs)) {
-                                $subject_pos = $start;
-                                $subject_seq = $ss;
-                                $query_seq   = $qs;
-                                $matchlength = $length;
-                                $upstream    = $start;
-                                $up_seq   = substr $line, 0, $upstream;
-                                $down_seq = substr $line, $upstream + $length;
-                                # now check if regions are larger than
-                                # expected. can happen when up/down differ
-                                if(length($up_seq) > $s->upstream) {
-                                    $up_seq = substr $up_seq, 
-                                           length($up_seq)-$s->upstream;
-                                    $upstream = length($up_seq);       
-                                }    
-                                if(length($down_seq) > $s->downstream) {
-                                    $down_seq = substr $down_seq,0, 
-                                           $s->downstream;
-                                }    
-                                last SUBSTRING;
-                        }        
-                }        
-            }        
-        }    
+            my $qrc = lc $query->revcom->seq;
+            $qrc =~ s/t/u/gxms;
+            my $ql = $s->query_length || length $query->seq;
+        SUBSTRING:
+            for my $length ( reverse $ql .. length $query->seq ) {
+            STARTPOSITION:
+                for my $start (
+                    reverse 0 .. max( $s->upstream, $s->downstream ) )
+                {
+                    my $query_start
+                        = length( $query->seq ) - $query_pos + 1 - $length;
+                    my $qs = substr $qrc,  $query_start, $length;
+                    my $ss = substr $line, $start,       $length;
+
+                #warn "L:$length S:$start QS:$query_start $qrc $qs $line $ss";
+                    next STARTPOSITION if !( $self->_rnas_match( $ss, $qs ) );
+                    $subject_pos = $start;
+                    $subject_seq = $ss;
+                    $query_seq   = $qs;
+                    $matchlength = $length;
+                    $upstream    = $start;
+                    $up_seq      = substr $line, 0, $upstream;
+                    $down_seq    = substr $line, $upstream + $length;
+
+                    # now check if regions are larger than
+                    # expected. can happen when up/down differ
+                    if ( length($up_seq) > $s->upstream ) {
+                        $up_seq = substr $up_seq,
+                            length($up_seq) - $s->upstream;
+                        $upstream = length $up_seq;
+                    }
+                    if ( length($down_seq) > $s->downstream ) {
+                        $down_seq = substr $down_seq, 0, $s->downstream;
+                    }
+                    last SUBSTRING;
+                }
+            }
+        }
         my $fasta = Bio::Seq->new(
-            -id  => $subject_id,
-            -seq => $up_seq .  $subject_seq . $down_seq,
+            -id   => $subject_id,
+            -seq  => $up_seq . $subject_seq . $down_seq,
             -desc => $subject_desc,
         );
-        my $tmp_aln = new Bio::SimpleAlign( -source => "Bio::Grep" );
+        my $tmp_aln = new Bio::SimpleAlign( -source => 'Bio::Grep' );
         $tmp_aln->add_seq(
             Bio::LocatableSeq->new(
                 -id    => 'Subject',
                 -seq   => $subject_seq,
                 -start => $subject_pos,
-                -end   => $subject_pos+ length($subject_seq)-1,
+                -end   => $subject_pos + length($subject_seq) - 1,
             )
         );
         $tmp_aln->add_seq(
@@ -304,25 +327,27 @@ sub _parse_next_res {
                 -desc  => $query->desc,
                 -seq   => $query_seq,
                 -start => $query_pos,
-                -end   => $query_pos + length($query_seq)-1,
+                -end   => $query_pos + length($query_seq) - 1,
             )
         );
         my $res = $self->_filter_result(
-            Bio::Grep::SearchResult->new({ 
-                sequence    => $fasta,
-                begin       => $upstream, 
-                end         => $upstream +$matchlength,
-                alignment   => $tmp_aln, 
-                sequence_id => $fasta->id, 
-                remark      => '', 
-                query       => $query,
-            })
-            );
-        if ($res) {    
+            Bio::Grep::SearchResult->new(
+                {   sequence    => $fasta,
+                    begin       => $upstream,
+                    end         => $upstream + $matchlength,
+                    alignment   => $tmp_aln,
+                    sequence_id => $fasta->id,
+                    remark      => q{},
+                    query       => $query,
+                }
+            )
+        );
+        if ($res) {
             return $res;
         }
     }
     close $FH;
+
     #$self->_delete_output();
     return 0;
 }

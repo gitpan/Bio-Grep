@@ -89,7 +89,7 @@ $code =<<'EOT'
   
   # generate a Vmatch suffix array. you have to do this only once.
   $sbe->generate_database({ 
-    file          => 't/TestRevCom.fasta', 
+    file          => 't/Test_DB_RevCom.fasta', 
     description   => 'AGI Transcripts',
     datapath      => 'data',
     prefix_length => 3,
@@ -203,7 +203,7 @@ my $code =<<'EOT'
   
   # generate a database. you have to do this only once. 
   $sbe->generate_database({ 
-    file        => 't/TestRevCom.fasta', 
+    file        => 't/Test_DB_RevCom.fasta', 
     description => 'AGI Transcripts',
     datapath    => 'data',
   });
@@ -259,7 +259,7 @@ my $code =<<'EOT'
   # This function generates an fast index for $sbe->get_sequences
   # and files with a description and the alphabet (only DNA/RNA allowed)
   $sbe->generate_database({ 
-    file        => 't/TestRevCom.fasta', 
+    file        => 't/Test_DB_RevCom.fasta', 
     description => 'AGI Transcripts',
     datapath    => 'data',
   });
@@ -314,7 +314,7 @@ my $code =<<'EOT'
   
   # generate a database. you have to do this only once. 
   $sbe->generate_database({ 
-    file        => 't/TestRevCom.fasta', 
+    file        => 't/Test_DB_RevCom.fasta', 
     description => 'AGI Transcripts',
     datapath    => 'data',
   });
@@ -362,7 +362,7 @@ $code =<<'EOT'
  
   $sbe->search({
      datapath  => 't/data',
-     database  => 'TestRevCom.fasta',
+     database  => 'Test_DB_RevCom.fasta',
      query      => $motif,
   });
 EOT
@@ -381,7 +381,7 @@ rmdir('t/data2');
 
 sub code_eval {
     my ( $code ) = @_;
-    $code =~ s/ATH1.cdna/TestRevCom.fasta/g;
+    $code =~ s/ATH1.cdna/Test_DB_RevCom.fasta/g;
     $code =~ s{'data'}{'t/data'}g;
     $code =~ s{generate_database\('T}{generate_database('t/T}g;
 #    diag $code;

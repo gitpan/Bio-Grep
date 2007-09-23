@@ -1,3 +1,9 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 16:34:33 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 487 $
+#############################################################################
+
 package Bio::Grep::SearchSettings;
 
 use strict;
@@ -6,7 +12,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
 use Class::MethodMaker [
     new    => 'new2',
@@ -21,9 +27,10 @@ use Class::MethodMaker [
 
 sub new {
     my $self = shift->new2;
+
     # initialize standard settings
     $self->_init();
-    $self;
+    return $self;
 }
 
 sub _init {
@@ -50,12 +57,12 @@ sub _init {
     return;
 }
 
-sub set {
+sub set_attributes {
     my ( $self, $arg_ref ) = @_;
 
     # set default values first
     $self->_init();
-    for my $key ( keys %$arg_ref ) {
+    for my $key ( keys %{$arg_ref} ) {
         my $rt = reftype $arg_ref->{$key};
         if ( defined $rt ) {
             if ( $rt eq 'ARRAY' ) {
@@ -63,7 +70,7 @@ sub set {
             }
             else {
                 $self->$key( $arg_ref->{$key} );
-            }    
+            }
         }
         else {
             $self->$key( $arg_ref->{$key} );
@@ -144,9 +151,9 @@ back-end adds an object of this module into C<$sbe-E<gt>settings>, so you
 should never have to call this constructor directly. If you want to reset all
 settings to their default values, call
 
-  $sbe->settings->set({});
+  $sbe->settings->set_attributes({});
 
-See set().
+See set_attributes().
 
 =back
 
@@ -154,11 +161,11 @@ See set().
 
 =over
 
-=item C<set($hash_ref)>
+=item C<set_attributes($hash_ref)>
 
 Sets all settings in the hash reference:
 
-  set( { query => $query, reverse_complement => 1 } );
+  set_attributes( { query => $query, reverse_complement => 1 } );
 
 This function resets everything except the paths and the database to default
 values.

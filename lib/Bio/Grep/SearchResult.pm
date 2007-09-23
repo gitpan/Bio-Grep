@@ -1,9 +1,15 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 20:55:22 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 495 $
+#############################################################################
+
 package Bio::Grep::SearchResult;
 
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
 use IO::String;
 
@@ -12,7 +18,7 @@ use base 'Bio::Root::Root';
 use Class::MethodMaker [
     new    => 'new2',
     scalar => [
-        qw /sequence query begin end alignment sequence_id remark 
+        qw /sequence query begin end alignment sequence_id remark
             percent_identity evalue dG _real_query/
     ],
 ];
@@ -22,24 +28,29 @@ sub new {
     my $arg_ref = shift;
 
     #initizialize member variables
-    for my $key ( keys %$arg_ref ) {
+    for my $key ( keys %{$arg_ref} ) {
         $self->$key( $arg_ref->{$key} );
     }
-    $self;
+    return $self;
+}
+
+sub reverse_complement {
+    my ( $self ) = @_;
+    return $self->query->desc =~ m{ \(reverse\scomplement\) \z }xms;
 }
 
 sub mark_subject_uppercase {
     my $self   = shift;
     my $result = $self->sequence->seq;
-    if (!defined $self->begin || !defined $self->end) {
+    if ( !defined $self->begin || !defined $self->end ) {
         return lc $result;
     }
     else {
         return
-        lc( substr( $result, 0, $self->begin ) )
-            . uc( substr( $result, $self->begin, $self->end - $self->begin ) )
-            . lc( substr( $result, $self->end ) );
-    }    
+              lc( substr $result,   0,            $self->begin )
+            . uc( substr $result, $self->begin, $self->end - $self->begin )
+            . lc substr $result, $self->end;
+    }
 }
 
 sub subject {
@@ -51,20 +62,41 @@ sub subject {
     );
 }
 
+sub upstream {
+    my $self = shift;
+
+    return Bio::Seq->new(
+        -id  => $self->sequence->id,
+        -seq => $self->sequence->subseq( 1, $self->begin )
+    );
+}
+
+sub downstream {
+    my $self = shift;
+
+    return Bio::Seq->new(
+        -id  => $self->sequence->id,
+        -seq => $self->sequence->subseq( $self->end + 1,
+            length $self->sequence->seq )
+    );
+}
+
 sub alignment_string {
     my $self   = shift;
-    my $result = "";
+    my $result = q{};
     my $str    = IO::String->new();
     my $out    = Bio::AlignIO->new( -format => 'clustalw', -fh => $str );
-    unless ( defined( $self->alignment ) ) {
-        $self->warn("No alignment calculated.");
-        return "";
+    if ( !defined $self->alignment ) {
+        $self->warn('No alignment calculated.');
+        return q{};
     }
     $out->write_aln( $self->alignment );
     $out->close();
     $str = IO::String->new( ${ $str->string_ref } );
+LINE:
     while ( my $l = <$str> ) {
-        $result .= $l unless ( $l =~ /CLUSTAL/ or $l =~ /^\s+$/ );
+        next LINE if ( $l =~ /CLUSTAL/xms || $l =~ /\A \s+ \z/xms );
+        $result .= $l;
     }
     return $result;
 }
@@ -136,8 +168,20 @@ Only called by the back-end parser.
 =item C<subject()>
 
 Creates a L<Bio::Seq> object with the sequence found in the database (see 
-sequence(), L<"ACCESSORS/MUTATORS">), but without upstream and downstream 
+sequence()) , but without upstream and downstream 
 regions. 
+
+=item C<upstream()>
+
+The upstream region as L<Bio::Seq> object. See subject().
+
+=item C<downstream()>
+
+The downstream region as L<Bio::Seq> object. See subject().
+
+=item C<reverse_complement()>  
+
+Returns a true value if hit is a reverse complement hit, 0 otherwise.
 
 =back
 
@@ -177,10 +221,17 @@ L<Bio::Seq> object.
 
 Get the query as L<Bio::Seq> object. Useful for multiple queries. If
 <direct_and_rev_com> is set, then a reverse complement hit is marked with
-' (reverse complement)' in $query->desc;
+' (reverse complement)' in C<$query-E<gt>desc> and C<reverse_complement> (see
+below) is 1.
 
+  # DON'T DO THIS:  
   if ($query->desc =~ m{ \(reverse\scomplement\)\z}xms) {
      ...
+  }
+
+  # use reverse_complement instead:
+  if ($res->reverse_complement) {
+    ...
   }
 
 =item C<alignment()>

@@ -1,3 +1,9 @@
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-23 13:03:29 +0200 (Sun, 23 Sep 2007) $
+# $Revision: 499 $
+#############################################################################
+
 package Bio::Grep::Filter::FilterRemoveDuplicates;
 
 use strict;
@@ -7,37 +13,39 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.10.1');
+use version; our $VERSION = qv('0.10.2');
 
-use Class::MethodMaker
- [ new => [ qw / new2 / ],
-   hash => [qw / _ids / ],
- ];
-
+use Class::MethodMaker [
+    new  => [qw /new2/],
+    hash => [qw /_ids/],
+];
 
 sub new {
-   my $self = shift->new2;
-   $self->delete(1);
-   $self->supports_alphabet( dna => 1, protein => 1);
-   $self;
+    my $self = shift->new2;
+    $self->delete(1);
+    $self->supports_alphabet( dna => 1, protein => 1 );
+    return $self;
 }
 
 sub filter {
-   my $self = shift;
-   my %ids = $self->_ids;
-   my ( $id ) = $self->search_result->sequence->id =~ m{\A (.*) \. \d+ \z}xms;
-   $id =  $self->search_result->sequence->id if !defined $id;
-   return 0 if defined($ids{$id});
-   $ids{$id} = 1;
-   $self->_ids(%ids);
-   return 1;
-}   
-
-sub reset {
-   my $self = shift;
-   $self->_ids_reset;
+    my $self = shift;
+    my %ids  = $self->_ids;
+    my ($id) = $self->search_result->sequence->id =~ m{\A (.*) \. \d+ \z}xms;
+    if ( !defined $id ) {
+        $id = $self->search_result->sequence->id;
+    }
+    return 0 if defined $ids{$id};
+    $ids{$id} = 1;
+    $self->_ids(%ids);
+    return 1;
 }
-1;# Magic true value required at end of module
+
+sub reset_filter {
+    my $self = shift;
+    $self->_ids_reset;
+    return;
+}
+1;    # Magic true value required at end of module
 __END__
 
 =head1 NAME
@@ -63,7 +71,7 @@ characters (this normally represents alternative splice forms).
 
 =head1 METHODS
 
-See L<Bio::Grep::FilterI> for inherited methods.
+See L<Bio::Grep::Filter::FilterI> for inherited methods.
 
 =head2 CONSTRUCTOR
 

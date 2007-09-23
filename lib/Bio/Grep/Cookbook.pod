@@ -12,7 +12,7 @@ common problems and to make the development process easier.
 
 All recipes assume that the database is generated in the directory I<data>.
 The analyses of the search results are omitted, meaning you have to append
-somthing like
+something like
 
   while ( my $res = $sbe->next_res ) {
     ...

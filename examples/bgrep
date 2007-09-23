@@ -1,81 +1,83 @@
 #!/usr/bin/perl        
- 
+
+#############################################################################
+#   $Author: markus $
+#     $Date: 2007-09-21 16:34:33 +0200 (Fri, 21 Sep 2007) $
+# $Revision: 487 $
+#############################################################################
+
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.10.1);
+use version; our $VERSION = qv(0.10.2);
 
-use Bio::Grep ;
+use Bio::Grep;
 use Getopt::Long qw(:config auto_version);
 use Pod::Usage;
 use File::Basename;
 use Data::Dumper;
 
-# parse command line arguments 
+# parse command line arguments
 ##############################################################################
 
-my $man = 0;
-my $help = 0;
+my $man   = 0;
+my $help  = 0;
 my $start = time;
-my %h = ('help|?' => \$help, man => \$man);
+my %h     = ( 'help|?' => \$help, man => \$man );
 
 my $result = GetOptions(
-    \%h, "backend=s",   
-         "mismatches=i",      
-         "editdistance=i",      
-         "gumismatches=i",      
-         "insertions=i",      
-         "deletions=i",      
-         "upstream=i",      
-         "downstream=i",      
-         "maxhits=i",      
-         "query=s",
-         "query_length=i",     
-         "showdesc=i",     
-         "hxdrop=i",     
-         "exdrop=i",     
-         "reverse_complement",
-         "direct_and_rev_com",
-         "query_file=s",
-         "sort=s",
-         "database=s",
-         "datapath=s",
-         "createdb",
-         "complete",
-         "online",
-         "no_alignments",
-         "idsonly",
-         "man",
-         "help|?",
-                        ) or pod2usage(2);
-pod2usage(1) if $help;
-pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+    \%h,                  'backend=s',
+    'mismatches=i',       'editdistance=i',
+    'gumismatches=i',     'insertions=i',
+    'deletions=i',        'upstream=i',
+    'downstream=i',       'maxhits=i',
+    'query=s',            'query_length=i',
+    'showdesc=i',         'hxdrop=i',
+    'exdrop=i',           'reverse_complement',
+    'direct_and_rev_com', 'query_file=s',
+    'sort=s',             'database=s',
+    'datapath=s',         'createdb',
+    'complete',           'online',
+    'no_alignments',      'idsonly',
+    'man',                'help|?',
+) or pod2usage(2);
 
-unless ((defined $h{query_file} || defined $h{query} || defined $h{createdb}) && defined $h{database} ) {
+if ($help) {
     pod2usage(1);
-}    
+}
+if ($man) {
+    pod2usage( -exitstatus => 0, -verbose => 2 );
+}
+
+if (!(
+    ( defined $h{query_file} || defined $h{query} || defined $h{createdb} )
+    && defined $h{database} ))
+{
+    pod2usage(1);
+}
 
 # now start configuring Bio::Grep
 ##############################################################################
-my $sbe = Bio::Grep->new($h{backend});	
+my $sbe = Bio::Grep->new( $h{backend} );
 
-if (!defined $h{datapath}) {
+if ( !defined $h{datapath} ) {
     $h{datapath} = 'data';
 }
 
-mkdir($h{datapath});	
-$sbe->settings->datapath($h{datapath});
+mkdir $h{datapath};
+$sbe->settings->datapath( $h{datapath} );
 
 # generate a suffix array. you have to do this only once.
-if ($h{createdb}) {
-    $h{database} = $sbe->generate_database({ 
-            file =>$h{database}, 
-            description => 'Description for the test Fastafile',
+if ( $h{createdb} ) {
+    $h{database} = $sbe->generate_database(
+        {   file          => $h{database},
+            description   => 'Description for the test Fastafile',
             prefix_length => 4,
-        });
+        }
+    );
 }
 
-# now try to search. 
+# now try to search.
 ##############################################################################
 
 delete $h{'help|?'};
@@ -84,46 +86,51 @@ delete $h{backend};
 my $idsonly = $h{idsonly};
 delete $h{idsonly};
 
-if (!defined $h{createdb}) { 
-    $sbe->search(\%h);
-    
+if ( !defined $h{createdb} ) {
+    $sbe->search( \%h );
+
     my $hits = 0;
-    #  finally, output the results 
+
+    #  finally, output the results
     ##############################################################################
     while ( my $res = $sbe->next_res ) {
         if ($idsonly) {
             print $res->sequence->id . "\n";
-        }   
-        else { 
-            if (!defined $res->sequence->desc) {
+        }
+        else {
+            if ( !defined $res->sequence->desc ) {
                 print $res->sequence->id . "\n";
             }
             else {
-                print $res->sequence->id . " " . $res->sequence->desc . "\n";
-            }    
-            if (!defined $res->query->desc) {
+                print $res->sequence->id . q{ } . $res->sequence->desc . "\n";
+            }
+            if ( !defined $res->query->desc ) {
                 print $res->query->id . "\n";
             }
             else {
-                print $res->query->id . " " . $res->query->desc . "\n";
-            }    
+                print $res->query->id . q{ } . $res->query->desc . "\n";
+            }
             print $res->mark_subject_uppercase() . "\n";
+
             #print Dumper $res->alignment;
             print $res->alignment_string() . "\n\n";
         }
         $hits++;
     }
-    print "$hits search results. Search took " . (time - $start) . " seconds.\n";
+    print "$hits search results. Search took "
+        . ( time - $start )
+        . " seconds.\n";
 }
 else {
-    print "Database generation took " . (time - $start) . " seconds.\n";
-}    
+    print 'Database generation took ' . ( time - $start ) . " seconds.\n";
+}
+__END__
 
 =head1 NAME
 
 bgrep - Wrapper for several suffix array tools
 
-=head1 SYNOPSIS
+=head1 USAGE
 
   # to create a database
   bgrep --backend Vmatch --database Data.fa --datapath data --createdb
@@ -131,8 +138,19 @@ bgrep - Wrapper for several suffix array tools
   # to search
   bgrep [ Options ] --query_file Query.fa --database Data.fa  --datapath data
 
-    --query_file    A Fasta file with the query sequences.
-    --database      A Fasta database.
+=head1 REQUIRED ARGUMENTS
+
+=over
+
+=item C<database>
+
+The name of the database. 
+
+=item C<query_file>
+
+A Fasta file with query sequences.
+
+=back
 
 =head1 OPTIONS
 
@@ -243,6 +261,21 @@ backends available. You can filter search results.
 
 bgrep is an example of how to use this library.
 
+=head1 CONFIGURATION AND ENVIRONMENT
+
+C<bgrep> does not supported configuration files (but it is on my TODO list).
+
+The environment variable C<BIOGREPDEBUG> is supported. When this variable is
+set to a true value, then C<bgrep> will output A LOT OF debug text.
+
+=head1 DEPENDENCIES
+
+L<Bio::Grep>, L<Getopt::Long>, L<Pod::Usage>, L<File::Basename>
+
+=head1 INCOMPATIBILITIES
+
+None reported.
+
 =head1 BUGS AND LIMITATIONS
 
 No bugs have been reported. 
@@ -259,7 +292,7 @@ perldoc L<Bio::Grep>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

@@ -15,7 +15,7 @@ BEGIN{
 
 use BioGrepTest;
 
-register_backend_tests({ RE => 35 });
+register_backend_tests({ RE => 29 });
 
 plan tests => number_backend_tests;
 
@@ -26,11 +26,6 @@ my %test_seq = (
         'accactctcgtctctttcttttttccttctgttctgtttctctctctaaacccaaaacagtcaaaatcagggaagccgaaattttctttgctttcttctcctttggtcctttctttaaacccgagacagttaggtttgtgtgagagagagaatgatgagtaaaaccctttctgtctgagtaagaggaaaccaacATGGAGATGGGTTCCAACTCGGGTCCGGGTCATGGTCCGGGTCAGGCAGAGTCGGGTGGTTCCTCCACTGAGTCATCCTCTTTCAGTGGAGGGCTCATGTTTGGCCAGAAGATCTACTTCGAGGACGGTGGTGGTGGATCCGGGTCTTCTTCCTCAGGTGGTCGTTCAAACAGACGTGTCCGTGGAGGCGGGTCGGGTCAGTCGGGTCAGATACCAAGGTGCCAAGTGGAAGGTTGTGGGATGGATCTAACCAATGCAAAAGGTTATTACTCGAGACACCGAGTTTGTGGAGTGCACTCTAAAACACCTAAAGTCACTGTGGCTGGTATCGAACAGAGGTTTTGTCAACAGTGCAGCAGGTTTCATCAGCTTCCGGAATTTGACCTAGAGAAAAGGAGTTGCCGCAGGAGACTCGCTGGTCATAATGAGCGACGAAGGAAGCCACAGCCTGCGTCTCTCTCTGTGTTAGCTTCTCGTTACGGGAGGATCGCACCTTCGCTTTACGAAAATGGTGATGCTGGAATGAATGGAAGCTTTCTTGGGAACCAAGAGATAGGATGGCCAAGTTCAAGAACATTGGATACAAGAGTGATGAGGCGGCCAGTGTCGTCACCGTCATGGCAGATCAATCCAATGAATGTATTTAGTCAAGGTTCAGTTGGTGGAGGAGGGACAAGCTTCTCATCTCCAGAGATTATGGACACTAAACTAGAGAGCTACAAGGGAATTGGCGACTCAAACTGTGCTCTCTCTCTTCTGTCAAATC'
 );
 
-my %hits_sequences = (
- 'At1g01010.1' => 'tgaaaatggaggatcaagttgggtttg',
- 'At1g01010.2' => 'aaaatggaggatcaagttgggtttg',
- 'At1g01010.3' => 'tgaaaatggaggatcaagttgggtt',
-);
 my %hits_sequences3 = (
  'At1g01010.1' => 'tgaaaatggaggatcaagttgggt',
  'At1g01010.2' => 'aaaatggaggatcaagttgggt',
@@ -50,13 +45,13 @@ my %hits_sequences5 = (
 my $sbe = next_be;
 
 $sbe->settings->reverse_complement(0);
-$sbe->generate_database( { file => 't/Test.fasta',
-description => 'Description for Test.fasta'} );
-$sbe->generate_database( { file => 't/TestGUUGleExtend.fasta',
- description => 'Description for Test.fasta',
+$sbe->generate_database( { file => 't/Test_DB_Big.fasta',
+description => 'Description for Test_DB_Big.fasta'} );
+$sbe->generate_database( { file => 't/Test_DB_Extend.fasta',
+ description => 'Description for Test_DB_Big.fasta',
  copy => 0 } );
 $sbe->settings->query('ATGGAGGATCAAGTTGG');
-$sbe->settings->database('TestGUUGleExtend.fasta');
+$sbe->settings->database('Test_DB_Extend.fasta');
 $sbe->search();
 while (my $res = $sbe->next_res() ) {
     is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
@@ -64,11 +59,6 @@ while (my $res = $sbe->next_res() ) {
 # upstream downstream tests
 $sbe->settings->upstream(5);
 $sbe->settings->downstream(5);
-$sbe->search();
-while (my $res = $sbe->next_res() ) {
-    is($res->subject->seq, $sbe->settings->query, 'subject is query'); 
-    is(lc($res->sequence->seq), lc($hits_sequences{$res->sequence->id}), 'sequence correct'); 
-}
 # test reverse complement
 $sbe->settings->reverse_complement(1);
 my $query = 'ATGGAGGATCAAGTTGG';
@@ -109,7 +99,7 @@ while (my $res = $sbe->next_res() ) {
 # test database
 $sbe->search({
     reverse_complement => 0,
-    database           => 'Test.fasta',
+    database           => 'Test_DB_Big.fasta',
     query              => 'CAGAGTCGGGTGGTTCCTCCACTGAGTCATCCTCTTTCAGTGGAGGGCTCAT',
 });
 

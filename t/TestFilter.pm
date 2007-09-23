@@ -30,7 +30,7 @@ sub filter {
    return 1;
 }   
 
-sub reset {
+sub reset_filter {
    my $self = shift;
    # if you need local variables, you can clean up here
 }

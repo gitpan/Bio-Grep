@@ -30,6 +30,7 @@ my $builder = $class->new(
                             'Carp::Assert'       => 0,
                             'ToolSet'            => 0.13,
                             'Bio::Root::Version' => 0,
+                            'IPC::Open3'         => 0,
                             },
     script_files        => [ 'examples/bgrep' ], 
     add_to_cleanup      => [ 'Bio-Grep-*' ],
