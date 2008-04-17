@@ -9,7 +9,9 @@
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.10.2);
+use version; our $VERSION = qv(0.10.3);
+
+use Carp;
 
 use Bio::Grep;
 use Getopt::Long qw(:config auto_version);
@@ -95,34 +97,39 @@ if ( !defined $h{createdb} ) {
     ##############################################################################
     while ( my $res = $sbe->next_res ) {
         if ($idsonly) {
-            print $res->sequence->id . "\n";
+            _say( $res->sequence->id );
         }
         else {
             if ( !defined $res->sequence->desc ) {
-                print $res->sequence->id . "\n";
+                _say( $res->sequence->id );
             }
             else {
-                print $res->sequence->id . q{ } . $res->sequence->desc . "\n";
+                _say($res->sequence->id . q{ } . $res->sequence->desc);
             }
             if ( !defined $res->query->desc ) {
-                print $res->query->id . "\n";
+                _say( $res->query->id);
             }
             else {
-                print $res->query->id . q{ } . $res->query->desc . "\n";
+                _say( $res->query->id . q{ } . $res->query->desc);
             }
-            print $res->mark_subject_uppercase() . "\n";
+            _say( $res->mark_subject_uppercase());
 
             #print Dumper $res->alignment;
-            print $res->alignment_string() . "\n\n";
+            _say( $res->alignment_string() . "\n");
         }
         $hits++;
     }
-    print "$hits search results. Search took "
-        . ( time - $start )
-        . " seconds.\n";
+    _say("$hits search results. Search took " . ( time - $start ) . " seconds.\n");
 }
 else {
-    print 'Database generation took ' . ( time - $start ) . " seconds.\n";
+    _say('Database generation took ' . ( time - $start ) . " seconds.\n");
+}
+
+# make Perl::Critic happy
+sub _say {
+    my ( $msg ) = @_;
+    print "$msg\n" or croak q{Can't write to Terminal};
+    return;
 }
 __END__
 
@@ -263,7 +270,7 @@ bgrep is an example of how to use this library.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-C<bgrep> does not supported configuration files (but it is on my TODO list).
+C<bgrep> does not support configuration files (but it is on my TODO list).
 
 The environment variable C<BIOGREPDEBUG> is supported. When this variable is
 set to a true value, then C<bgrep> will output A LOT OF debug text.

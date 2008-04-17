@@ -9,6 +9,11 @@ package Bio::Grep::Backend::GUUGle;
 use strict;
 use warnings;
 
+use version; our $VERSION = qv('0.10.3');
+
+use Fatal qw(open close);
+use English qw( -no_match_vars );
+
 use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
 
@@ -16,7 +21,6 @@ use base 'Bio::Grep::Backend::BackendI';
 
 use List::Util qw(max);
 
-use version; our $VERSION = qv('0.10.2');
 
 sub new {
     my $self = shift;
@@ -529,7 +533,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester. 
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

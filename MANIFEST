@@ -17,6 +17,7 @@ examples/benchmark.pl
 examples/Benchmarks.tt
 Build.PL
 Makefile.PL
+LICENSE
 MANIFEST			This list of files
 META.yml
 README

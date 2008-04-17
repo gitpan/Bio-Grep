@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 20:55:22 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 495 $
+#     $Date: 2007-09-26 12:02:26 +0200 (Wed, 26 Sep 2007) $
+# $Revision: 507 $
 #############################################################################
 
 package Bio::Grep::Backend::BackendI;
@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 
 use English qw( -no_match_vars );
 use Fatal qw (open close opendir closedir);
@@ -131,7 +131,7 @@ sub _filter_result {
     if ( $self->settings->filters_isset ) {
         foreach my $filter ( @{ $self->settings->filters } ) {
             $filter->message_reset;
-            $res->_real_query( $self->settings->_real_query );
+            #$res->_real_query( $self->settings->_real_query );
             $filter->search_result($res);
             if ( !$filter->filter ) {
                 if ( $filter->delete ) {
@@ -148,7 +148,7 @@ sub _filter_result {
 
 sub results {
     my ($self) = @_;
-    $self->deprecated(q{Use 'while (my \$res = \$sbe->next_res)' instead});
+    $self->deprecated(q{Use 'next_res()' instead.});
     my @results;
     while ( my $res = $self->next_res ) {
         push @results, $res;
@@ -503,7 +503,8 @@ sub _copy_fasta_file_and_create_nfo {
     }
     if ( defined $args->{description} ) {
         open my $NFOFILE, '>', $newfile . '.nfo';
-        print ${NFOFILE} $args->{description};
+        print ${NFOFILE} $args->{description} or
+            $self->_cannot_print("$newfile.nfo");
         close $NFOFILE;
     }
     return;
@@ -593,9 +594,9 @@ sub _prepare_query {
         $query = $seq->revcom->seq;
         $seq->seq($query);
     }
-    $self->settings->_real_query( uc $query );
+    # $self->settings->_real_query( uc $query );
     $self->{_query_obj} = $seq;
-    return $self->settings->_real_query();
+    return uc $query; # $self->settings->_real_query();
 }
 
 sub generate_database_out_of_fastafile {
@@ -682,7 +683,7 @@ sub _execute_command_and_return_output {
     my ( $writer, $reader, $err );
     my $pid = open3( $writer, $reader, $err, $cmd );
     waitpid $pid, 0;
-    my $output = join q{}, <$reader>;
+    my $output = do { local $INPUT_RECORD_SEPARATOR = undef; <$reader> };
 #    my $error = join q{}, <$err>;
     return $output;
 }
@@ -702,11 +703,13 @@ sub _create_index_and_alphabet_file {
     # create a vmatch alphabet file
     open my $ALFILE, '>', "$filename.al1";
     if ( $alphabet eq 'dna' ) {
-        print ${ALFILE} "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n";
+        print ${ALFILE} "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n" or
+            $self->_cannot_print("$filename.al1");
     }
     else {
         print ${ALFILE}
-            "L\nV\nI\nF\nK\nR\nE\nD\nA\nG\nS\nT\nN\nQ\nY\nW\nP\nH\nM\nC\nXUBZ*\n";
+            "L\nV\nI\nF\nK\nR\nE\nD\nA\nG\nS\nT\nN\nQ\nY\nW\nP\nH\nM\nC\nXUBZ*\n"
+                or $self->_cannot_print("$filename.al1");
     }
     close $ALFILE;
 
@@ -876,11 +879,12 @@ sub _parse_regions {
 
     }
     my @ret = ( $upstream_seq, $subject_seq, $downstream_seq );
+    ## no critic
     assert(
         index( $args->{complete_seq}, join( q{}, @ret ), $upstream_begin )
             == $upstream_begin )
         if DEBUG;
-
+    ## use critic
     return @ret;
 }
 
@@ -1297,7 +1301,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

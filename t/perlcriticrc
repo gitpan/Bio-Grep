@@ -1,5 +1,4 @@
-# 3 in the next release ;)
-severity=4
+severity=1
 # we use Fatal qw(open close)
 [-InputOutput::RequireCheckedOpen]
 [-InputOutput::RequireCheckedClose]
@@ -13,6 +12,8 @@ severity=4
 
 [Miscellanea::RequireRcsKeywords]
 keywords = Date Author Revision
+
+[-InputOutput::RequireBriefOpen]
 
 [-Documentation::RequirePodSections]
 #lib_sections    = NAME│SYNOPSIS│DESCRIPTION|METHODS|BUGS AND LIMITATIONS│AUTHOR|LICENSE AND COPYRIGHT

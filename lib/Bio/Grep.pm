@@ -13,7 +13,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 
 sub new {
     my ( $class, $backendname ) = @_;
@@ -53,7 +53,7 @@ Bio::Grep - Perl extension for searching in DNA and Protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.10.2
+This document describes Bio::Grep version 0.10.3
 
 =head1 SYNOPSIS
 
@@ -601,7 +601,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

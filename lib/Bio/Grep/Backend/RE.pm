@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 16:59:40 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 488 $
+#     $Date: 2007-09-26 11:51:31 +0200 (Wed, 26 Sep 2007) $
+# $Revision: 506 $
 #############################################################################
 
 package Bio::Grep::Backend::RE;
@@ -9,7 +9,7 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 use Carp::Assert;
 
 use Fatal qw(open close seek);
@@ -135,8 +135,10 @@ sub _parse_next_res {
             $found_hits++;
 
             # get coordinates of hit
+            ## no critic
             my $subject_begin = length $`;
             my $subject_seq   = $&;
+            ## use critic
             my $subject_end   = $subject_begin + length $subject_seq;
 
             my ( $upstream_seq, $dummy, $downstream_seq )
@@ -147,7 +149,9 @@ sub _parse_next_res {
                 }
                 );
 
+            ## no critic
             assert( $dummy eq $subject_seq ) if DEBUG;
+            ## use critic
 
             my $sequence = Bio::Seq->new(
                 -id   => $seq_obj->id,
@@ -377,7 +381,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007  by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester. 
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

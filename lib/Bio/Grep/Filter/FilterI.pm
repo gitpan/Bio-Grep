@@ -9,7 +9,7 @@ package Bio::Grep::Filter::FilterI;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 
 use base 'Bio::Root::Root';
 
@@ -185,7 +185,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester. 
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

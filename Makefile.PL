@@ -16,6 +16,12 @@ WriteMakefile(
                             'ToolSet'            => 0.13,
                             'Bio::Root::Version' => 0,
                             'IPC::Open3' => 0,
+                            'Bio::Factory::EMBOSS' => 0,
+                            'Bio::Seq'             => 0, 
+                            'Bio::Root::Root'      => 0,
+                            'Bio::Index::Fasta'    => 0, 
+                            'Bio::AlignIO'         => 0, 
+                            'Bio::SeqIO'           => 0,
                           }, 
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Bio/Grep.pm', # retrieve abstract from module

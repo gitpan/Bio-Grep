@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 16:34:33 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 487 $
+#     $Date: 2007-09-26 12:02:26 +0200 (Wed, 26 Sep 2007) $
+# $Revision: 507 $
 #############################################################################
 
 package Bio::Grep::Backend::Agrep;
@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 
 use Fatal qw(open close);
 
@@ -96,6 +96,7 @@ sub search {
     $self->_check_search_settings($arg_ref);
 
     my $query = $self->_prepare_query();
+    $self->{_real_query} = $query;
 
     # now generate the command string
     my $mm = 0;
@@ -164,13 +165,13 @@ sub generate_database {
 
     open my $DATFILE, '>', "$filename.dat";
     open my $MAPFILE, '>', "$filename.map";
-
     my $in = Bio::SeqIO->new( -file => $filename, -format => $args{format} );
-
     my $id = 1;
     while ( my $seq = $in->next_seq() ) {
-        print ${MAPFILE} $seq->id . "\n";
-        print ${DATFILE} $id . q{:} . $seq->seq . "\n";
+        print ${MAPFILE} $seq->id . "\n" or
+            $self->_cannot_print("$filename.dat");
+        print ${DATFILE} $id . q{:} . $seq->seq . "\n" or
+            $self->_cannot_print("$filename.map");
         $id++;
     }
     close $DATFILE;
@@ -202,7 +203,7 @@ sub _load_mapping {
 sub _parse_next_res {
     my $self  = shift;
     my $s     = $self->settings;
-    my $query = $s->_real_query();
+    my $query = $self->{_real_query};
 
     my $FH = $self->_output_fh;
 LINE:
@@ -236,8 +237,10 @@ LINE:
 
         my $seq_hit = $self->{_idx}->fetch($id);
 
+        ## no critic
         assert( defined $seq_hit, "Found $sequence_id:$id in Bio::Index" )
             if DEBUG;
+        ## use critic
 
         # take complete sequence as subject sequence for standard agrep
         $subject_seq = $seq_hit->seq;
@@ -442,7 +445,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester. 
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

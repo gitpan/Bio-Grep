@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 22:22:27 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 498 $
+#     $Date: 2007-09-26 12:02:26 +0200 (Wed, 26 Sep 2007) $
+# $Revision: 507 $
 #############################################################################
 
 package Bio::Grep::Backend::Vmatch;
@@ -9,7 +9,7 @@ package Bio::Grep::Backend::Vmatch;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 
 use Fatal qw(open close);
 use English qw( -no_match_vars );
@@ -200,6 +200,17 @@ sub get_databases {
     return $self->_get_databases('.al1');
 }
 
+###########################################################################
+# Usage      : generate_database()
+# Purpose    : calling mkvtree to generate the suffix arrays
+# Returns    : 1
+# Parameters : hashref with mandatory argument 'file'. optional parameters
+#              are format (not needed here), description, copy (instead of
+#              symlink), datapath and the mkvtree parameters prefix_length
+#              (-pl) and verbose (-v)
+# Throws     : Bio::Root::BadParameter,
+#              Bio::Root::SystemException
+
 sub generate_database {
     my ( $self, @args ) = @_;
     my %args = $self->_prepare_generate_database(@args);
@@ -224,7 +235,7 @@ sub generate_database {
     if ( $alphabet eq 'protein' ) {
         $alphabet_specific_arguments = ' -protein ';
     }
-    elsif ( $alphabet eq 'dna' ) {
+    elsif ( $alphabet eq 'dna' || $alphabet eq 'rna' ) {
         $alphabet_specific_arguments = ' -dna ';
     }
     else {
@@ -258,6 +269,13 @@ sub generate_database {
     return 1;
 }
 
+###########################################################################
+# Usage      : _parse_next_res()
+# Purpose    : Assumes that the output filehandle points to the beginning of 
+#              a hit. This method then parses this hit.
+# Returns    : SearchResult object or 0 (end of file)
+# Parameters : none
+
 sub _parse_next_res {
     my $self                = shift;
     my @query_seqs          = $self->_query_seqs;
@@ -279,13 +297,21 @@ LINE:
         if ( $line !~ /\s/xms ) {
             $skipped_lines++;
             next LINE if $skipped_lines != 2;
+
+            # we are here? this means the parser is at the end of one hit
+            # so store the alignment (we did not know the alignment when we
+            # had to create the search result object)
             $results[-1]->alignment($tmp_aln);
-            my $real_subject = $subject;
 
-            # remove gaps out of alignment
-            $real_subject =~ s{-}{}gxms;
-
+            # without showdesc, we fetch the sequence with vsubseqselect
+            # with, we need to extract the sequence out of the vmatch output
+            # (the alignment)
             if ( $s->showdesc_isset ) {
+                my $real_subject
+                    = $results[-1]->alignment->get_seq_by_pos(1)->seq;
+
+                # remove gaps out of alignment
+                $real_subject =~ s{-}{}gxms;
                 $results[-1]->sequence->seq($real_subject);
             }
 
@@ -311,85 +337,29 @@ LINE:
             $subject = $1;
         }
         if ( $line =~ m{\A Query: \s (.*) \z}xms ) {
-            my $query = $1;
 
-            my ( $query_pos, $subject_pos );
+            # updates or creates the alignment
+            $self->_parser_create_alignment_obj(
+                {   query     => $1,
+                    subject   => $subject,
+                    alignment => $tmp_aln,
+                    results   => \@results
+                }
+            );
 
-            if ( $query =~ s{\s+ (\d+) \s* \z}{}xms ) {
-                $query_pos = $1;
-            }
-            if ( $subject =~ s{\s + (\d+) \s* \z}{}xms ) {
-                $subject_pos = $1;
-            }
-            assert( defined $query_pos )   if DEBUG;
-            assert( defined $subject_pos ) if DEBUG;
-
-            if ( !$tmp_aln->no_sequences ) {
-                $tmp_aln->add_seq(
-                    Bio::LocatableSeq->new(
-                        -id    => 'Subject',
-                        -seq   => $subject,
-                        -start => ( $subject_pos - length $subject ) + 1,
-                        -end   => $subject_pos
-                    )
-                );
-                $tmp_aln->add_seq(
-                    Bio::LocatableSeq->new(
-                        -id    => $results[-1]->query->id,
-                        -seq   => $query,
-                        -start => ( $query_pos - length $query ) + 1,
-                        -end   => $query_pos
-                    )
-                );
-            }
-            else {
-                my $s1 = $tmp_aln->get_seq_by_pos(1);
-                my $s2 = $tmp_aln->get_seq_by_pos(2);
-                $s1->end($subject_pos);
-                $s1->seq( $s1->seq . $subject );
-                $s2->end($query_pos);
-                $s2->seq( $s2->seq . $query );
-                $tmp_aln = new Bio::SimpleAlign( -source => 'VMATCH' );
-                $tmp_aln->add_seq($s1);
-                $tmp_aln->add_seq($s2);
-            }
             next LINE;
         }
         next LINE if $alignment_in_output >= 0;
 
         $tmp_aln = new Bio::SimpleAlign( -source => 'VMATCH' );
 
-        $self->_untaint_parsed_data( \@fields );
+        $self->_parser_untaint_data( \@fields );
 
-        my $fasta;
-        my $upstream        = $s->upstream;
+        my ( $fasta, $upstream )
+            = $self->_parser_create_sequence_obj( \@fields );
         my $internal_seq_id = $fields[1];
-
-        if ( !$s->showdesc_isset ) {
-            my $start = $fields[2] - $s->upstream;
-
-            # maybe the defined upstream region is larger than available
-            # so check this and store in local variables
-            if ( $start < 0 ) {
-                $upstream = $upstream + $start;
-                $start    = 0;
-            }
-            my $length = $upstream + $fields[0] + $s->downstream;
-            $fasta = $self->_get_subsequence( $length, $internal_seq_id,
-                $start );
-        }
-        else {
-            my ( $seq_id, $seq_desc )
-                = $fields[1] =~ m{\A (.+?) _ (.*) \z}xms;
-            if ( !defined $seq_id ) {
-                $seq_id = $fields[1];
-            }
-            if ( !defined $seq_desc ) {
-                $seq_desc = q{};
-            }
-            $seq_desc =~ s{_}{ }gxms;
-            $fasta = Bio::Seq->new( -id => $seq_id, -desc => $seq_desc );
-            $internal_seq_id = $seq_id;
+        if ( $s->showdesc_isset ) {
+            $internal_seq_id = $fasta->id;
         }
 
         my $query;
@@ -428,7 +398,90 @@ LINE:
     return 0;
 }
 
-sub _untaint_parsed_data {
+###########################################################################
+# Usage      : _parser_create_sequence_obj()
+# Purpose    : creates a Bio::Seq object for $res->sequence, returns true 
+#              upstream size (corrects upstream when available upstream 
+#              region too small)
+# Returns    : Bio::Seq object and $upstream
+# Parameters : ref to @fields array (containing the Vmatch output)
+
+sub _parser_create_sequence_obj {
+    my ( $self, $fields ) = @_;
+    my $upstream = $self->settings->upstream;
+    my $seq_obj;
+    if ( !$self->settings->showdesc_isset ) {
+        my $start = $fields->[2] - $upstream;
+
+        # maybe the defined upstream region is larger than available
+        # so check this and store in local variables
+        if ( $start < 0 ) {
+            $upstream = $upstream + $start;
+            $start    = 0;
+        }
+        my $length = $upstream + $fields->[0] + $self->settings->downstream;
+        $seq_obj = $self->_get_subsequence( $length, $fields->[1], $start );
+    }
+    else {
+        my ( $seq_id, $seq_desc ) = $fields->[1] =~ m{\A (.+?) _ (.*) \z}xms;
+        if ( !defined $seq_id ) {
+            $seq_id = $fields->[1];
+        }
+        $seq_desc =~ s{_}{ }gxms;
+        $seq_obj = Bio::Seq->new( -id => $seq_id, -desc => $seq_desc );
+    }
+    return ( $seq_obj, $upstream );
+}
+
+sub _parser_create_alignment_obj {
+    my ( $self, $args ) = @_;
+
+    my ( $query_pos, $subject_pos );
+
+    if ( $args->{query} =~ s{\s+ (\d+) \s* \z}{}xms ) {
+        $query_pos = $1;
+    }
+    if ( $args->{subject} =~ s{\s + (\d+) \s* \z}{}xms ) {
+        $subject_pos = $1;
+    }
+    ## no critic
+    assert( defined $query_pos )   if DEBUG;
+    assert( defined $subject_pos ) if DEBUG;
+    ## use critic
+
+    if ( !$args->{alignment}->no_sequences ) {
+        $args->{alignment}->add_seq(
+            Bio::LocatableSeq->new(
+                -id    => 'Subject',
+                -seq   => $args->{subject},
+                -start => ( $subject_pos - length $args->{subject} ) + 1,
+                -end   => $subject_pos
+            )
+        );
+        $args->{alignment}->add_seq(
+            Bio::LocatableSeq->new(
+                -id    => $args->{results}->[-1]->query->id,
+                -seq   => $args->{query},
+                -start => ( $query_pos - length $args->{query} ) + 1,
+                -end   => $query_pos
+            )
+        );
+    }
+    else {
+        my $s1 = $args->{alignment}->get_seq_by_pos(1);
+        my $s2 = $args->{alignment}->get_seq_by_pos(2);
+        $s1->end($subject_pos);
+        $s1->seq( $s1->seq . $args->{subject} );
+        $s2->end($query_pos);
+        $s2->seq( $s2->seq . $args->{query} );
+        $args->{alignment} = new Bio::SimpleAlign( -source => 'VMATCH' );
+        $args->{alignment}->add_seq($s1);
+        $args->{alignment}->add_seq($s2);
+    }
+    return;
+}
+
+sub _parser_untaint_data {
     my ( $self, $fields ) = @_;
 
     ( $fields->[0] ) = $fields->[0] =~ m{ (\d+) }xms;
@@ -488,7 +541,8 @@ sub get_sequences {
             = tempfile( 'vseqselect_XXXXXXXXXXXXX', DIR => $s->tmppath );
 
         for my $sid ( @{$seqid} ) {
-            print ${tmp_fh} $sid . " \n ";
+            print ${tmp_fh} $sid . " \n " or
+                $self->_cannot_print($tmpfile);
         }
         close $tmp_fh;
         $seq_query = ' -seqnum ' . $tmpfile;
@@ -778,7 +832,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

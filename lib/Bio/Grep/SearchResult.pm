@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 20:55:22 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 495 $
+#     $Date: 2007-09-26 11:19:25 +0200 (Wed, 26 Sep 2007) $
+# $Revision: 503 $
 #############################################################################
 
 package Bio::Grep::SearchResult;
@@ -9,7 +9,7 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.2');
+use version; our $VERSION = qv('0.10.3');
 
 use IO::String;
 
@@ -19,7 +19,7 @@ use Class::MethodMaker [
     new    => 'new2',
     scalar => [
         qw /sequence query begin end alignment sequence_id remark
-            percent_identity evalue dG _real_query/
+            percent_identity evalue dG/
     ],
 ];
 
@@ -298,7 +298,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

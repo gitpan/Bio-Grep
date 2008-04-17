@@ -1,4 +1,4 @@
-Bio-Grep version 0.10.2
+Bio-Grep version 0.10.3
 =======================
 
 Bio-Grep is a collection of Perl modules for searching in DNA and protein
@@ -136,7 +136,7 @@ L<http://rt.cpan.org>.
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2007 by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
