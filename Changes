@@ -1,5 +1,10 @@
 Revision history for Perl extension Bio::Grep.
 
+0.10.4  Fri Jul  25 17:53:00 2008
+    - New Perl::Critic passes
+    - added Bio:Perl dependencies
+    - Bugfix: -blanks in dirnames allowed (thanks Jamie)
+
 0.10.3  Sun Apr  17 12:01:00 2008
     - code cleanup:
         * perlcritic severity 1

@@ -9,7 +9,7 @@ package Bio::Grep::Root;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 use Bio::Root::Root;
 
@@ -104,7 +104,7 @@ sub _check_variable {
     my %regexes = (
         'int'      => qr{ ( \A \d+ \z ) }xms,
         'word'     => qr{ ( \A [\w.\-]+ \z ) }xms,
-        'path'     => qr{ ( \A [\w.\-/\\:]+ \z ) }xms,
+        'path'     => qr{ ( \A [\w.\-/\\: ]+ \z ) }xms,
         'sentence' => qr{  \A ([\w.\-/|:(),;]+)  }xms,
     );
 

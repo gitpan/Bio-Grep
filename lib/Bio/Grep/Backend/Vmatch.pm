@@ -9,7 +9,7 @@ package Bio::Grep::Backend::Vmatch;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 use Fatal qw(open close);
 use English qw( -no_match_vars );
@@ -23,6 +23,16 @@ use File::Basename;
 use File::Temp qw/ tempfile tempdir /;
 use IO::String;
 use Carp::Assert;
+
+use Readonly;
+
+# The VMATCH output columns
+Readonly my $COL_ID       =>  1;
+Readonly my $COL_POS      =>  2;
+Readonly my $COL_STRAND   =>  3;
+Readonly my $COL_QUERY    =>  5;
+Readonly my $COL_EVALUE   =>  8;
+Readonly my $COL_IDENTITY => 10;
 
 sub new {
     my $self = shift;
@@ -281,7 +291,7 @@ sub _parse_next_res {
     my @query_seqs          = $self->_query_seqs;
     my $s                   = $self->settings;
     my @results             = ();
-    my $alignment_in_output = -1;
+    my $alignment_in_output = 0;
     my $skip_next_alignment = 0;
     my $skipped_lines       = 0;
     my $subject;
@@ -317,7 +327,7 @@ LINE:
 
             my $res = $self->_filter_result( $results[-1] );
             return $res if $res;
-            $alignment_in_output = -1;
+            $alignment_in_output = 0;
             next LINE;
         }
 
@@ -325,12 +335,12 @@ LINE:
 
         my @fields = split q{ }, $line;
         if ( $line =~ m{\A Sbjct: }xms && !$skip_next_alignment ) {
-            $alignment_in_output = 0;
+            $alignment_in_output = 1;
         }
 
         next
             if !( $fields[0] =~ m{\A \d+ \z}xms
-            || $alignment_in_output >= 0 );
+            || $alignment_in_output  );
         $skip_next_alignment = 0;
 
         if ( $line =~ m{\A Sbjct: \s (.*) \z}xms ) {
@@ -349,7 +359,7 @@ LINE:
 
             next LINE;
         }
-        next LINE if $alignment_in_output >= 0;
+        next LINE if $alignment_in_output;
 
         $tmp_aln = new Bio::SimpleAlign( -source => 'VMATCH' );
 
@@ -357,22 +367,22 @@ LINE:
 
         my ( $fasta, $upstream )
             = $self->_parser_create_sequence_obj( \@fields );
-        my $internal_seq_id = $fields[1];
+        my $internal_seq_id = $fields[$COL_ID];
         if ( $s->showdesc_isset ) {
             $internal_seq_id = $fasta->id;
         }
 
         my $query;
         if ( $s->showdesc_isset ) {
-            $query = $self->{_mapping}->{ $fields[5] };
+            $query = $self->{_mapping}->{ $fields[$COL_QUERY] };
         }
         else {
-            $query = $query_seqs[ $fields[5] ];
+            $query = $query_seqs[ $fields[$COL_QUERY] ];
         }
 
         my $rct = q{};
         my $rcs = $query->seq;
-        if ( $s->direct_and_rev_com && $fields[3] eq q{P} ) {
+        if ( $s->direct_and_rev_com && $fields[$COL_STRAND] eq q{P} ) {
             $rct = ' (reverse complement)';
             $rcs = $query->revcom->seq;
         }
@@ -383,8 +393,8 @@ LINE:
                 alignment        => Bio::SimpleAlign->new(),
                 sequence_id      => $internal_seq_id,
                 remark           => q{},
-                evalue           => $fields[8],
-                percent_identity => $fields[10],
+                evalue           => $fields[$COL_EVALUE],
+                percent_identity => $fields[$COL_IDENTITY],
                 query            => Bio::Seq->new(
                     -id   => $query->id,
                     -desc => $query->desc . $rct,
@@ -485,20 +495,20 @@ sub _parser_untaint_data {
     my ( $self, $fields ) = @_;
 
     ( $fields->[0] ) = $fields->[0] =~ m{ (\d+) }xms;
-    ( $fields->[2] ) = $fields->[2] =~ m{ (\d+) }xms;
-    ( $fields->[3] ) = $fields->[3] =~ m{ ([DP]) }xms;
+    ( $fields->[$COL_POS] ) = $fields->[$COL_POS] =~ m{ (\d+) }xms;
+    ( $fields->[$COL_STRAND] ) = $fields->[$COL_STRAND] =~ m{ ([DP]) }xms;
 
     if ( $self->settings->showdesc_isset ) {
 
         # not numerical with showdesc on
         # don't worry about this unclean untainting, we don't use that
         # description in dangerous ways
-        ( $fields->[1] ) = $fields->[1] =~ m{ (.+) }xms;
-        ( $fields->[5] ) = $fields->[5] =~ m{ (.+) }xms;
+        ( $fields->[$COL_ID] ) = $fields->[$COL_ID] =~ m{ (.+) }xms;
+        ( $fields->[$COL_QUERY] ) = $fields->[$COL_QUERY] =~ m{ (.+) }xms;
     }
     else {
-        ( $fields->[1] ) = $fields->[1] =~ m{ (\d+) }xms;
-        ( $fields->[5] ) = $fields->[5] =~ m{ (\d+) }xms;
+        ( $fields->[$COL_ID] ) = $fields->[$COL_ID] =~ m{ (\d+) }xms;
+        ( $fields->[$COL_QUERY] ) = $fields->[$COL_QUERY] =~ m{ (\d+) }xms;
     }
     return;
 }

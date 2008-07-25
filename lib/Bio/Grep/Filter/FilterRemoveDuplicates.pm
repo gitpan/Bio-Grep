@@ -13,7 +13,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 use Class::MethodMaker [
     new  => [qw /new2/],

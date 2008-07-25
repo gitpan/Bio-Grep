@@ -31,6 +31,7 @@ my $builder = $class->new(
                             'ToolSet'            => 0.13,
                             'Bio::Root::Version' => 0,
                             'IPC::Open3'         => 0,
+                            'Readonly'           => 0,
                             'perl'               => '5.8.1',
                             'Bio::Factory::EMBOSS' => 0,
                             'Bio::Seq'             => 0, 

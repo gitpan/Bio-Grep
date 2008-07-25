@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 use English qw( -no_match_vars );
 use Fatal qw (open close opendir closedir);
@@ -23,6 +23,7 @@ use File::Basename;
 use Scalar::Util qw(reftype);
 use Cwd 'abs_path';
 use IPC::Open3 'open3';
+use Readonly;
 
 use Bio::AlignIO;
 use Bio::Factory::EMBOSS;
@@ -47,6 +48,8 @@ use Class::MethodMaker [
             generate_database _parse_next_res/
     ],
 ];
+
+Readonly my $DNA_ALPHABET_SIZE => 5;
 
 sub new {
     my $self = shift->new2;
@@ -650,7 +653,7 @@ sub get_alphabet_of_database {
         $lines++;
     }
     close $ALFILE;
-    return $lines <= 5 ? return 'dna' : return 'protein';
+    return $lines <= $DNA_ALPHABET_SIZE ? return 'dna' : return 'protein';
 }
 
 sub _delete_output {

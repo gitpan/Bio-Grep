@@ -12,7 +12,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 use Class::MethodMaker [
     new    => 'new2',

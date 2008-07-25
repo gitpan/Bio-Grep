@@ -13,7 +13,7 @@ BEGIN{
     my ($skip,$msg) = BioGrepSkip::skip_all( );
     plan skip_all => $msg if $skip;
 }
-plan tests => 28;
+plan tests => 29;
 
 use BioGrepTest;
 
@@ -81,6 +81,9 @@ cmp_ok($EVAL_ERROR, '=~', qr{Missing arguments: require hash with keys},
 eval {$sbe->_check_variable( variable => 'bla',  regex => 'real' )};
 cmp_ok($EVAL_ERROR, '=~', qr{Unknown regex},
     "Exception with unknown regex");
+
+eval {$sbe->is_path('C:\My Programs', 'windows') };
+ok(!$EVAL_ERROR, 'windows path ok') || diag $EVAL_ERROR;
 
 $sbe=Bio::Grep->new('GUUGle');
 

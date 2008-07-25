@@ -9,7 +9,7 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 use Carp::Assert;
 
 use Fatal qw(open close seek);

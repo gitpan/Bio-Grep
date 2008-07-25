@@ -9,7 +9,7 @@ package Bio::Grep::Backend::GUUGle;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 use Fatal qw(open close);
 use English qw( -no_match_vars );

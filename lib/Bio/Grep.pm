@@ -13,7 +13,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.10.3');
+use version; our $VERSION = qv('0.10.4');
 
 sub new {
     my ( $class, $backendname ) = @_;
@@ -53,7 +53,7 @@ Bio::Grep - Perl extension for searching in DNA and Protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.10.3
+This document describes Bio::Grep version 0.10.4
 
 =head1 SYNOPSIS
 
