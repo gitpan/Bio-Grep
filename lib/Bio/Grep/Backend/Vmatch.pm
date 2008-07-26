@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-26 12:02:26 +0200 (Wed, 26 Sep 2007) $
-# $Revision: 507 $
+#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 813 $
 #############################################################################
 
 package Bio::Grep::Backend::Vmatch;
@@ -9,7 +9,7 @@ package Bio::Grep::Backend::Vmatch;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 
 use Fatal qw(open close);
 use English qw( -no_match_vars );
@@ -27,6 +27,7 @@ use Carp::Assert;
 use Readonly;
 
 # The VMATCH output columns
+Readonly my $COL_LENGTH   =>  0;
 Readonly my $COL_ID       =>  1;
 Readonly my $COL_POS      =>  2;
 Readonly my $COL_STRAND   =>  3;
@@ -339,7 +340,7 @@ LINE:
         }
 
         next
-            if !( $fields[0] =~ m{\A \d+ \z}xms
+            if !( $fields[$COL_LENGTH] =~ m{\A \d+ \z}xms
             || $alignment_in_output  );
         $skip_next_alignment = 0;
 
@@ -389,7 +390,7 @@ LINE:
         my $result = Bio::Grep::SearchResult->new(
             {   sequence         => $fasta,
                 begin            => $upstream,
-                end              => $upstream + $fields[0],
+                end              => $upstream + $fields[$COL_LENGTH],
                 alignment        => Bio::SimpleAlign->new(),
                 sequence_id      => $internal_seq_id,
                 remark           => q{},
@@ -421,7 +422,7 @@ sub _parser_create_sequence_obj {
     my $upstream = $self->settings->upstream;
     my $seq_obj;
     if ( !$self->settings->showdesc_isset ) {
-        my $start = $fields->[2] - $upstream;
+        my $start = $fields->[$COL_POS] - $upstream;
 
         # maybe the defined upstream region is larger than available
         # so check this and store in local variables
@@ -429,13 +430,13 @@ sub _parser_create_sequence_obj {
             $upstream = $upstream + $start;
             $start    = 0;
         }
-        my $length = $upstream + $fields->[0] + $self->settings->downstream;
-        $seq_obj = $self->_get_subsequence( $length, $fields->[1], $start );
+        my $length = $upstream + $fields->[$COL_LENGTH] + $self->settings->downstream;
+        $seq_obj = $self->_get_subsequence( $length, $fields->[$COL_ID], $start );
     }
     else {
-        my ( $seq_id, $seq_desc ) = $fields->[1] =~ m{\A (.+?) _ (.*) \z}xms;
+        my ( $seq_id, $seq_desc ) = $fields->[$COL_ID] =~ m{\A (.+?) _ (.*) \z}xms;
         if ( !defined $seq_id ) {
-            $seq_id = $fields->[1];
+            $seq_id = $fields->[$COL_ID];
         }
         $seq_desc =~ s{_}{ }gxms;
         $seq_obj = Bio::Seq->new( -id => $seq_id, -desc => $seq_desc );
@@ -494,8 +495,8 @@ sub _parser_create_alignment_obj {
 sub _parser_untaint_data {
     my ( $self, $fields ) = @_;
 
-    ( $fields->[0] ) = $fields->[0] =~ m{ (\d+) }xms;
-    ( $fields->[$COL_POS] ) = $fields->[$COL_POS] =~ m{ (\d+) }xms;
+    ( $fields->[$COL_LENGTH] ) = $fields->[$COL_LENGTH] =~ m{ (\d+) }xms;
+    ( $fields->[$COL_POS] )    = $fields->[$COL_POS]    =~ m{ (\d+) }xms;
     ( $fields->[$COL_STRAND] ) = $fields->[$COL_STRAND] =~ m{ ([DP]) }xms;
 
     if ( $self->settings->showdesc_isset ) {
@@ -503,11 +504,11 @@ sub _parser_untaint_data {
         # not numerical with showdesc on
         # don't worry about this unclean untainting, we don't use that
         # description in dangerous ways
-        ( $fields->[$COL_ID] ) = $fields->[$COL_ID] =~ m{ (.+) }xms;
+        ( $fields->[$COL_ID] )    = $fields->[$COL_ID]    =~ m{ (.+) }xms;
         ( $fields->[$COL_QUERY] ) = $fields->[$COL_QUERY] =~ m{ (.+) }xms;
     }
     else {
-        ( $fields->[$COL_ID] ) = $fields->[$COL_ID] =~ m{ (\d+) }xms;
+        ( $fields->[$COL_ID] )    = $fields->[$COL_ID]    =~ m{ (\d+) }xms;
         ( $fields->[$COL_QUERY] ) = $fields->[$COL_QUERY] =~ m{ (\d+) }xms;
     }
     return;

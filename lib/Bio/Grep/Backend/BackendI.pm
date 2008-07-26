@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-26 12:02:26 +0200 (Wed, 26 Sep 2007) $
-# $Revision: 507 $
+#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 813 $
 #############################################################################
 
 package Bio::Grep::Backend::BackendI;
@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 
 use English qw( -no_match_vars );
 use Fatal qw (open close opendir closedir);

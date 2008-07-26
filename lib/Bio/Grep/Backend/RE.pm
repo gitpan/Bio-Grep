@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-26 11:51:31 +0200 (Wed, 26 Sep 2007) $
-# $Revision: 506 $
+#     $Date: 2008-07-26 20:17:39 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 815 $
 #############################################################################
 
 package Bio::Grep::Backend::RE;
@@ -9,7 +9,7 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 use Carp::Assert;
 
 use Fatal qw(open close seek);
@@ -135,10 +135,9 @@ sub _parse_next_res {
             $found_hits++;
 
             # get coordinates of hit
-            ## no critic
-            my $subject_begin = length $`;
-            my $subject_seq   = $&;
-            ## use critic
+            my $subject_begin = $-[0];
+            my $subject_seq   = substr $seq, $-[0], $+[0] - $-[0];
+
             my $subject_end   = $subject_begin + length $subject_seq;
 
             my ( $upstream_seq, $dummy, $downstream_seq )
@@ -149,9 +148,7 @@ sub _parse_next_res {
                 }
                 );
 
-            ## no critic
             assert( $dummy eq $subject_seq ) if DEBUG;
-            ## use critic
 
             my $sequence = Bio::Seq->new(
                 -id   => $seq_obj->id,
@@ -274,6 +271,14 @@ Bio::Grep::Backend::RE - Perl Regular Expression back-end
 
 B<Bio::Grep::Backend::RE> searches for a query with a
 Perl Regular Expression. 
+
+Internally, it precompiles the specified regex (with the appended modifiers
+i, m, s and x), matches it against every line in the database with the looping
+modifier g, and then returns the positions retrieved with $- and $+. The substr
+function is then used to extract the sequences.
+
+This back-end does not perform any sanity checks of the regular expressions,
+so do NOT provide this back-end in a web service.
 
 =head1 METHODS
 

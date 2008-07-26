@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-26 11:19:25 +0200 (Wed, 26 Sep 2007) $
-# $Revision: 503 $
+#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 813 $
 #############################################################################
 
 package Bio::Grep::SearchResult;
@@ -9,7 +9,7 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 
 use IO::String;
 

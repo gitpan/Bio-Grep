@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 17:38:22 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 490 $
+#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 813 $
 #############################################################################
 
 package Bio::Grep::Backend::GUUGle;
@@ -9,7 +9,7 @@ package Bio::Grep::Backend::GUUGle;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 
 use Fatal qw(open close);
 use English qw( -no_match_vars );

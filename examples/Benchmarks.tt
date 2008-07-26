@@ -8,9 +8,9 @@ A collection of quick and dirty benchmarks.
 
 =head1 BENCHMARKS
 
-[% cpuinfo %], 1GB RAM. Fedora Core 6.
+[% cpuinfo %], 1GB RAM. Fedora Core 8.
 
-[% filenameCDNA %] (Arabidopsis CDNA Fasta file, 52MB). 
+[% filenameCDNA %] (Arabidopsis CDNA Fasta file, 63MB). 
 
 Bio::Grep [% biogrepv %]. 
 
@@ -107,7 +107,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (C) 2007  by M. Riester. All rights reserved. 
+Copyright (C) 2007-2008 M. Riester.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

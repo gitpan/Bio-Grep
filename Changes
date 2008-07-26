@@ -1,5 +1,10 @@
 Revision history for Perl extension Bio::Grep.
 
+0.10.5  Sat Jul  26 13:00:00 2008
+    - META.yml broken 
+    - small cleanup in Vmatch back-end
+    - RE backend: switched to $+ and $- to retrieve the positions. 
+
 0.10.4  Fri Jul  25 17:53:00 2008
     - New Perl::Critic passes
     - added Bio:Perl dependencies

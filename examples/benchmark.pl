@@ -27,7 +27,7 @@ $query =~ tr{u}{t};
 
 my $time;
 my $VERBOSE=0;
-my $filenameCDNA = 'TAIR7_cdna_20070425';
+my $filenameCDNA = 'TAIR8_cdna_20080412';
 my $iterations = 20;
 my $iterationsdb = 2;
 

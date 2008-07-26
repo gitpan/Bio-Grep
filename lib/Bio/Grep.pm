@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 14:18:43 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 483 $
+#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 813 $
 #############################################################################
 
 package Bio::Grep;
@@ -13,7 +13,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 
 sub new {
     my ( $class, $backendname ) = @_;
@@ -53,7 +53,7 @@ Bio::Grep - Perl extension for searching in DNA and Protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.10.4
+This document describes Bio::Grep version 0.10.5
 
 =head1 SYNOPSIS
 

@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2007-09-21 18:47:42 +0200 (Fri, 21 Sep 2007) $
-# $Revision: 493 $
+#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+# $Revision: 813 $
 #############################################################################
 
 package Bio::Grep::Root;
@@ -9,7 +9,7 @@ package Bio::Grep::Root;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.4');
+use version; our $VERSION = qv('0.10.5');
 
 use Bio::Root::Root;
 

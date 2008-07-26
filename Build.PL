@@ -40,6 +40,9 @@ my $builder = $class->new(
                             'Bio::AlignIO'         => 0, 
                             'Bio::SeqIO'           => 0,
                             },
+    build_requires => {
+        'Test::More'       => 0,
+    }, 
     script_files        => [ 'examples/bgrep' ], 
     add_to_cleanup      => [ 'Bio-Grep-*' ],
 );
