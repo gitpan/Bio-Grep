@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#/usr/bin/perl
 use strict;
 use warnings;
 
@@ -6,15 +6,18 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use Data::Dumper;
 use English qw( -no_match_vars ) ; 
 use Template;
-use Sys::Info::CPU;
+use Sys::Info;
 
 use Bio::Grep;
 use Bio::Perl;
+
+my $DEBUG = 0;
 
 my $template = Template->new();
 
 my %be = (
    agrep  => Bio::Grep->new('Agrep'),
+   agrep_tre  => Bio::Grep->new('Agrep'),
    vmatch => Bio::Grep->new('Vmatch'),
    re     => Bio::Grep->new('RE'),
    guugle => Bio::Grep->new('GUUGle'),
@@ -28,9 +31,11 @@ $query =~ tr{u}{t};
 my $time;
 my $VERBOSE=0;
 my $filenameCDNA = 'TAIR8_cdna_20080412';
-my $iterations = 20;
-my $iterationsdb = 2;
+my $iterations = $DEBUG ? 1 : 20;
+my $iterationsdb = $DEBUG ? 1: 2;
+my $maxmm = $DEBUG ? 1 : 5;
 
+#goto CREATETMP;
 DB:
 for $b (sort keys %be) {
     my $sbe = $be{$b};
@@ -49,7 +54,6 @@ for $b (sort keys %be) {
         (tv_interval($time)/$iterationsdb));
     warn "$b took " . $results{"${b}_dbgen"} . " seconds\n";
 }    
-#goto CREATETMP;
 
 MM:
 for $b (sort keys %be) {
@@ -57,10 +61,11 @@ for $b (sort keys %be) {
     my $loop_counter = 0;
     $loop_counter = 1 if $b eq 'vmatch';
     for my $online ( 0 .. $loop_counter) {
-    for my $mm (0..5) {
+    for my $mm (0..$maxmm) {
         next MM if !defined $sbe->features->{MISMATCHES} && $mm > 0;
         $time = [gettimeofday];
         for my $i (1..$iterations) {
+            print "." if ($i % 5 == 0);
             my %showdesc;
             %showdesc = ( showdesc => 100) if $b eq 'vmatch'; 
             my $gu = 1;
@@ -70,6 +75,7 @@ for $b (sort keys %be) {
             mismatches         => $mm,
             reverse_complement => 1,
             datapath => 'data' . $b,
+            ($b eq 'agrep_tre' ? ( execpath => 'examples/bin/agrep-tre/' ) : ()),
             no_alignments      => 1,
             online             => $online,
             database           => $filenameCDNA,
@@ -82,6 +88,8 @@ for $b (sort keys %be) {
             }    
             warn scalar(@ids). " results.\n" if $VERBOSE;
         }   
+        warn 'Is TRE? ' . $sbe->is_tre_agrep() if $b =~/agrep/;
+        
         $results{"${b}_mm_${mm}_$online"} = sprintf("%.2f",
             tv_interval($time)/$iterations);
         warn "$b (mm $mm) took " . $results{"${b}_mm_${mm}_$online"} . " seconds\n";
@@ -90,7 +98,10 @@ for $b (sort keys %be) {
 }    
 
 CREATETMP:
-$results{cpuinfo} = scalar Sys::Info::CPU->new->identify; 
+my $info = Sys::Info->new;
+$results{cpuinfo} = scalar $info->device('CPU')->identify;
+$results{perl} = $info->perl_long();
+$results{osname} = $info->os->name( long => 1 );
 $results{filenameCDNA} = $filenameCDNA;
 $results{biogrepv} = $Bio::Grep::VERSION;
 $results{iterations} = $iterations;

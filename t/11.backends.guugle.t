@@ -8,6 +8,7 @@
 BEGIN{
     use lib 't';
     use Test::More; 
+    use Test::NoWarnings;
     use BioGrepSkip; 
     my ($skip,$msg) = BioGrepSkip::skip_all( 'guugle');
     plan skip_all => $msg if $skip;
@@ -15,7 +16,7 @@ BEGIN{
 use BioGrepTest;
 register_backend_tests({ GUUGle => 49});
 
-plan tests => number_backend_tests;
+plan tests => (1 + number_backend_tests);
 
 my %test_seq = (
     id   => 'At2g42200',

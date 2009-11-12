@@ -3,10 +3,11 @@
 BEGIN {
     use lib 't';
     use Test::More;
+    use Test::NoWarnings;
     use BioGrepSkip; 
     my ($skip,$msg) = BioGrepSkip::skip_all( );
     plan skip_all => $msg if $skip;
-    plan tests => 11;
+    plan tests => 12;
 
     use_ok( 'Bio::Grep' );
     use_ok( 'Bio::Grep::Root' );

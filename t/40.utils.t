@@ -8,12 +8,13 @@
 
 BEGIN{
     use Test::More;
+    use Test::NoWarnings;
     use lib 't';
     use BioGrepSkip;
     my ($skip,$msg) = BioGrepSkip::skip_all( );
     plan skip_all => $msg if $skip;
 }
-plan tests => 29;
+plan tests => 30;
 
 use BioGrepTest;
 

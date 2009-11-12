@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 19:54:03 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1848 $
 #############################################################################
 
 package Bio::Grep::Backend::Agrep;
@@ -10,9 +10,9 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
-use Fatal qw(open close);
+use autodie qw(open close);
 
 use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
@@ -31,14 +31,6 @@ sub new {
 sub _init {
     my ($self) = @_;
     my %all_features = $self->features;
-
-    $self->{_tre_agrep} = $self->_is_tre_agrep;
-    if ( $self->is_tre_agrep ) {
-        $self->{_line_regex} = qr{\A(\d+)\-(\d+):(\d+):(.*)\z}xmso;
-    }
-    else {
-        $self->{_line_regex} = qr{\A(.*):(.*)\z}xmso;
-    }
 
     # agrep implementation features
     # TODO
@@ -76,7 +68,6 @@ sub _is_tre_agrep {
         = $self->_cat_path_filename( $self->settings->execpath, 'agrep' )
         . ' -V';
     my $version_info = $self->_execute_command_and_return_output($command);
-
     if ( $version_info =~ m{TRE}xms ) {
         return 1;
     }
@@ -94,6 +85,14 @@ sub search {
     my ( $self, $arg_ref ) = @_;
     my $s = $self->settings;
     $self->_check_search_settings($arg_ref);
+
+    $self->{_tre_agrep} = $self->_is_tre_agrep;
+    if ( $self->is_tre_agrep ) {
+        $self->{_line_regex} = qr{\A(\d+)\-(\d+):(\d+):(.*)\z}xmso;
+    }
+    else {
+        $self->{_line_regex} = qr{\A(.*):(.*)\z}xmso;
+    }
 
     my $query = $self->_prepare_query();
     $self->{_real_query} = $query;
@@ -117,7 +116,8 @@ sub search {
         $show_position = ' --show-position ';
     }
 
-    my $command = $self->_cat_path_filename( $s->execpath, 'agrep' )
+    my $command
+        = $self->_cat_path_filename( $s->execpath, 'agrep' )
         . $show_position . ' -i '
         . $fuzzy . q{ }
         . $query . q{ }
@@ -168,10 +168,10 @@ sub generate_database {
     my $in = Bio::SeqIO->new( -file => $filename, -format => $args{format} );
     my $id = 1;
     while ( my $seq = $in->next_seq() ) {
-        print ${MAPFILE} $seq->id . "\n" or
-            $self->_cannot_print("$filename.dat");
-        print ${DATFILE} $id . q{:} . $seq->seq . "\n" or
-            $self->_cannot_print("$filename.map");
+        print ${MAPFILE} $seq->id . "\n"
+            or $self->_cannot_print("$filename.dat");
+        print ${DATFILE} $id . q{:} . $seq->seq . "\n"
+            or $self->_cannot_print("$filename.map");
         $id++;
     }
     close $DATFILE;
@@ -226,8 +226,8 @@ LINE:
             ( $sequence_id, $sequence ) = @ret;
             $subject_begin = 0;
             if ( !defined $sequence ) {
-                $self->warn( "Truncated record. Record is:\n" . $line
-                        . "\n\nSkipping hit." );
+                $self->warn(
+                    "Truncated record. Record is:\n$line\n\nSkipping hit.");
                 next LINE;
             }
             $subject_end = length $sequence;
@@ -237,10 +237,8 @@ LINE:
 
         my $seq_hit = $self->{_idx}->fetch($id);
 
-        ## no critic
         assert( defined $seq_hit, "Found $sequence_id:$id in Bio::Index" )
             if DEBUG;
-        ## use critic
 
         # take complete sequence as subject sequence for standard agrep
         $subject_seq = $seq_hit->seq;
@@ -384,7 +382,7 @@ Rather, a back-end should be constructed by the main class L<Bio::Grep>:
 Returns all available sort modes as hash. keys are sort modes, values a short
 description.
 
-Available sortmodes in Agrep:
+Available sort modes in Agrep:
 
 =over
 
@@ -443,9 +441,9 @@ L<Bio::Index::Fasta>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester. 
+Copyright (C) 2007-2009 by M. Riester. 
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -467,7 +465,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

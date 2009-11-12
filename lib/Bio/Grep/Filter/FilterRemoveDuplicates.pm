@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 14:21:37 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1843 $
 #############################################################################
 
 package Bio::Grep::Filter::FilterRemoveDuplicates;
@@ -13,7 +13,7 @@ use Bio::Grep::Filter::FilterI;
 
 use base 'Bio::Grep::Filter::FilterI';
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
 use Class::MethodMaker [
     new  => [qw /new2/],
@@ -66,7 +66,7 @@ Bio::Grep::Filter::FilterRemoveDuplicates - Example Filter
 B<Bio::Grep::Filter::FilterRemoveDuplicates> is an example filter that allows 
 only unique sequence ids in search results. It is useful if you are only
 interested in which genes the query was found. Deletes the result if 
-the id already occured. Ignores suffixes of the form ".xx", where xx are digit
+the id already occurred. Ignores suffixes of the form ".xx", where xx are digit
 characters (this normally represents alternative splice forms).
 
 =head1 METHODS
@@ -92,9 +92,9 @@ L<Bio::Grep::Backend::BackendI>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester.
+Copyright (C) 2007-2009 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -116,7 +116,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

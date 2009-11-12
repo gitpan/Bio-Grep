@@ -8,6 +8,7 @@
 BEGIN{
     use lib 't';
     use Test::More; 
+    use Test::NoWarnings;
     use BioGrepSkip;
     my ($skip,$msg) = BioGrepSkip::skip_all();
     plan skip_all => $msg if $skip;
@@ -16,7 +17,7 @@ use BioGrepTest;
 use TestFilter;
 
 register_backend_tests({ Agrep => 2, Vmatch => 14, GUUGle => 14, RE => 14 });
-plan tests => ( 1 + number_backend_tests );
+plan tests => ( 2 + number_backend_tests );
 
 ################################################################################
 

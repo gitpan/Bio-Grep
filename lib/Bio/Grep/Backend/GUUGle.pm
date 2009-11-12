@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 19:54:03 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1848 $
 #############################################################################
 
 package Bio::Grep::Backend::GUUGle;
@@ -9,9 +9,9 @@ package Bio::Grep::Backend::GUUGle;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
-use Fatal qw(open close);
+use autodie qw(open close);
 use English qw( -no_match_vars );
 
 use Bio::Grep::SearchResult;
@@ -20,7 +20,6 @@ use Bio::Grep::Backend::BackendI;
 use base 'Bio::Grep::Backend::BackendI';
 
 use List::Util qw(max);
-
 
 sub new {
     my $self = shift;
@@ -92,7 +91,9 @@ sub search {
         }
     }
 
-    my $command = $self->_cat_path_filename( $s->execpath, 'guugle' ) . $eflag
+    my $command
+        = $self->_cat_path_filename( $s->execpath, 'guugle' ) 
+        . $eflag
         . $lflag . ' -d '
         . $s->query_length . q{ }
         . $self->_cat_path_filename( $s->datapath, $s->database ) . q{ }
@@ -316,7 +317,7 @@ LINE:
             -seq  => $up_seq . $subject_seq . $down_seq,
             -desc => $subject_desc,
         );
-        my $tmp_aln = new Bio::SimpleAlign( -source => 'Bio::Grep' );
+        my $tmp_aln = Bio::SimpleAlign->new( -source => 'Bio::Grep' );
         $tmp_aln->add_seq(
             Bio::LocatableSeq->new(
                 -id    => 'Subject',
@@ -458,7 +459,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in C<GUUGle>:
+Available sort modes in C<GUUGle>:
 
 =over
 
@@ -531,9 +532,9 @@ L<Bio::Seq>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester. 
+Copyright (C) 2007-2009 by M. Riester. 
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -553,7 +554,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

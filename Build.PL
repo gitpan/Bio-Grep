@@ -23,6 +23,7 @@ my $builder = $class->new(
     requires            => {
                             'Class::MethodMaker' => 2.02,
                             'version'            => 0,
+                            'autodie'            => 0,
     		                'IO::String'         => 1.0, 
                             'Getopt::Long'       => 2.32,   
                             'Pod::Usage'         => 0,   
@@ -42,6 +43,7 @@ my $builder = $class->new(
                             },
     build_requires => {
         'Test::More'       => 0,
+        'Test::NoWarnings' => 0,
     }, 
     script_files        => [ 'examples/bgrep' ], 
     add_to_cleanup      => [ 'Bio-Grep-*' ],

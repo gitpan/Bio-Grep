@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 19:54:03 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1848 $
 #############################################################################
 
 package Bio::Grep::Backend::BackendI;
@@ -10,10 +10,10 @@ use strict;
 use warnings;
 
 use Carp::Assert;
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
 use English qw( -no_match_vars );
-use Fatal qw (open close opendir closedir);
+use autodie qw (open close opendir closedir);
 
 use File::Spec;
 use File::Copy;
@@ -134,6 +134,7 @@ sub _filter_result {
     if ( $self->settings->filters_isset ) {
         foreach my $filter ( @{ $self->settings->filters } ) {
             $filter->message_reset;
+
             #$res->_real_query( $self->settings->_real_query );
             $filter->search_result($res);
             if ( !$filter->filter ) {
@@ -213,11 +214,12 @@ sub _sort_by_dg {
         }
     }
     if ( $self->settings->sort eq 'gd' ) {
-        return reverse sort { $a->dG <=> $b->dG } @results;
+        @results = reverse sort { $a->dG <=> $b->dG } @results;
     }
     else {
-        return sort { $a->dG <=> $b->dG } @results;
+        @results = sort { $a->dG <=> $b->dG } @results;
     }
+    return @results;
 }
 
 sub _results_may_have_gaps {
@@ -239,7 +241,7 @@ sub _get_alignment {
     if ( !$self->_results_may_have_gaps
         && length $seq_a->seq == length $seq_b->seq )
     {
-        my $alignment = new Bio::SimpleAlign( -source => 'Bio::Grep' );
+        my $alignment = Bio::SimpleAlign->new( -source => 'Bio::Grep' );
         $alignment->add_seq($seq_a);
         $alignment->add_seq($seq_b);
         return $alignment;
@@ -265,7 +267,7 @@ sub _get_alignment {
 
     if ( -e $outfile ) {
         my $alignio_fmt = 'emboss';
-        my $align_io    = new Bio::AlignIO(
+        my $align_io    = Bio::AlignIO->new(
             -format => $alignio_fmt,
             -file   => $outfile
         );
@@ -275,7 +277,7 @@ sub _get_alignment {
         my $s2        = $alignment->get_seq_by_pos(2);
         $s1->start( $seq_a->start );
         $s1->end( $seq_a->end );
-        $alignment = new Bio::SimpleAlign( -source => 'Bio::Grep' );
+        $alignment = Bio::SimpleAlign->new( -source => 'Bio::Grep' );
         $alignment->add_seq($s1);
         $alignment->add_seq($s2);
         return $alignment;
@@ -502,12 +504,12 @@ sub _copy_fasta_file_and_create_nfo {
             -class => 'Bio::Root::IOException',
             -text  => q{Can't symlink } . $abs_path . " to $newfile",
             -value => $OS_ERROR,
-            );
+        );
     }
     if ( defined $args->{description} ) {
         open my $NFOFILE, '>', $newfile . '.nfo';
-        print ${NFOFILE} $args->{description} or
-            $self->_cannot_print("$newfile.nfo");
+        print ${NFOFILE} $args->{description}
+            or $self->_cannot_print("$newfile.nfo");
         close $NFOFILE;
     }
     return;
@@ -542,8 +544,11 @@ sub _bioseq_query {
             if ( $db_alphabet eq 'dna' ) {
                 $query =~ tr/uU/tT/;
             }
-            $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query',
-                -seq => $query );
+            $query_obj = Bio::Seq->new(
+                -id   => '1',
+                -desc => 'Query',
+                -seq  => $query
+            );
         }
         else {
             $query_obj = Bio::Seq->new( -id => '1', -desc => 'Query' );
@@ -597,9 +602,10 @@ sub _prepare_query {
         $query = $seq->revcom->seq;
         $seq->seq($query);
     }
+
     # $self->settings->_real_query( uc $query );
     $self->{_query_obj} = $seq;
-    return uc $query; # $self->settings->_real_query();
+    return uc $query;    # $self->settings->_real_query();
 }
 
 sub generate_database_out_of_fastafile {
@@ -687,7 +693,8 @@ sub _execute_command_and_return_output {
     my $pid = open3( $writer, $reader, $err, $cmd );
     waitpid $pid, 0;
     my $output = do { local $INPUT_RECORD_SEPARATOR = undef; <$reader> };
-#    my $error = join q{}, <$err>;
+
+    #    my $error = join q{}, <$err>;
     return $output;
 }
 
@@ -706,13 +713,13 @@ sub _create_index_and_alphabet_file {
     # create a vmatch alphabet file
     open my $ALFILE, '>', "$filename.al1";
     if ( $alphabet eq 'dna' ) {
-        print ${ALFILE} "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n" or
-            $self->_cannot_print("$filename.al1");
+        print ${ALFILE} "aA\ncC\ngG\ntTuU\nnsywrkvbdhmNSYWRKVBDHM\n"
+            or $self->_cannot_print("$filename.al1");
     }
     else {
         print ${ALFILE}
             "L\nV\nI\nF\nK\nR\nE\nD\nA\nG\nS\nT\nN\nQ\nY\nW\nP\nH\nM\nC\nXUBZ*\n"
-                or $self->_cannot_print("$filename.al1");
+            or $self->_cannot_print("$filename.al1");
     }
     close $ALFILE;
 
@@ -882,12 +889,10 @@ sub _parse_regions {
 
     }
     my @ret = ( $upstream_seq, $subject_seq, $downstream_seq );
-    ## no critic
     assert(
         index( $args->{complete_seq}, join( q{}, @ret ), $upstream_begin )
             == $upstream_begin )
         if DEBUG;
-    ## use critic
     return @ret;
 }
 
@@ -1107,7 +1112,7 @@ necessary, returns the prepared query. C<settings-E<gt>query> is unchanged!
 The method generate_database() should call this internal method as first step.
 It checks if the first argument is a valid hash reference (see
 generate_database()), sets default values for undefined keys and returns this
-modifed argument hash. Creates a symlink of the specified file (or copies this
+modified argument hash. Creates a symlink of the specified file (or copies this
 file) in the I<data> directory. Generates a C<.nfo> file with the description
 of the database. 
 
@@ -1302,9 +1307,9 @@ L<Bio::Grep::SearchResults>
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester.
+Copyright (C) 2007-2009 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -1327,7 +1332,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

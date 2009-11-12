@@ -1,4 +1,4 @@
-Bio-Grep version 0.10.5
+Bio-Grep version 0.10.6
 =======================
 
 Bio-Grep is a collection of Perl modules for searching in DNA and protein
@@ -20,7 +20,7 @@ This module requires these other modules, libraries and programs:
     you follow all installation steps in the Bioperl Documentation 
     (for example you will need some XML modules. Bundle::BioPerl 
     will install them).
-    Works with Bioperl 1.5.2.
+    Works with Bioperl 1.6
     
   EMBOSS (ftp://emboss.open-bio.org/pub/EMBOSS/EMBOSS-latest.tar.gz)
 
@@ -36,7 +36,7 @@ This module requires these other modules, libraries and programs:
   nice alignments, choose vmatch too (EMBOSS can automatically align the 
   sequence and the query in the agrep back-end, but then vmatch is faster). 
   Filters require exact positions, so you can't use them with agrep. 
-  This may change in future version or not.
+  This may change in a future version or not.
   GUUGle is the best choice if you have RNA queries (counts GU as no mismatch)
   and if you are interested in only exact matches.
 
@@ -101,7 +101,7 @@ DOCUMENTATION
 bgrep is an example implementation. The source code is well documented, so
 maybe it is a good starting point.
 
-A not yet comprehensive coobook is available in perldoc Bio::Grep::Cookbook.
+A not yet comprehensive cookbook is available in perldoc Bio::Grep::Cookbook.
 Please contribute recipes if you can!
 
 
@@ -112,7 +112,7 @@ Please contribute recipes if you can!
 
 
 *  Try $sbe->settings->showdesc(200) if you don't need upstream or downstream
-   regions. This makes the parser get all data direcly out of vmatch output.
+   regions. This makes the parser get all data directly out of vmatch output.
    Otherwise the parser will call vsubseqselect for every search result.
 
 *  Try $sbe->settings->online(1) if you allow many mismatches.
@@ -134,9 +134,9 @@ C<bug-bio-grep@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org>. 
 
 
-COPYRIGHT AND LICENCE
+COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2008 by M. Riester.
+Copyright (C) 2007-2009 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.

@@ -8,19 +8,19 @@ A collection of quick and dirty benchmarks.
 
 =head1 BENCHMARKS
 
-2 x Intel(R) Xeon(TM) CPU 2.40GHz, 1GB RAM. Fedora Core 8.
+4 x Intel(R) Core(TM)2 Quad CPU Q9400  @ 2.66GHz, 4GB RAM. Fedora Linux 2.6.27.38-170.2.113.fc10.i686.PAE (kernel: 2.6.27.38-170.2.113.fc10.i686.PAE). Perl 5.10.0.0.
 
 TAIR8_cdna_20080412 (Arabidopsis CDNA Fasta file, 63MB). 
 
-Bio::Grep 0.10.5. 
+Bio::Grep 0.10.6. 
 
 =head2 Database Generation
 
 Average over 2 iterations.
 
-  GUUGle         : 6.29 sec
-  Agrep/RE       : 18.50 sec
-  Vmatch (-pl 3) : 208.14 sec
+  GUUGle         : 2.88 sec
+  Agrep/RE       : 10.69 sec
+  Vmatch (-pl 3) : 135.32 sec
 
   
 =head2 Mismatches
@@ -33,12 +33,12 @@ Average over 20 iterations.
 
 =item B<No mismatches (exact matching):>
 
-  Agrep (Wu-Manber):  0.62 sec
-  Vmatch           :  2.27 sec
-  RE               :  2.17 sec
-  Vmatch (-online) :  5.09 sec
-  GUUGle           : 16.21 sec
-  Agrep (TRE)      : 15.96 sec
+  Vmatch           :  0.02 sec
+  Agrep (Wu-Manber):  0.22 sec
+  RE               :  1.66 sec
+  Vmatch (-online) :  3.80 sec
+  GUUGle           :  6.18 sec
+  Agrep (TRE)      : 10.22 sec
 
 Note that C<Vmatch> needs one slow run to load the suffix arrays in memory
 (Values are the average over 20 iterations). Also note that GUUGle
@@ -46,46 +46,46 @@ allows GU mismatches.
 
 =item B<One mismatch:>
 
-  Vmatch           :  0.08 sec
-  Agrep (Wu-Manber):  1.31 sec
-  Vmatch (-online) :  5.53 sec
-  Agrep (TRE)      : 47.01 sec
+  Vmatch           :  0.05 sec
+  Agrep (Wu-Manber):  0.98 sec
+  Vmatch (-online) :  3.85 sec
+  Agrep (TRE)      : 35.26 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Two mismatches:>
 
-  Vmatch           :  0.23 sec
-  Agrep (Wu-Manber):  1.66 sec
-  Vmatch (-online) :  6.01 sec
-  Agrep (TRE)      : 59.17 sec
+  Vmatch           :  0.12 sec
+  Agrep (Wu-Manber):  1.28 sec
+  Vmatch (-online) :  3.89 sec
+  Agrep (TRE)      : 43.48 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Three mismatches:>
 
-  Vmatch           :  0.54 sec
-  Agrep (Wu-Manber):  2.13 sec
-  Vmatch (-online) :  6.34 sec
-  Agrep (TRE)      : 72.56 sec
+  Vmatch           :  0.28 sec
+  Agrep (Wu-Manber):  1.57 sec
+  Vmatch (-online) :  4.01 sec
+  Agrep (TRE)      : 50.66 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Four mismatches:>
 
-  Vmatch           :  1.77 sec
-  Agrep (Wu-Manber):  2.49 sec
-  Vmatch (-online) :  7.22 sec
-  Agrep (TRE)      : 83.50 sec
+  Vmatch           :  0.93 sec
+  Agrep (Wu-Manber):  1.89 sec
+  Vmatch (-online) :  4.48 sec
+  Agrep (TRE)      : 57.43 sec
   GUUGle           :       n/a
   RE               :       n/a
 
 =item B<Five mismatches:>
 
-  Agrep (Wu-Manber):  3.32 sec
-  Vmatch           :  7.49 sec
-  Vmatch (-online) : 11.68 sec
-  Agrep (TRE)      : 96.16 sec
+  Agrep (Wu-Manber):  2.42 sec
+  Vmatch           :  3.95 sec
+  Vmatch (-online) :  6.85 sec
+  Agrep (TRE)      : 64.81 sec
   GUUGle           :       n/a
   RE               :       n/a
 
@@ -105,9 +105,9 @@ L<http://rt.cpan.org>.
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008  by M. Riester. 
+Copyright (C) 2007-2009 M. Riester.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

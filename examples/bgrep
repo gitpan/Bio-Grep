@@ -2,14 +2,14 @@
 
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
+#     $Date: 2009-11-12 12:28:21 +0100 (Thu, 12 Nov 2009) $
 # $Revision: 487 $
 #############################################################################
 
 use strict;
 use warnings;
 
-use version; our $VERSION = qv(0.10.5);
+use version; our $VERSION = qv(0.10.6);
 
 use Carp;
 
@@ -20,7 +20,7 @@ use File::Basename;
 use Data::Dumper;
 use Readonly;
 
-Readonly my  $PREFIX_LENGTH => 4;
+Readonly my $PREFIX_LENGTH => 4;
 
 # parse command line arguments
 ##############################################################################
@@ -54,9 +54,13 @@ if ($man) {
     pod2usage( -exitstatus => 0, -verbose => 2 );
 }
 
-if (!(
-    ( defined $h{query_file} || defined $h{query} || defined $h{createdb} )
-    && defined $h{database} ))
+if (!(  (      defined $h{query_file}
+            || defined $h{query}
+            || defined $h{createdb}
+        )
+        && defined $h{database}
+    )
+    )
 {
     pod2usage(1);
 }
@@ -107,30 +111,32 @@ if ( !defined $h{createdb} ) {
                 _say( $res->sequence->id );
             }
             else {
-                _say($res->sequence->id . q{ } . $res->sequence->desc);
+                _say( $res->sequence->id . q{ } . $res->sequence->desc );
             }
             if ( !defined $res->query->desc ) {
-                _say( $res->query->id);
+                _say( $res->query->id );
             }
             else {
-                _say( $res->query->id . q{ } . $res->query->desc);
+                _say( $res->query->id . q{ } . $res->query->desc );
             }
-            _say( $res->mark_subject_uppercase());
+            _say( $res->mark_subject_uppercase() );
 
             #print Dumper $res->alignment;
-            _say( $res->alignment_string() . "\n");
+            _say( $res->alignment_string() . "\n" );
         }
         $hits++;
     }
-    _say("$hits search results. Search took " . ( time - $start ) . " seconds.\n");
+    _say(     "$hits search results. Search took "
+            . ( time - $start )
+            . " seconds.\n" );
 }
 else {
-    _say('Database generation took ' . ( time - $start ) . " seconds.\n");
+    _say( 'Database generation took ' . ( time - $start ) . " seconds.\n" );
 }
 
 # make Perl::Critic happy
 sub _say {
-    my ( $msg ) = @_;
+    my ($msg) = @_;
     print "$msg\n" or croak q{Can't write to Terminal};
     return;
 }
@@ -267,7 +273,7 @@ Don't calculate alignments with EMBOSS.
 
 Bio-Grep is a collection of Perl modules for searching in 
 Fasta files. It is programmed in a modular way. There are different 
-backends available. You can filter search results.
+back-ends available. You can filter search results.
 
 bgrep is an example of how to use this library.
 
@@ -321,7 +327,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

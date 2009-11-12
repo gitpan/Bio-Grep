@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 20:17:39 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 815 $
+#     $Date: 2009-11-12 19:54:03 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1848 $
 #############################################################################
 
 package Bio::Grep::Backend::RE;
@@ -9,10 +9,10 @@ package Bio::Grep::Backend::RE;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 use Carp::Assert;
 
-use Fatal qw(open close seek);
+use autodie qw(open close seek);
 
 use Bio::Grep::SearchResult;
 use Bio::Grep::Backend::BackendI;
@@ -78,8 +78,7 @@ sub search {
             -desc => $query_obj->desc . ' (reverse complement)',
             -seq  => $query_obj->revcom->seq
         );
-        $self->{_qmapping}->{ lc $query_revcom_obj->seq }
-            = $query_revcom_obj;
+        $self->{_qmapping}->{ lc $query_revcom_obj->seq } = $query_revcom_obj;
         if ( $s->direct_and_rev_com ) {
             $regex = $regex . q{|} . $query_revcom_obj->seq;
         }
@@ -136,9 +135,9 @@ sub _parse_next_res {
 
             # get coordinates of hit
             my $subject_begin = $-[0];
-            my $subject_seq   = substr $seq, $-[0], $+[0] - $-[0];
+            my $subject_seq = substr $seq, $-[0], $+[0] - $-[0];
 
-            my $subject_end   = $subject_begin + length $subject_seq;
+            my $subject_end = $+[0];
 
             my ( $upstream_seq, $dummy, $downstream_seq )
                 = $self->_parse_regions(
@@ -156,7 +155,7 @@ sub _parse_next_res {
                 -seq  => $upstream_seq . $subject_seq . $downstream_seq,
             );
 
-            my $tmp_aln = new Bio::SimpleAlign( -source => 'Bio::Grep' );
+            my $tmp_aln = Bio::SimpleAlign->new( -source => 'Bio::Grep' );
             $tmp_aln->add_seq(
                 Bio::LocatableSeq->new(
                     -id    => 'Subject',
@@ -272,10 +271,10 @@ Bio::Grep::Backend::RE - Perl Regular Expression back-end
 B<Bio::Grep::Backend::RE> searches for a query with a
 Perl Regular Expression. 
 
-Internally, it precompiles the specified regex (with the appended modifiers
+Internally, it pre-compiles the specified regex (with the appended modifiers
 i, m, s and x), matches it against every line in the database with the looping
-modifier g, and then returns the positions retrieved with $- and $+. The substr
-function is then used to extract the sequences.
+modifier g, and then returns the positions retrieved with $- and $+. The
+C<substr> function is then used to extract the sequences.
 
 This back-end does not perform any sanity checks of the regular expressions,
 so do NOT provide this back-end in a web service.
@@ -308,7 +307,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in C<RE>:
+Available sort modes in C<RE>:
 
 =over
 
@@ -384,9 +383,9 @@ L<Bio::Index::Fasta>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester. 
+Copyright (C) 2007-2009 by M. Riester. 
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -405,7 +404,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 12:42:02 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1842 $
 #############################################################################
 
 package Bio::Grep;
@@ -13,7 +13,7 @@ require UNIVERSAL::require;
 
 use base 'Bio::Root::Root';
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
 sub new {
     my ( $class, $backendname ) = @_;
@@ -53,7 +53,7 @@ Bio::Grep - Perl extension for searching in DNA and Protein sequences
 
 =head1 VERSION
 
-This document describes Bio::Grep version 0.10.5
+This document describes Bio::Grep version 0.10.6
 
 =head1 SYNOPSIS
 
@@ -97,7 +97,6 @@ This document describes Bio::Grep version 0.10.5
   
   my @ids;
 
-  # output some informations! 
   while ( my $res = $sbe->next_res ) {
      print $res->sequence->id . "\n";
      print $res->alignment_string() . "\n\n";
@@ -155,7 +154,7 @@ L<"FEATURE COMPARISON">.
 
 =item 
 
-This module should be suitable for large datasets. The back-end output is piped
+This module should be suitable for large data sets. The back-end output is piped
 to a temporary file and the parser only stores the current hit in memory.
 
 =item
@@ -185,7 +184,7 @@ common problems.
 
 As a first step, you have to generate a C<Bio::Grep> database out of your Fasta
 file in which you want to search. A C<Bio::Grep> database consists of a couple of
-files and allows you to retrieve informations about the database as well
+files and allows you to retrieve information about the database as well
 as to perform queries as fast and memory efficient as possible. You have to do
 this only once for every file.
 
@@ -256,14 +255,14 @@ Use such a L<Bio::Perl> like while loop to analyze the search results.
      print $res->alignment_string() . "\n\n";
   }
 
-See L<Bio::Grep::SearchResult> for all available informations.
+See L<Bio::Grep::SearchResult> for all available information.
 
 
 =head1 BGREP
 
 This distribution comes with a sample script called L<bgrep>. 
 
-=head1 WHICH BACKEND?
+=head1 WHICH BACK-END?
 
 
 We support these external back-ends:
@@ -394,7 +393,8 @@ L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>
 <td style="font-weight: bold;text-align: center;background-color: #00ff00;">yes</td>
 <td style="text-align:center;background-color: #ffe0e0;">no</td>
 </tr>
-</table><br/><div style="font-size: smaller"><hr width="300" align="left"><sup>1</sup>Needs precalculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>Matches if a substring of the query of size n or larger matches<br/><sup>4</sup>Agrep soon</div>
+</table><br/><div style="font-size: smaller"><hr width="300"
+align="left"><sup>1</sup>Needs pre-calculation and (much) more memory but queries are in general faster<br/><sup>2</sup>With query_file<br/><sup>3</sup>Matches if a substring of the query of size n or larger matches<br/><sup>4</sup>Agrep soon</div>
 
 =end html
 
@@ -420,7 +420,7 @@ L<http://bibiserv.techfak.uni-bielefeld.de/guugle/>
    Regular Expressions 4  ||   no   |   no   |  yes   |   no   
 
 --
- 1 Needs precalculation and (much) more memory but queries are in general faster
+ 1 Needs pre-calculation and (much) more memory but queries are in general faster
  2 With query_file
  3 Matches if a substring of the query of size n or larger matches
  4 Agrep soon
@@ -447,11 +447,11 @@ mismatch) and if you are interested in only exact matches. Another
 solution here would be to use C<Vmatch> and write a filter (see next section)
 that only allows GU mismatches. Of course, this is only an alternative if you
 can limit (C<$sbe-E<gt>settings-E<gt>mismatches()>) the maximal number of GU
-mismatches. C<Vmatch> with its precalculated suffix arrays is really fast, so 
+mismatches. C<Vmatch> with its pre-calculated suffix arrays is really fast, so 
 you should consider this option.
 
 Perl regular expressions are available in the C<RE> back-end. It is a very
-simple back-end which is written in pure perl and which does not require any
+simple back-end which is written in pure Perl and which does not require any
 additional software.
 
 =head1 FILTERS
@@ -601,7 +601,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester.
+Copyright (C) 2007-2009 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -624,7 +624,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

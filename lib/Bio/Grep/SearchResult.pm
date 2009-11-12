@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 17:13:23 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1844 $
 #############################################################################
 
 package Bio::Grep::SearchResult;
@@ -9,7 +9,7 @@ package Bio::Grep::SearchResult;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
 use IO::String;
 
@@ -35,7 +35,7 @@ sub new {
 }
 
 sub reverse_complement {
-    my ( $self ) = @_;
+    my ($self) = @_;
     return $self->query->desc =~ m{ \(reverse\scomplement\) \z }xms;
 }
 
@@ -47,7 +47,7 @@ sub mark_subject_uppercase {
     }
     else {
         return
-              lc( substr $result,   0,            $self->begin )
+              lc( substr $result, 0, $self->begin )
             . uc( substr $result, $self->begin, $self->end - $self->begin )
             . lc substr $result, $self->end;
     }
@@ -76,8 +76,10 @@ sub downstream {
 
     return Bio::Seq->new(
         -id  => $self->sequence->id,
-        -seq => $self->sequence->subseq( $self->end + 1,
-            length $self->sequence->seq )
+        -seq => $self->sequence->subseq(
+            $self->end + 1,
+            length $self->sequence->seq
+        )
     );
 }
 
@@ -197,7 +199,7 @@ lowercase.
 
 =item C<alignment_string()>
 
-This function returns a string with the formated alignment. We use CLUSTALW
+This function returns a string with the formatted alignment. We use CLUSTALW
 Format without many blank lines and CLUSTAL header. In some back-ends like
 Agrep, this function will return an empty string if C<no_alignments> is true.
 
@@ -271,7 +273,7 @@ Get/set C<dG> . See L<Bio::Grep::RNA::HybridizationI> for details.
 
 =item C<remark()>
 
-Get/set some additional informations like filter results to this hit.
+Get/set some additional information like filter results to this hit.
 
 =item C<evalue()>
 
@@ -296,9 +298,9 @@ L<Bio::Grep::Backend::BackendI>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester.
+Copyright (C) 2007-2009 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -321,7 +323,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

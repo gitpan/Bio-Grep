@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 17:13:23 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1844 $
 #############################################################################
 
 package Bio::Grep::SearchSettings;
@@ -12,7 +12,7 @@ use warnings;
 use Data::Dumper;
 use Scalar::Util qw(reftype);
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
 use Class::MethodMaker [
     new    => 'new2',
@@ -241,7 +241,7 @@ Get/Set allowed mismatches
 
    $sbe->settings->mismatches(5)
 
-Not available in the GUUGle backend.
+Not available in the GUUGle back-end.
 
 =item C<editdistance()>
 
@@ -263,7 +263,7 @@ Get/set C<upstream>. This is the number of bases upstream the match.
  
    $sbe->settings->upstream( 10 );
 
-Not available in the Agrep backend.
+Not available in the Agrep back-end.
 
 =item C<downstream()>
 
@@ -271,7 +271,7 @@ Get/set C<downstream>. This is the number of bases downstream the match.
    
    $sbe->settings->downstream( 10 );
 
-Not available in the Agrep backend.
+Not available in the Agrep back-end.
 
 =item C<filters()>
 
@@ -285,7 +285,7 @@ Get/set the filters. This is an array of modules based on L<Bio::Grep::Filter::F
 
    $sbe->settings->filters( ( $filter1, $filter2 ) );
 
-Not available in the Agrep backend.
+Not available in the Agrep back-end.
 
 =item C<datapath()>
 
@@ -389,7 +389,7 @@ id.
 =item C<qspeedup()>
 
 Get/Set qspeedup. Specify speedup level when matching queries
-(0: fast, 2: faster; default is 2). Beware of time/space tradeoff.
+(0: fast, 2: faster; default is 2). Beware of time/space trade-off.
              
 =back
 
@@ -407,9 +407,9 @@ L<Bio::Grep::Backend::BackendI>
 
 Markus Riester, E<lt>mriester@gmx.deE<gt>
 
-=head1 LICENCE AND COPYRIGHT
+=head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester. 
+Copyright (C) 2007-2009 by M. Riester. 
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -432,7 +432,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

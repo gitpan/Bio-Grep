@@ -3,13 +3,14 @@
 BEGIN{
     use lib 't';
     use BioGrepSkip;
+    use Test::NoWarnings;
     use Test::More; 
     my ($skip,$msg) = BioGrepSkip::skip_all();
     plan skip_all => $msg if $skip;
 }
 
 use BioGrepTest;
-plan tests => 8;
+plan tests => 9;
 
 
 my $backendname  = 'Vmatch';

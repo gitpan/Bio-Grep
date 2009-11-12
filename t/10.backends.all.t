@@ -15,11 +15,11 @@ BEGIN {
 }
 
 use BioGrepTest;
-
+use Test::NoWarnings;
 use TestFilter;
 
-register_backend_tests( { Agrep => 74, Vmatch => 153, GUUGle => 57, RE => 55 } );
-plan tests => (1+number_backend_tests);
+register_backend_tests( { Agrep => 74, Vmatch => 154, GUUGle => 58, RE => 56 } );
+plan tests => (2+number_backend_tests);
 
 # backends
 ################################################################################
@@ -520,6 +520,7 @@ SKIP: {
 
         my $gum = 1;
         $gum = 0 if $backendname eq 'GUUGle';
+        my $long_matches = 0;
         if ( $backendname ne 'Agrep' ) {
 
             #'Agrep wants shorter queries
@@ -535,7 +536,9 @@ SKIP: {
                 $seq =~ tr{u}{t};
 
                 is( $seq, lc($long_query), 'id correct' );
+                $long_matches++;
             }
+            is($long_matches, 1, 'only one longmatch' );
         }
 ################################################################################
         # test upstream/downstream

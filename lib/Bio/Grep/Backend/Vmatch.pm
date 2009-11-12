@@ -1,7 +1,7 @@
 #############################################################################
 #   $Author: markus $
-#     $Date: 2008-07-26 18:37:36 +0200 (Sat, 26 Jul 2008) $
-# $Revision: 813 $
+#     $Date: 2009-11-12 19:54:03 +0100 (Thu, 12 Nov 2009) $
+# $Revision: 1848 $
 #############################################################################
 
 package Bio::Grep::Backend::Vmatch;
@@ -9,9 +9,9 @@ package Bio::Grep::Backend::Vmatch;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.10.5');
+use version; our $VERSION = qv('0.10.6');
 
-use Fatal qw(open close);
+use autodie qw(open close);
 use English qw( -no_match_vars );
 
 use Bio::Grep::SearchResult;
@@ -27,12 +27,12 @@ use Carp::Assert;
 use Readonly;
 
 # The VMATCH output columns
-Readonly my $COL_LENGTH   =>  0;
-Readonly my $COL_ID       =>  1;
-Readonly my $COL_POS      =>  2;
-Readonly my $COL_STRAND   =>  3;
-Readonly my $COL_QUERY    =>  5;
-Readonly my $COL_EVALUE   =>  8;
+Readonly my $COL_LENGTH   => 0;
+Readonly my $COL_ID       => 1;
+Readonly my $COL_POS      => 2;
+Readonly my $COL_STRAND   => 3;
+Readonly my $COL_QUERY    => 5;
+Readonly my $COL_EVALUE   => 8;
 Readonly my $COL_IDENTITY => 10;
 
 sub new {
@@ -144,7 +144,8 @@ sub _generate_vmatch_command {
     if ($auto_query_length) {
         $s->query_length_reset;
     }
-    return $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
+    return
+          $self->_cat_path_filename( $s->execpath, 'vmatch' ) . ' -q '
         . $tmp_query_file
         . join( q{ }, @params ) . ' -s '
         . $self->_cat_path_filename( $s->datapath, $s->database );
@@ -282,7 +283,7 @@ sub generate_database {
 
 ###########################################################################
 # Usage      : _parse_next_res()
-# Purpose    : Assumes that the output filehandle points to the beginning of 
+# Purpose    : Assumes that the output filehandle points to the beginning of
 #              a hit. This method then parses this hit.
 # Returns    : SearchResult object or 0 (end of file)
 # Parameters : none
@@ -340,8 +341,9 @@ LINE:
         }
 
         next
-            if !( $fields[$COL_LENGTH] =~ m{\A \d+ \z}xms
-            || $alignment_in_output  );
+            if !(      $fields[$COL_LENGTH] =~ m{\A \d+ \z}xms
+                    || $alignment_in_output
+            );
         $skip_next_alignment = 0;
 
         if ( $line =~ m{\A Sbjct: \s (.*) \z}xms ) {
@@ -362,7 +364,7 @@ LINE:
         }
         next LINE if $alignment_in_output;
 
-        $tmp_aln = new Bio::SimpleAlign( -source => 'VMATCH' );
+        $tmp_aln = Bio::SimpleAlign->new( -source => 'VMATCH' );
 
         $self->_parser_untaint_data( \@fields );
 
@@ -411,8 +413,8 @@ LINE:
 
 ###########################################################################
 # Usage      : _parser_create_sequence_obj()
-# Purpose    : creates a Bio::Seq object for $res->sequence, returns true 
-#              upstream size (corrects upstream when available upstream 
+# Purpose    : creates a Bio::Seq object for $res->sequence, returns true
+#              upstream size (corrects upstream when available upstream
 #              region too small)
 # Returns    : Bio::Seq object and $upstream
 # Parameters : ref to @fields array (containing the Vmatch output)
@@ -430,11 +432,16 @@ sub _parser_create_sequence_obj {
             $upstream = $upstream + $start;
             $start    = 0;
         }
-        my $length = $upstream + $fields->[$COL_LENGTH] + $self->settings->downstream;
-        $seq_obj = $self->_get_subsequence( $length, $fields->[$COL_ID], $start );
+
+        my $length = $upstream + $fields->[$COL_LENGTH];
+        $length += $self->settings->downstream;
+
+        $seq_obj
+            = $self->_get_subsequence( $length, $fields->[$COL_ID], $start );
     }
     else {
-        my ( $seq_id, $seq_desc ) = $fields->[$COL_ID] =~ m{\A (.+?) _ (.*) \z}xms;
+        my ( $seq_id, $seq_desc )
+            = $fields->[$COL_ID] =~ m{\A (.+?) _ (.*) \z}xms;
         if ( !defined $seq_id ) {
             $seq_id = $fields->[$COL_ID];
         }
@@ -455,10 +462,8 @@ sub _parser_create_alignment_obj {
     if ( $args->{subject} =~ s{\s + (\d+) \s* \z}{}xms ) {
         $subject_pos = $1;
     }
-    ## no critic
     assert( defined $query_pos )   if DEBUG;
     assert( defined $subject_pos ) if DEBUG;
-    ## use critic
 
     if ( !$args->{alignment}->no_sequences ) {
         $args->{alignment}->add_seq(
@@ -481,13 +486,13 @@ sub _parser_create_alignment_obj {
     else {
         my $s1 = $args->{alignment}->get_seq_by_pos(1);
         my $s2 = $args->{alignment}->get_seq_by_pos(2);
-        $s1->end($subject_pos);
         $s1->seq( $s1->seq . $args->{subject} );
-        $s2->end($query_pos);
         $s2->seq( $s2->seq . $args->{query} );
-        $args->{alignment} = new Bio::SimpleAlign( -source => 'VMATCH' );
+        $args->{alignment} = Bio::SimpleAlign->new( -source => 'VMATCH' );
         $args->{alignment}->add_seq($s1);
         $args->{alignment}->add_seq($s2);
+        $s1->end($subject_pos);
+        $s2->end($query_pos);
     }
     return;
 }
@@ -516,7 +521,8 @@ sub _parser_untaint_data {
 
 sub _get_subsequence {
     my ( $self, $length, $id, $start ) = @_;
-    my $command = $self->_cat_path_filename( $self->settings->execpath,
+    my $command
+        = $self->_cat_path_filename( $self->settings->execpath,
         'vsubseqselect' )
         . " -seq $length $id $start "
         . $self->_cat_path_filename( $self->settings->datapath,
@@ -552,8 +558,8 @@ sub get_sequences {
             = tempfile( 'vseqselect_XXXXXXXXXXXXX', DIR => $s->tmppath );
 
         for my $sid ( @{$seqid} ) {
-            print ${tmp_fh} $sid . " \n " or
-                $self->_cannot_print($tmpfile);
+            print ${tmp_fh} $sid . " \n "
+                or $self->_cannot_print($tmpfile);
         }
         close $tmp_fh;
         $seq_query = ' -seqnum ' . $tmpfile;
@@ -563,7 +569,8 @@ sub get_sequences {
         $seq_query = ' -matchdesc "' . $seq_desc . q{"};
     }
 
-    my $command = $self->_cat_path_filename( $s->execpath, 'vseqselect' )
+    my $command
+        = $self->_cat_path_filename( $s->execpath, 'vseqselect' )
         . $seq_query . q{ }
         . $self->_cat_path_filename( $s->datapath, $s->database );
 
@@ -722,7 +729,7 @@ description.
 
    $sbe->sort('ga');
 
-Available sortmodes in C<Vmatch>:
+Available sort modes in C<Vmatch>:
 
 =over
 
@@ -843,7 +850,7 @@ Markus Riester, E<lt>mriester@gmx.deE<gt>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2007-2008 by M. Riester.
+Copyright (C) 2007-2009 by M. Riester.
 
 Based on Weigel::Search v0.13, Copyright (C) 2005-2006 by Max Planck 
 Institute for Developmental Biology, Tuebingen.
@@ -866,7 +873,7 @@ NECESSARY SERVICING, REPAIR, OR CORRECTION.
 
 IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENSE, BE
 LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
 OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
 THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING

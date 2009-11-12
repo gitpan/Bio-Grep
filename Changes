@@ -1,5 +1,13 @@
 Revision history for Perl extension Bio::Grep.
 
+0.10.6  Thu Nov  12 18:00:00 2009
+    - Perl::Tidy 20090616 passes
+    - Added Test::NoWarnings to tests
+    - Build dist benchmarks more automated, support for new Sys::Info
+    - Agrep back-end: check if agrep is TRE in search(), not new()
+    - use autodie instead of Fatal
+    - Bugfixes: Fix Warning with Bioperl 1.6.1 (thanks Jeremy)
+
 0.10.5  Sat Jul  26 13:00:00 2008
     - META.yml broken 
     - small cleanup in Vmatch back-end

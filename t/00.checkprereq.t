@@ -1,5 +1,5 @@
 #!perl -T
-use Test::More tests => 1;
+use Test::More tests => 2;
 
 use lib 't';
 
@@ -7,6 +7,7 @@ BEGIN {
 use_ok( 'BioGrepSkip' );
 }
 use BioGrepSkip;
+use Test::NoWarnings;
 
 my %prereq = BioGrepSkip::check_prereq();
 my $bp =<<EOT
